@@ -234,8 +234,8 @@ classdef RerpResult < matlab.mixin.Copyable
                     ts_idx = ts_idx(rsquare_significance(i, ts_idx)==1);
                 end
                 
+                if ~isempty(ts_idx)
                 scrollsubplot(4,1,m,h);
-                
                 hold all;
                 plot(xaxis_ms{i}', [estimates{i, ts_idx}]);
                 
@@ -274,6 +274,7 @@ classdef RerpResult < matlab.mixin.Copyable
                 
                 xlabel(x_label);
                 ylabel(y_label);
+                end
                 m=m+1;
             end
         end
@@ -1103,8 +1104,10 @@ classdef RerpResult < matlab.mixin.Copyable
         end
         
         function delay = get_delay_times(obj, event_nums, delay_var, num_samples)
+            import rerp_dependencies.*
+            
             regexp_str_in_parentheses = '.*\((.*)\).*';
-            regexp_str_out_parentheses = '(.*)(?:\s*\(.*\))';
+            regexp_str_out_parentheses = '(.*)(?:\s*\(.*\))?';
             
             delay_context_tag = strtrim(regexp(delay_var, regexp_str_in_parentheses, 'tokens'));
             delay_locking_tag = strtrim(regexp(delay_var, regexp_str_out_parentheses, 'tokens'));
@@ -1115,24 +1118,25 @@ classdef RerpResult < matlab.mixin.Copyable
             m=1;
             if obj.rerp_profile.settings.hed_enable
                 % Now find the delay for each delay_var event
-                for i=event_nums
-                    this_latency = events.latencyInFrame(i);
+                for i=1:length(event_nums)
+                    this_evt_num=event_nums(i);
+                    this_latency = events.latencyInFrame(this_evt_num);
                     if ~isempty(delay_var)
-                        for j=i:length(events.label)
+                        for j=this_evt_num:length(events.label)
                             
-                            if events.latencyInFrame > (this_latency + num_samples)
+                            if events.latencyInFrame(j) > (this_latency + num_samples)
                                 delay(m) = num_samples;
                                 break;
                             end
                             
-                            these_hed_tags = regexp(events.hedTag{j}, '[,;]','split');
-                            if any(strcmp(these_hed_tags, delay_locking_tag))
+                            these_hed_tags = hedTree.hed_tag_count(regexp(events.hedTag{j}, '[,;]','split'), 0, 0);
+                            if ~isempty(intersect(these_hed_tags, delay_locking_tag{1}{1}))
                                 if isempty(delay_context_tag)
                                     delay_latency=events.latencyInFrame(j);
                                     delay(m) = delay_latency-this_latency;
                                     break;
                                 else
-                                    if any(strcmp(these_hed_tags, delay_context_tag))
+                                    if ~isempty(intersect(these_hed_tags, delay_context_tag{1}{1}))
                                         delay_latency=events.latencyInFrame(j);
                                         delay(m) = delay_latency-this_latency;
                                         break;
@@ -1174,14 +1178,15 @@ classdef RerpResult < matlab.mixin.Copyable
             
             if obj.rerp_profile.settings.hed_enable
                 regexp_str_in_parentheses = '.*\((.*)\).*';
-                regexp_str_out_parentheses = '(.*)(?:\s*\(.*\))';
+                regexp_str_out_parentheses = '(.*)(?:\s*\(.*\))?';
                 
                 context_tag = regexp(locking_var, regexp_str_in_parentheses, 'tokens');
                 locking_tag = regexp(locking_var, regexp_str_out_parentheses, 'tokens');
-                
+               
                 % Get event numbers for locking_var (possibly in a context
                 % group).
-                if ~isempty(context_tag{1}{1})
+                
+                if ~isempty(context_tag)
                     for i=1:length(obj.rerp_profile.context_group)
                         this_group = obj.rerp_profile.context_group{i};
                         for j=1:length(this_group.children)
@@ -1194,10 +1199,10 @@ classdef RerpResult < matlab.mixin.Copyable
                     end
                 else
                     tag_idx = strcmp(locking_tag{1}{1}, obj.rerp_profile.hed_tree.uniqueTag);
-                    event_nums = obj.rerp_profile.hed_tree.originalHedStringId(tag_idx);
+                    event_nums = obj.rerp_profile.hed_tree.originalHedStringId{tag_idx};
                 end
                 
-                for i=event_nums
+                for i=event_nums(:)'
                     this_latency = events.latencyInFrame(i);
                     rerp_epochs(:,m,:) = data(this_latency:(this_latency+num_samples-1),:);
                     m=m+1;

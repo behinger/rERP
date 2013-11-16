@@ -432,7 +432,7 @@ significance_level=str2double(get(handles.significancelevel,'String'));
 exclude_insignificant=get(handles.exclude_insignif, 'value'); 
 
 if strcmp(plottype, 'Rerp by event type')||strcmp(plottype,'Rerp by HED tag')
-    handles.UserData.current_result.plotRerpEventTypes(event_idx, ts_idx, handles.UserData.plotfig,exclude_insignificant, significance_level);
+    handles.UserData.current_result.plotRerpEventTypes(event_idx, ts_idx, handles.UserData.plotfig, exclude_insignificant, significance_level);
 end
 
 if strcmp(plottype, 'Rerp by component')||strcmp(plottype,'Rerp by channel')
