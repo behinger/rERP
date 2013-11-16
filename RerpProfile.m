@@ -1,7 +1,7 @@
 % Copyright (C) 2013 Matthew Burns, Swartz Center for Computational
 % Neuroscience.
 %
-% User feedback welcome: email mburns ( at ) sccn.ucsd.edu
+% User feedback welcome: email rerptoolbox@gmail.com
 %
 % Redistribution and use in source and binary forms, with or without
 % modification, are permitted provided that the following conditions are met:
