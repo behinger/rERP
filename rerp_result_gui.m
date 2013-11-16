@@ -51,7 +51,7 @@ function varargout = rerp_result_gui(varargin)
 
 % Edit the above text to modify the response to help rerp_result_gui
 
-% Last Modified by GUIDE v2.5 05-Nov-2013 17:26:48
+% Last Modified by GUIDE v2.5 15-Nov-2013 18:36:16
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 0;
@@ -162,7 +162,7 @@ for i=1:length(names)
 end
 
 
-set(handles.typeplotlist,'max',1);
+set(handles.typeplotlist,'max',1,'value',1);
 set(handles.resultslist,'string',handles.UserData.result_names,'max',1);
 set(handles.channelslist,'max', 1e7);
 
@@ -240,7 +240,7 @@ thisplot=contents{get(hObject,'Value')};
 % Rerpimage options 
 if strcmp(thisplot,'Rerp image')
     set(handles.lockingindexbutton, 'Visible','on');
-    set(handles.tagslist,'Max',1);
+    set(handles.tagslist,'Value',1,'Max',1);
     set(handles.enterwindow,'Visible','on');
     set(handles.windowlabel,'Visible','on');
     handles.UserData.rerpimage=1;
@@ -252,14 +252,14 @@ else
     handles.UserData.rerpimage=0;
 end
 
-% Rsquare options
-if strcmp(thisplot, 'R-Squared by event type')||(strcmp(thisplot, 'R-Squared by HED tag')||strcmp(thisplot, 'R-Squared total'))
-    set(handles.significancelevel, 'Visible','on');
-    set(handles.significancelabel, 'Visible','on');
-else
-    set(handles.significancelevel, 'Visible','off');
-    set(handles.significancelabel, 'Visible','off');
-end
+% % Rsquare options
+% if strcmp(thisplot, 'R-Squared by event type')||(strcmp(thisplot, 'R-Squared by HED tag')||strcmp(thisplot, 'R-Squared total'))
+%     set(handles.significancelevel, 'Visible','on');
+%     set(handles.significancelabel, 'Visible','on');
+% else
+%     set(handles.significancelevel, 'Visible','off');
+%     set(handles.significancelabel, 'Visible','off');
+% end
 
 tagslist_Callback(handles.tagslist, eventdata, handles);
 guidata(hObject, handles);
@@ -393,11 +393,11 @@ function clearfigure_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 if ~isempty(handles.UserData.plotfig)
     try
-        get(handles.UserData.plotfig);
-        clf(handles.UserData.plotfig);
+        close(handles.UserData.plotfig);
+        handles.UserData.plotfig=figure;
+        guidata(hObject, handles);
     catch
     end
-else
 end
 
 % --- Executes on button press in plot.
@@ -415,9 +415,9 @@ event_idx = get(handles.tagslist,'Value');
 if ~isempty(handles.UserData.plotfig)
     try
         get(handles.UserData.plotfig);
-        if ~strcmp(handles.UserData.lastplot, plottype)
-            clf(handles.UserData.plotfig);
-        end
+%         if ~strcmp(handles.UserData.lastplot, plottype)
+%             clf(handles.UserData.plotfig);
+%         end
         
     catch
         handles.UserData.plotfig=figure;
@@ -426,24 +426,25 @@ else
     handles.UserData.plotfig=figure;
 end
 
-set(0,'CurrentFigure', handles.UserData.plotfig)
+set(0,'CurrentFigure', handles.UserData.plotfig);
+set(handles.UserData.plotfig,'color', [1 1 1]);
+significance_level=str2double(get(handles.significancelevel,'String'));
+exclude_insignificant=get(handles.exclude_insignif, 'value'); 
 
-if strcmp(plottype, 'Rerp by event type')||strcmp(plottype,'Rerp by HED tag');
-    handles.UserData.current_result.plotRerpEventTypes(event_idx, ts_idx, handles.UserData.plotfig)
+if strcmp(plottype, 'Rerp by event type')||strcmp(plottype,'Rerp by HED tag')
+    handles.UserData.current_result.plotRerpEventTypes(event_idx, ts_idx, handles.UserData.plotfig,exclude_insignificant, significance_level);
 end
 
 if strcmp(plottype, 'Rerp by component')||strcmp(plottype,'Rerp by channel')
-    handles.UserData.current_result.plotRerpTimeSeries(event_idx, ts_idx, handles.UserData.plotfig)
+    handles.UserData.current_result.plotRerpTimeSeries(event_idx, ts_idx, handles.UserData.plotfig,exclude_insignificant, significance_level);
 end
 
 if strcmp(plottype, 'R-Squared total')
-    significance_level=str2double(get(handles.significancelevel,'String'));
-    handles.UserData.current_result.plotRerpTotalRsquared(ts_idx, significance_level, handles.UserData.plotfig)
+    handles.UserData.current_result.plotRerpTotalRsquared(ts_idx, significance_level, handles.UserData.plotfig);
 end
 
 if strcmp(plottype, 'R-Squared by event type')||strcmp(plottype, 'R-Squared by HED tag')
-    significance_level=str2double(get(handles.significancelevel,'String'));
-    handles.UserData.current_result.plotRerpEventRsquared(ts_idx, significance_level, event_idx, handles.UserData.plotfig)
+    handles.UserData.current_result.plotRerpEventRsquared(ts_idx, significance_level, event_idx, handles.UserData.plotfig);
 end
 
 if strcmp(plottype, 'Rerp image')
@@ -461,15 +462,15 @@ if strcmp(plottype, 'Rerp image')
     end
     
     window_size_ms = str2double(get(handles.enterwindow,'String'));
-    handles.UserData.current_result.plotRerpImage(EEG, handles.UserData.locking_idx, handles.UserData.sorting_idx, ts_idx, window_size_ms, handles.UserData.plotfig)
+    handles.UserData.current_result.plotRerpImage(EEG, handles.UserData.locking_idx, handles.UserData.sorting_idx, ts_idx, window_size_ms, handles.UserData.plotfig);
 end
 
 if strcmp(plottype, 'Grid search')
-    handles.UserData.current_result.plotGridSearch(obj, ts_idx, handles.UserData.plotfig)
+    handles.UserData.current_result.plotGridSearch(ts_idx, handles.UserData.plotfig);
 end
 
 if strcmp(plottype, 'Rersp')
-    handles.UserData.current_result.plotRersp(event_idx, ts_idx, handles.UserData.plotfig)
+    handles.UserData.current_result.plotRersp(event_idx, ts_idx, handles.UserData.plotfig);
 end
 
 handles.UserData.lastplot = plottype;
@@ -521,7 +522,8 @@ if isempty(result)
 end
 
 % Setup result options for plotting. Populate channels/components. Populate event types/tags
-set(handles.typeplotlist, 'string', get_all_plotting_opts(result),'max',1);
+opts=get_all_plotting_opts(result);
+set(handles.typeplotlist, 'string', opts, 'value', min(length(opts), get(handles.typeplotlist,'Value')));
 
 if result.rerp_profile.settings.type_proc
     channels = result.rerp_profile.include_chans;
@@ -553,15 +555,18 @@ else
 end
 
 rsqstr = num2str(rsq');
-ts_str_w_rsq=cell(1,length(rsqstr));
+ts_str_w_rsq=cell(1,size(rsqstr,1));
 
-for i=1:length(time_series_str)
+for i=1:length(ts_str_w_rsq)
     ts_str_w_rsq{i} = [time_series_str(i,:) '    (' rsqstr(i,:) ')'];
 end
+cts=get(handles.channelslist,'Value'); 
+tsstr=ts_str_w_rsq(handles.UserData.sort_idx);
+set(handles.channelslist, 'string', tsstr, 'value', cts(cts<=length(tsstr)));
 
-set(handles.channelslist, 'string', ts_str_w_rsq(handles.UserData.sort_idx));
 tags = result.get_plotting_params;
-set(handles.tagslist, 'string', tags)
+ctags = get(handles.tagslist,'value');
+set(handles.tagslist, 'string', tags, 'value', ctags(ctags<=length(tags)));
 
 if result.rerp_profile.settings.hed_enable
     set(handles.tagslabel, 'string', 'HED tags');
@@ -668,3 +673,12 @@ function saveresultas_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles.UserData.current_result.saveRerpResult;
+
+
+% --- Executes on button press in exclude_insignif.
+function exclude_insignif_Callback(hObject, eventdata, handles)
+% hObject    handle to exclude_insignif (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of exclude_insignif

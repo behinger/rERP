@@ -209,11 +209,14 @@ end
 
 clbk = [];
 for i = clbk_indx
-  clbk{end+1} = get(fig_chld(i),'callback');
+  clbk{end+1} = get(fig_chld(i), 'callback');
 end
 
-if ~isempty(clbk)
-  scroll_clbk_indx = strmatch('rerp_dependencies.scroll',clbk);
+try
+    if ~isempty(clbk)
+      scroll_clbk_indx = strmatch('rerp_dependencies.scroll',clbk);
+    end
+catch
 end
 
 if isempty(scroll_clbk_indx)

@@ -184,12 +184,28 @@ classdef RerpResult < matlab.mixin.Copyable
         % on same axis (one plot per event type). ts_idx specifies which time
         % series are included, event_idx indicates which event types to
         % include
-        function plotRerpEventTypes(obj, event_idx, ts_idx, h)
+        function plotRerpEventTypes(obj, event_idx, ts_idx, h, exclude_insignificant, significance_level)
             import rerp_dependencies.*
             
             if ~exist('h','var')
                 h=figure;
             end
+            
+            if ~exist('exclude_insignificant','var')
+                exclude_insignificant=0;
+            end
+            
+            if ~exist('significance_level','var')
+                significance_level=.05;
+            end
+                   
+            if exclude_insignificant
+                significance_label = [' ( significant @ p < ' num2str(significance_level) ' )'];
+            else
+                significance_label = '';
+            end
+            
+            rsquare_significance = obj.get_event_rsquare_significance(significance_level);   
             
             hold all;
             assert(~obj.ersp_flag, 'RerpResult: plotRerpEventTypes is invalid, use plotRersp instead');
@@ -210,21 +226,41 @@ classdef RerpResult < matlab.mixin.Copyable
             datasetname = regexp(obj.rerp_profile.eeglab_dataset_name,'.*[\\\/](.*).set','tokens');
             datasetname = {{regexprep(datasetname{1}{1},'[\_]','\\\_')}};
             
-            m=1;
+            m=1;            
             props=get(findobj(h, 'tag', 'legend'));
             for i=event_idx
+                
+                if exclude_insignificant
+                    ts_idx = ts_idx(rsquare_significance(i, ts_idx)==1);
+                end
+                
                 scrollsubplot(4,1,m,h);
+                
                 hold all;
-                plot(xaxis_ms{i}, [estimates{i,ts_idx}]);
+                plot(xaxis_ms{i}', [estimates{i, ts_idx}]);
                 
                 hcmenu = uicontextmenu;
                 uimenu(hcmenu, 'Label', 'Publish graph', 'Callback', @RerpResult.gui_publish);
-                set(gca,'uicontextmenu', hcmenu)
+                set(gca,'uicontextmenu', hcmenu);
                 
-                title(['parameter name:' tags{i}]);
+                if obj.rerp_profile.settings.hed_enable
+                    titl = ['Tag:' tags{i}];
+                else
+                    titl = ['Event type:' tags{i}];
+                end
+                
+                if obj.rerp_profile.settings.type_proc
+                    leg = [datasetname{1}{1} ' - ' obj.analysis_name ', Channel: ']; 
+                    ts_label=obj.rerp_profile.include_chans(ts_idx);
+                else
+                    leg = [datasetname{1}{1} ' - ' obj.analysis_name ', Component: ']; 
+                    ts_label=obj.rerp_profile.include_comps(ts_idx);
+                end     
+                
+                title([titl significance_label]);
                 xlim([min(xaxis_ms{i}) max(xaxis_ms{i})]);
                 
-                legend_idx = cellfun(@(x) [datasetname{1}{1} ' - ' obj.analysis_name ': ' x], regexp(num2str(ts_idx), '\s+','split'), 'UniformOutput' ,false);
+                legend_idx = cellfun(@(x) [leg x], regexp(num2str(ts_label),'\s*','split'), 'UniformOutput' ,false);
                 
                 if isempty(props)
                     a=legend(legend_idx);
@@ -246,14 +282,28 @@ classdef RerpResult < matlab.mixin.Copyable
         % per time series). ts_idx specifies which time
         % series are included, event_idx indicates which event types to
         % include
-        function plotRerpTimeSeries(obj, event_idx, ts_idx, h)
+        function plotRerpTimeSeries(obj, event_idx, ts_idx, h, exclude_insignificant, significance_level)
             import rerp_dependencies.*
             
             if ~exist('h','var')
                 h=figure;
             end
-            hold all;
             
+            if ~exist('exclude_insignificant','var')
+                exclude_insignificant=0;
+            end
+            
+            if ~exist('significance_level','var')
+                significance_level=.05;
+            end
+            
+            if exclude_insignificant
+                significance_label = [' ( significant @ p < ' num2str(significance_level) ' )'];
+            else
+                significance_label = '';
+            end
+            
+            rsquare_significance = obj.get_event_rsquare_significance(significance_level);         
             assert(~obj.ersp_flag, 'RerpResult: plotRerpTimeSeries is invalid, , use plotRersp instead');
             
             [tags, estimates, xaxis_ms] = obj.get_plotting_params;
@@ -276,19 +326,37 @@ classdef RerpResult < matlab.mixin.Copyable
             props=get(findobj(h, 'tag', 'legend'));
             for i=ts_idx
                 scrollsubplot(4,1,m,h);
+                
+                n=1;       
                 for j=event_idx
-                    plot(xaxis_ms{j}, estimates{j, i});
-                    hold all;
+                    if ~exclude_insignificant||rsquare_significance(j, i)
+                        plot(xaxis_ms{j}, estimates{j, i});
+                        new_idx(n)=j;
+                        hold all;
+                        n=n+1;
+                    end
                 end
+                event_idx=new_idx; 
                 
                 hcmenu = uicontextmenu;
                 uimenu(hcmenu, 'Label', 'Publish graph', 'Callback', @RerpResult.gui_publish);
                 set(gca,'uicontextmenu', hcmenu)
                 
-                title(['time series: ' num2str(i)]);
-                xlim([min(min(xaxis_ms{event_idx})) max(max(xaxis_ms{event_idx}))]);
+                if obj.rerp_profile.settings.type_proc
+                    titl = ['Channel:' num2str(obj.rerp_profile.include_chans(i))];
+                else
+                    titl = ['Component:' num2str(obj.rerp_profile.include_comps(i))];
+                end
                 
-                legend_idx = cellfun(@(x) [datasetname{1}{1} ' - ' obj.analysis_name ': ' x], tags(event_idx) , 'UniformOutput' ,false);
+                if obj.rerp_profile.settings.hed_enable
+                    leg = [datasetname{1}{1} ' - ' obj.analysis_name ', Tag: ']; 
+                else
+                    leg = [datasetname{1}{1} ' - ' obj.analysis_name ', Event type: ']; 
+                end
+                
+                title([titl significance_label]);
+                xlim([min(cell2mat(xaxis_ms(event_idx))) max(cell2mat(xaxis_ms(event_idx)))]);
+                legend_idx = cellfun(@(x) [leg x], tags(event_idx) , 'UniformOutput' ,false);
                 if isempty(props)
                     a=legend(legend_idx);
                 else
@@ -314,9 +382,7 @@ classdef RerpResult < matlab.mixin.Copyable
             if ~exist('h','var')
                 h=figure;
             end
-            
-            hold all;
-            
+  
             vals = obj.average_total_rsquare(ts_idx);
             
             tmax = max(vals);
@@ -336,11 +402,13 @@ classdef RerpResult < matlab.mixin.Copyable
             set(gca,'xtickmode','manual');
             set(gca, 'xtick', 1:length(ts_idx));
             legend_idx=[datasetname{1}{1} ' - ' obj.analysis_name];
+            
             props=get(findobj(h, 'tag', 'legend'));
             if isempty(props)
                 leg = legend(legend_idx);
                 props = get(leg);
                 props.UserData.plotHandles = p;
+                props.UserData.lstrings={legend_idx};
                 set(gca, 'xticklabel', ts_idx);
             else
                 plotHandles = [props.UserData.plotHandles p];
@@ -359,13 +427,13 @@ classdef RerpResult < matlab.mixin.Copyable
             for j=1:length(ts_idx)
                 if rsquare_significance(j)
                     hold all; 
-                    plot(j, vals(j) ,'x', 'LineWidth', 1, 'MarkerEdgeColor',line_props.Color,'MarkerSize', 14);
+                    plot(j, vals(j) ,'s', 'LineWidth', 1, 'MarkerEdgeColor',line_props.Color,'MarkerSize', 14);
                 end
             end
                 
             hcmenu = uicontextmenu;
             uimenu(hcmenu, 'Label', 'Publish graph', 'Callback', @RerpResult.gui_publish);
-            set(gca,'uicontextmenu', hcmenu)
+            set(gca,'uicontextmenu', hcmenu);
             
             xlabel('Time series - decreasing R ^2 order');
             ylabel('R ^2');
@@ -404,26 +472,30 @@ classdef RerpResult < matlab.mixin.Copyable
             datasetname = {{regexprep(datasetname{1}{1},'[\_]','\\\_')}};
             
             m=1;
-            for i=event_idx
+            for i=1:length(event_idx)
                 
-                vals = obj.average_event_rsquare(i,ts_idx);
+                vals = obj.average_event_rsquare(event_idx(i),ts_idx);
                 this_rsquare_significance = rsquare_significance(i,:);
                 
                 tmax = max(vals);
                 tmin = min(min(vals), 0);
                 
-                scrollsubplot(4,1,m,h);
+                hold all;
+                scrollsubplot(3,1,m,h);
+                                
                 p=plot(1:length(ts_idx), vals);
                 line_props = get(p);
                 set(gca,'xtickmode','manual');
                 set(gca, 'xtick', 1:length(ts_idx));
-                props=get(findobj(h, 'tag', ['legend_' num2str(i)]));
+                props=get(findobj(h,'Tag', ['legend_' num2str(i)]));
                 legend_idx=[datasetname{1}{1} ' - ' obj.analysis_name];
+                
                 if isempty(props)
                     leg = legend(legend_idx);
                     props = get(leg);
                     props.UserData.plotHandles = p;
-                    set(leg,'UserData', props.UserData, 'tag',['legend_' num2str(i)]);
+                    props.UserData.lstrings={legend_idx};
+                    set(leg,'UserData', props.UserData, 'Tag',['legend_' num2str(i)]);
                     set(gca, 'xticklabel', ts_idx);
                 else
                     plotHandles = [props.UserData.plotHandles p];
@@ -434,7 +506,7 @@ classdef RerpResult < matlab.mixin.Copyable
                     set(gca, 'xticklabel', 1:length(ts_idx));
                 end
                 
-                set(leg, 'UserData', props.UserData);
+                set(leg,'UserData', props.UserData);
                 pr= get(gca,'UserData');
                 pr.legend=leg;
                 set(gca, 'UserData',pr);
@@ -449,11 +521,11 @@ classdef RerpResult < matlab.mixin.Copyable
                 
                 hcmenu = uicontextmenu;
                 uimenu(hcmenu, 'Label', 'Publish graph', 'Callback', @RerpResult.gui_publish);
-                set(gca,'uicontextmenu', hcmenu)
+                set(gca,'uicontextmenu', hcmenu);
                 
                 xlabel('Time series - decreasing R ^2 order');
                 ylabel('R ^2');
-                title(['Rsquare performance by time series: ' tags{i}]);
+                title(['Rsquare performance by time series: ' tags{event_idx(i)}]);
                 
                 a = get(gca);
                 tmin = min(tmin, a.YLim(1));
@@ -486,6 +558,15 @@ classdef RerpResult < matlab.mixin.Copyable
                 data = EEG.data(ts_idx,:)';
             end
             
+            % Replace artifact indexes with data mean for plotting 
+            if obj.rerp_profile.settings.artifact_rejection_enable
+                if obj.rerp_profile.settings.artifact_variable_enable
+                    data(obj.rerp_profile.variable_artifact_indexes,:)=repmat(median(data), [nnz(obj.rerp_profile.variable_artifact_indexes), 1]);
+                else
+                    data(obj.rerp_profile.computed_artifact_indexes,:)=repmat(median(data), [nnz(obj.rerp_profile.computed_artifact_indexes), 1]);
+                end
+            end
+                    
             num_samples = ceil(obj.rerp_profile.sample_rate*(window_size_ms/1000));
             
             disp('RerpResult: generating modeled data');
@@ -497,6 +578,7 @@ classdef RerpResult < matlab.mixin.Copyable
             [tags, estimates, xaxis_ms, epoch_boundaries] = obj.get_plotting_params;
             locking_tag = tags{locking_idx};
             locking_estimate = estimates(locking_idx, ts_idx);
+            sorting_tag = tags{delay_idx}; 
             
             if ~isempty(delay_idx)
                 delay_tag = tags{delay_idx};
@@ -509,45 +591,59 @@ classdef RerpResult < matlab.mixin.Copyable
             this_epoch_boundaries = epoch_boundaries{locking_idx};
             this_xaxis_ms = ((0:(num_samples-1))'/obj.rerp_profile.sample_rate + this_epoch_boundaries(1))*1000;
             
-            disp('RerpResult: getting epochs');
+            disp('RerpResult: getting epochs');               
             [data_epochs, event_nums] = obj.get_rerp_epochs(data, locking_tag, num_samples);
             [modeled_epochs] = obj.get_rerp_epochs(modeled_data, locking_tag, num_samples);
             [noise_epochs] = obj.get_rerp_epochs(noise, locking_tag, num_samples);
             
             if ~isempty(delay_tag)
-                disp('RerpResult: calulating order of trials');
+                disp('RerpResult: calculating order of trials');
                 sorting_var = (obj.get_delay_times(event_nums, delay_tag, num_samples)/obj.rerp_profile.sample_rate)*1000;
             else
                 sorting_var=[];
             end
-            
+           
             m=1;
             for i=1:length(ts_idx)
-                this_ts = ts_idx(i);
+               this_ts = ts_idx(i);
+                                
+                if obj.rerp_profile.settings.type_proc
+                    ts = 'Channel';
+                    tsn = num2str(obj.rerp_profile.include_chans(this_ts));
+                else
+                    ts = 'Component';
+                    tsn = num2str(obj.rerp_profile.include_comps(this_ts));
+                end
+                
+                if obj.rerp_profile.settings.hed_enable
+                    v = 'Tag';
+                else
+                    v = 'Event type';
+                end
+ 
                 % Plot the data epochs
                 scrollsubplot(4,1,m,h);
-                erpimage(data_epochs(:,:,i), sorting_var, this_xaxis_ms, ['data epochs: variable ' locking_tag ', time-series ' num2str(this_ts)]);
+                erpimage(data_epochs(:,:,i), sorting_var, this_xaxis_ms, ['Data epochs - ' v ': ' locking_tag ', ' ts ': ' tsn]);        
                 
                 % Plot the modeled epochs
                 scrollsubplot(4,1,m+1,h);
-                erpimage(modeled_epochs(:,:,i), sorting_var, this_xaxis_ms, ['modeled epochs: variable ' locking_tag ', time-series ' num2str(this_ts)]);
+                erpimage(modeled_epochs(:,:,i), sorting_var, this_xaxis_ms, ['Modeled epochs - ' v ': ' locking_tag ', ' ts ': ' tsn]);
                 
                 % Plot the noise epochs
                 scrollsubplot(4,1,m+2,h);
-                erpimage(noise_epochs(:,:,i), sorting_var, this_xaxis_ms, ['difference epochs: variable ' locking_tag ', time-series ' num2str(this_ts)]);
+                erpimage(noise_epochs(:,:,i), sorting_var, this_xaxis_ms, ['Difference epochs - ' v ': ' locking_tag ', ' ts ': ' tsn]);
                 
                 % Plot the rerp estimates
                 scrollsubplot(4,1,m+3,h);
                 plot(xaxis_ms{locking_idx}', locking_estimate{i}, xaxis_ms{delay_idx}', delay_estimate{i});
-                title([locking_tag ' rERP estimates']);
+                title('rERP estimates');
                 xlabel('time (ms)');
                 ylabel('epoch number');
-                legend('Locking variable estimate', 'Sorting variable estimate');
+                legend([v '(locking): ' locking_tag], [v '(sorting): ' sorting_tag]);   
                 
                 hcmenu = uicontextmenu;
                 uimenu(hcmenu, 'Label', 'Publish graph', 'Callback', @RerpResult.gui_publish);
-                set(gca,'uicontextmenu', hcmenu)
-                
+                set(gca,'uicontextmenu', hcmenu); 
                 m=m+4;
             end
             
@@ -562,31 +658,51 @@ classdef RerpResult < matlab.mixin.Copyable
             if ~exist('h','var')
                 figure;
             end
-            
+
+
             nbins = obj.rerp_profile.settings.nbins;
             sr = obj.rerp_profile.sample_rate;
-            y_axis_hz = ((0:floor(nbins/2))-1)*sr/nbins;
+            y_axis_hz = ((1:floor(nbins/2)))*sr/nbins;
             
             [tags, estimates, xaxis_ms] = obj.get_plotting_params;
-            
+
             m=1;
             for i=ts_idx
+                if obj.rerp_profile.settings.type_proc
+                    ts = 'Channel';
+                    tsn = num2str(obj.rerp_profile.include_chans(i));
+                else
+                    ts = 'Component';
+                    tsn = num2str(obj.rerp_profile.include_comps(i));
+                end
+
+                if obj.rerp_profile.settings.hed_enable
+                    v = 'Tag';
+                else
+                    v = 'Event type';
+                end
+ 
                 for j=event_idx
                     % Plot the rERSP estimates
-                    this_xaxis_ms = xaxis_ms{j,i};
+                    this_xaxis_ms = xaxis_ms{i,j};
                     this_estimate = estimates{j,i};
-                    this_tag = tags{j,i};
+                    this_tag = tags{i,j};
                     
                     scrollsubplot(1,1,m,h);
-                    imagesc(this_xaxis_ms, y_axis_hz, this_estimate);
+                    a=imagesc(this_xaxis_ms, y_axis_hz, this_estimate');
                     colormap('jet'); 
-                    title(['rERSP, time-series ' num2str(i) ', variable ' this_tag]);
-                    xlabel('time (ms)');
-                    ylabel('frequency (Hz)');
+                    title(['rERSP, ' ts ': ' tsn ', ' v ': ' this_tag]);
+                    xlabel('time ( ms )');
+                    ylabel('frequency ( Hz ) ');
+                    axis xy;
+%                     num_yticks=20; 
+%                     y_axis_hz_tick = (1:(num_yticks-1))*sr/(num_yticks*2);
+%                     set(gca, 'ytick', 1:num_yticks);
+%                     set(gca, 'yticklabel', flipdim(y_axis_hz_tick,2));
                     
                     hcmenu = uicontextmenu;
                     uimenu(hcmenu, 'Label', 'Publish graph', 'Callback', @RerpResult.gui_publish);
-                    set(gca,'uicontextmenu', hcmenu)
+                    set(a,'uicontextmenu', hcmenu)
                     
                     m=m+1;
                 end
@@ -607,6 +723,13 @@ classdef RerpResult < matlab.mixin.Copyable
             
             this_level = obj.gridsearch;
             m=1;
+            if obj.rerp_profile.settings.type_proc
+                incl_ts=obj.rerp_profile.include_chans;
+                ts = 'Channel';
+            else
+                incl_ts=obj.rerp_profile.include_comps;
+                ts = 'Component';
+            end
             
             while 1
                 gr = this_level.grid_results;
@@ -617,19 +740,19 @@ classdef RerpResult < matlab.mixin.Copyable
                     pred_surf = zeros(1,numel(gr));
                     
                     for j=1:numel(gr)
-                        pred_surf(j) = gr{j}.average_rsquare(i);
+                        pred_surf(j) = gr{j}.average_total_rsquare(i);
                     end
                     
                     scrollsubplot(1,1,m,h);
                     
-                    if strcmp(obj.penalty_func, 'Elastic_net')
+                    if strcmp(obj.rerp_profile.settings.penalty_func, 'Elastic net')
                         [lambda_grid_L1, lambda_grid_L2] = meshgrid(this_lambda_range(:,1), this_lambda_range(:, 2));
-                        mesh(lambda_grid_L1, lambda_grid_L2, reshape(pred_surf, size(lambda_grid_L2)));
+                        p=mesh(lambda_grid_L1, lambda_grid_L2, reshape(pred_surf, size(lambda_grid_L2)));
+                        props=get(p); 
                         grid on;
-                        colormap(obj.colormap);
-                        colorbar;
+                        colormap('jet');
                         
-                        title(['Predictive surface (Elastic net), time-series ' num2str(i) ', level ' num2str(m)]);
+                        title(['Predictive surface, Elastic net, '  ts ': ' num2str(incl_ts(i)) ', level ' num2str(m)]);
                         xlabel('\lambda  1');
                         ylabel('\lambda  2');
                         zlable('average rsquare');
@@ -638,41 +761,43 @@ classdef RerpResult < matlab.mixin.Copyable
                         hold on;
                         opt_lambda1 = this_lambda_range(lambda_grid_L1==max(max(pred_surf)));
                         opt_lambda2 = this_lambda_range(lambda_grid_L2==max(max(pred_surf)));
-                        line([opt_lambda1 opt_lambda1], [opt_lambda2 opt_lambda2], [0 max(max(pred_surf))],'Color',obj.this_linespec(1),'LineSpec',obj.this_linespec(2), 'linewidth',1);
+                        line([opt_lambda1 opt_lambda1], [opt_lambda2 opt_lambda2], [0 max(max(pred_surf))],'Color',props.Color,'LineStyle',props.LineStyle, 'linewidth',1);
                         
                         zpos = (max(max(pred_surf)) + max(0,min(min(pred_surf))))/2;
-                        text(opt_lambda1, opt_lambda2, zpos, ['   \lambda  =  (' num2str(opt_lambda1) ', ' num2str(opt_lambda2) ')'], 'color',obj.this_linespec(1));
+                        text(opt_lambda1, opt_lambda2, zpos, ['   lambda  =  (' num2str(opt_lambda1) ', ' num2str(opt_lambda2) ')'], 'color',props.Color);
                     end
                     
-                    if strcmp(obj.penalty_func, 'L1_norm')
-                        plot(this_lambda_range, pred_surf', obj.this_linespec);
+                    if strcmp(obj.rerp_profile.settings.penalty_func, 'L1 norm')
+                        p=plot(this_lambda_range, pred_surf');
+                        props=get(p); 
                         grid on;
-                        title(['Predictive surface, L1 norm penalty, time-series ' num2str(i) ', level ' num2str(m)]);
+                        title(['Predictive surface, L1 norm penalty, ' ts ': ' num2str(incl_ts(i)) ', level ' num2str(m)]);
                         ylim([max(0, min(pred_surf)), max(pred_surf)]);
                         xlabel('\lambda');
                         ylabel('R ^2');
                         
                         hold on;
                         opt_lambda = this_lambda_range(pred_surf==max(pred_surf));
-                        line([opt_lambda opt_lambda],[0 max(pred_surf)*1.1],'Color',obj.this_linespec(1),'LineSpec',obj.this_linespec(2), 'linewidth',1);
+                        line([opt_lambda opt_lambda],[0 max(pred_surf)*1.1],'Color',props.Color,'LineStyle',props.LineStyle, 'linewidth',1);
                         
                         ypos = (max(pred_surf) + max(0, min(pred_surf)))/2;
-                        text(opt_lambda, ypos, ['   \lambda  =  ' num2str(opt_lambda)], 'color','b');
+                        text(opt_lambda, ypos, ['   lambda  =  ' num2str(opt_lambda)], 'Color',props.Color);
                     end
                     
-                    if strcmp(obj.penalty_func, 'L2_norm')
-                        plot(this_lambda_range, pred_surf', obj.this_linespec);
+                    if strcmp(obj.rerp_profile.settings.penalty_func, 'L2 norm')
+                        p=plot(this_lambda_range, pred_surf');
+                        props=get(p); 
                         grid on;
-                        title(['Predictive surface, L2 norm penalty, time-series ' num2str(i) ', level ' num2str(m)]);
+                        title(['Predictive surface, L2 norm penalty, ' ts ': ' num2str(incl_ts(i)) ', level ' num2str(m)]);
                         ylim([max(0, min(pred_surf)), max(pred_surf)]);
                         xlabel('\lambda');
                         ylabel('R ^2');
                         hold on;
                         opt_lambda = this_lambda_range(pred_surf==max(pred_surf));
-                        line([opt_lambda opt_lambda],[0 max(pred_surf)],'Color',obj.this_linespec(1),'LineSpec',obj.this_linespec(2), 'linewidth',1);
+                        line([opt_lambda opt_lambda],[0 max(pred_surf)],'Color',props.Color,'LineStyle',props.LineStyle, 'linewidth',1);
                         
                         ypos = (max(pred_surf) + max(0, min(pred_surf)))/2;
-                        text(opt_lambda, ypos, ['   \lambda  =  ' num2str(opt_lambda)], 'color','b');
+                        text(opt_lambda, ypos, ['   lambda  =  ' num2str(opt_lambda)],'Color',props.Color);
                     end
                     
                     
@@ -699,6 +824,8 @@ classdef RerpResult < matlab.mixin.Copyable
         %Returns a representation of the rerp estimate that is convenient
         %for plotting
         function [tags, estimates, xaxis_ms, epoch_boundaries] = get_plotting_params(obj)
+            import rerp_dependencies.*
+            
             p=obj.rerp_profile;
             
             category_epoch_length = p.settings.category_epoch_boundaries(2) - p.settings.category_epoch_boundaries(1);
@@ -749,7 +876,7 @@ classdef RerpResult < matlab.mixin.Copyable
                     start_idx=category_ns*(m-1)+1;
                     end_idx = start_idx+category_ns-1;
                     for j=1:size(raw_estimate,2)
-                        estimates{m,j} = raw_estimate(start_idx:end_idx, j,:);
+                        estimates{m,j} = squeeze(raw_estimate(start_idx:end_idx, j,:));
                         xaxis_ms{m} = RerpResult.get_xaxis_ms(p.settings.category_epoch_boundaries, p.sample_rate);
                         epoch_boundaries{m}=p.settings.category_epoch_boundaries;
                     end
@@ -762,7 +889,7 @@ classdef RerpResult < matlab.mixin.Copyable
                     start_idx=continuous_ns*(m-1)+1;
                     end_idx = start_idx+continuous_ns-1;
                     for j=1:size(raw_estimate,2)
-                        estimates{m,j} = raw_estimate(start_idx:end_idx, j);
+                        estimates{m,j} = squeeze(raw_estimate(start_idx:end_idx, j,:));
                         xaxis_ms{m} = RerpResult.get_xaxis_ms(p.settings.continuous_epoch_boundaries, p.sample_rate);
                         epoch_boundaries{m}=p.settings.continuous_epoch_boundaries;
                     end
@@ -775,7 +902,7 @@ classdef RerpResult < matlab.mixin.Copyable
                     start_idx=category_ns*(m-1)+1;
                     end_idx = start_idx+category_ns-1;
                     for j=1:size(raw_estimate,2)
-                        estimates{m,j} = raw_estimate(start_idx:end_idx, j);
+                        estimates{m,j} = squeeze(raw_estimate(start_idx:end_idx, j,:));
                         xaxis_ms{m} = RerpResult.get_xaxis_ms(p.settings.category_epoch_boundaries, p.sample_rate);
                         epoch_boundaries{m}=p.settings.category_epoch_boundaries;
                     end
@@ -794,7 +921,7 @@ classdef RerpResult < matlab.mixin.Copyable
                     start_idx=category_ns*(i-1)+1;
                     end_idx = start_idx+category_ns-1;
                     for j=1:size(raw_estimate,2)
-                        estimates{i,j} = raw_estimate(start_idx:end_idx, j);
+                        estimates{i,j} = squeeze(raw_estimate(start_idx:end_idx, j, :));
                         xaxis_ms{i} = RerpResult.get_xaxis_ms(p.settings.category_epoch_boundaries, p.sample_rate);
                         epoch_boundaries{i}=p.settings.category_epoch_boundaries;
                     end
@@ -1118,10 +1245,25 @@ classdef RerpResult < matlab.mixin.Copyable
         function gui_publish(varargin)
                 ax=gca;
                 h=figure;
+                set(h,'color',[1 1 1]); 
 
-                copyobj(ax, h);
+                newax=copyobj(ax, h);
                 pr=get(ax,'UserData');
-                legend(get(pr.legend,'String'));
+                
+                try
+                    lstr = get(pr.legend,'String');
+                    legend(lstr);
+                    lprops=get(pr.legend,'UserData');
+                    try
+                        p=copyobj(lprops.plotHandles,newax);
+                        legend(p,lstr);
+                    catch
+                        legend(lstr);
+                    end
+                catch
+                    
+                end
+                
                 set(gca,  'ActivePositionProperty', 'OuterPosition',...
                     'OuterPosition', [0 0 1 1]);
 

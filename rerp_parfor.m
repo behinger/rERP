@@ -100,7 +100,7 @@ final_result.compute_time_seconds=toc;
 final_result.date_completed=datestr(now,'yyyy-mm-dd-HH:MM:SS');
 final_result.ersp_flag=ersp_flag;
 
-final_result.saveRerpResult('path',fullfile(final_result.rerp_profile.autosave_results_path, 'last.rerp_profile'));
+final_result.saveRerpResult('path',fullfile(rerp_path, 'results', 'last.rerp_result'));
 
 if rerp_profile.settings.rerp_result_autosave
     temp = regexp(rerp_profile.eeglab_dataset_name, '^.*[\/\\](.*).set$', 'tokens');

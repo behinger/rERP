@@ -171,7 +171,9 @@ if strcmp(format,'eps')
     format='epsc';
 end
 
-saveas(h, fullfile(pn,fn), format);
+if fn
+    saveas(h, fullfile(pn,fn), format);
+end
 
 close(h);
 close(handles.UserData.pubFig); 
