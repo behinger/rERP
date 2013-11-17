@@ -73,7 +73,7 @@ rerp_comps=1:EEG.nbchan;
 
 rerp_result = pop_rerp(EEG);
 rerp_result = pop_rerp(EEG, rerp_profile, 'force_gui', 1);
-rerp_result = pop_rerp(EEG, rerp_profile, 'view_only', 1);
+rerp_result = pop_rerp({}, rerp_profile, 'view_only', 1);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
