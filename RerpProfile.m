@@ -119,11 +119,9 @@ classdef RerpProfile < matlab.mixin.Copyable
             events = event;
             obj.these_events = events.eeglab2event(EEG);
             
-            [ these_event_types, idx] = sort(str2double(obj.these_events.uniqueLabel));
+            obj.event_types = obj.these_events.uniqueLabel;
             obj.num_event_types = obj.these_events.getNumberOfOccurancesForEachEvent;
-            obj.num_event_types = obj.num_event_types(idx);
             
-            obj.event_types=regexp(num2str(these_event_types), ' *', 'split');
             obj.event_type_descriptions = cell(size(obj.event_types));
             
             p=makeParser;
@@ -289,7 +287,7 @@ classdef RerpProfile < matlab.mixin.Copyable
             default_settings = {...
                 'type_proc', 0,... 0 for ICA or 1 for channels
                 'ersp_enable',0,...perform time-frequency decomposition first
-                'nbins', 128,...number of freq bins to use when ersp_enable==1          
+                'nbins', 64,...number of freq bins to use when ersp_enable==1          
                 'rerp_result_autosave', 1,...automatically save the regression result 
                 ...
                 'category_epoch_boundaries',[-1 2],...sets window for categorical variables like event types
@@ -297,7 +295,7 @@ classdef RerpProfile < matlab.mixin.Copyable
                 ...
                 'artifact_rejection_enable', 1,...automatically ensure artifact frames are identified and excluded (recommended)
                 'artifact_variable_enable', 0,...use an artifact variable from the workspace (RerpProfile.variable_artifact_indexes)
-                'artifact_function_name', 'rerp_reject_samples_robcov',...name of function used to compute artifact indexes
+                'artifact_function_name', 'rerp_reject_samples_robcov',...name of function used to compute artifact indexes - reject_samples_robcov uses much more resources than reject_samples_probability, but it is also more thorough
                 ...
                 'exclude_event_types',{},...event types to exclude from regression
                 ...
@@ -310,13 +308,13 @@ classdef RerpProfile < matlab.mixin.Copyable
                 'continuous_tag',{},...tags which have a magnitude associated (e.g. Stimulus/Visual/Luminance/.25)
                 ...
                 'regularization_enable', 1,...enable penalized regression 
-                'lambda',[6e-4, 6e-4],...specify lambda to use if cross validation is disabled
+                'lambda',[1 1],...specify lambda to use if cross validation is disabled
                 'cross_validate_enable', 1,...do a grid search for lambda 
                 'num_xvalidation_folds', 5,...number of folds to use during cross validation 
-                'num_grid_zoom_levels', 3,...number of levels of grid search zooming
+                'num_grid_zoom_levels', 1,...number of levels of grid search zooming
                 'num_grid_points', 8,...number of points to sample at each grid level
-                'first_phase_lambda', [-logspace(log10(1e8), log10(1e-8),  20) 0 logspace(log10(1e-8), log10(1e8), 20)]',... the initial sample space for grid search
-                'elasticnet_quick_zoom', 1,...for ElasticNet (L1+L2) penalty. find optimal lambda1 and lambda2 serpately first, then 2D grid search around those values
+                'first_phase_lambda', [0 logspace(log10(1e-6), log10(1e8), 15)]',... the initial sample space for grid search
+                'elasticnet_quick_zoom', 0,...for ElasticNet (L1+L2) penalty. find optimal lambda1 and lambda2 serpately first, then 2D grid search around those values
                 'penalty_func',{'L2 norm'},...penalty function
                 'penalty_options',{'L1 norm' 'L2 norm' 'Elastic net'}... available options for penalty function
                 }; 

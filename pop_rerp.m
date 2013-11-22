@@ -813,15 +813,16 @@ return;
         cp.saveRerpProfile('path',fullfile(rerp_path, 'profiles','last.rerp_profile'));
         
         EEGOUT.rerp_profile = cp;
-        if ~isempty(s.penalty_func)
+        if ~isempty(s.penalty_func) &&  matlabpool('size') > 4
             rerp_result = rerp_parfor(EEG, cp);
         else
-            rerp_result = rerp_parfor(EEG, cp, 'disable_parfor',1);
+            rerp_result = rerp_parfor(EEG, cp,'disable_parfor',1);
         end
         
         if ~isempty(gui_handle)
             close(gui_handle);
         end
+        
         disp('pop_rerp: done'); 
     end
 
@@ -1125,7 +1126,7 @@ return;
             'minwidth', 1000);
         
         gui_handle = gcf;
-        set(gui_handle, 'Position', [100 100 1100 900], 'color', [1 1 1]);
+        set(gui_handle, 'Position', [100 100 1100 900]);
         
         %Bring relevent ui handles into scope.
         ui_enterExcludeChans = findobj([all_handlers{:}],'flat', 'tag','enterExcludeChans');
@@ -1182,13 +1183,14 @@ return;
         ui_penaltyLabel = findobj([all_handlers{:}],'flat', 'tag','penaltyLabel');
         ui_autosavePathLabel = findobj([all_handlers{:}],'flat', 'tag','autosavePathLabel');
         
-        set([ui_penaltyLabel,ui_autosavePathLabel, ui_lambdaLabel, ui_includeTagsLabel,...
-            ui_excludeTagsLabel, ui_continuousTagsLabel, ui_seperatorTagsLabel, ui_parameterCountLabel,...
-            ui_rejectedFramesCounter, ui_typeProcLabel,ui_includeUniqueTagsList,ui_excludeUniqueTagsList,...
-            ui_continuousTagsList,ui_seperatorTagsList,ui_penaltyFunctionList,ui_includeUniqueevent_typesList,...
-            ui_excludeUniqueevent_typesList,ui_artifactFunction,ui_inclevttypelabel,ui_exclevttypelabel,ui_catepoch,...
-            ui_enableArtifactVariable, ui_enableHed, ui_enforceHed, ui_enableXValidate, ui_conepoch,ui_autoSaveResultsEnable,...
-            ui_erspEnable, ui_enableArtifactRejection, ui_enableRegularization], 'backgroundcolor', [1 1 1]);
+% Change background color to white
+%         set([ui_penaltyLabel,ui_autosavePathLabel, ui_lambdaLabel, ui_includeTagsLabel,...
+%             ui_excludeTagsLabel, ui_continuousTagsLabel, ui_seperatorTagsLabel, ui_parameterCountLabel,...
+%             ui_rejectedFramesCounter, ui_typeProcLabel,ui_includeUniqueTagsList,ui_excludeUniqueTagsList,...
+%             ui_continuousTagsList,ui_seperatorTagsList,ui_penaltyFunctionList,ui_includeUniqueevent_typesList,...
+%             ui_excludeUniqueevent_typesList,ui_artifactFunction,ui_inclevttypelabel,ui_exclevttypelabel,ui_catepoch,...
+%             ui_enableArtifactVariable, ui_enableHed, ui_enforceHed, ui_enableXValidate, ui_conepoch,ui_autoSaveResultsEnable,...
+%             ui_erspEnable, ui_enableArtifactRejection, ui_enableRegularization], 'backgroundcolor', [1 1 1]);
     end
 end
 

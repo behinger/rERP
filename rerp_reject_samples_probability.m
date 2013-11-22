@@ -1,4 +1,4 @@
-% Copyright (C) 2013 Matthew Burns, Swartz Center for Computational
+% Copyright (C) 2013 Matthew Burns, Nima Bigdely-Shamlo Swartz Center for Computational
 % Neuroscience.
 %
 % User feedback welcome: email rerptoolbox@gmail.com
@@ -26,6 +26,8 @@
 % The views and conclusions contained in the software and documentation are those
 % of the authors and should not be interpreted as representing official policies,
 % either expressed or implied, of the FreeBSD Project.function isFrameAnArtifact= rerp_reject_samples_probability(EEG, varargin)
+function artifact_indexes = rerp_reject_samples_probability(EEG) 
+ARTIFACT_LIKELIHOOD_THRESHOLD=2.1; 
 
 data = double(eeg_getdatact(EEG));
 
@@ -48,7 +50,7 @@ windowFrame = round((-windowFrameLength/2):(windowFrameLength/2));
 meanLogLikelihood(isinf(meanLogLikelihood))=0; 
 smoothMeanLogLikelihood =  filtfilt( ones(1, windowFrameLength) , 1, meanLogLikelihood)/(windowFrameLength.^2);
 
-isArtifactWindowCenter = find(smoothMeanLogLikelihood > 2.1);
+isArtifactWindowCenter = find(smoothMeanLogLikelihood > ARTIFACT_LIKELIHOOD_THRESHOLD)';
 
 % add two sides on the window
 artifactFrames = repmat(windowFrame, length(isArtifactWindowCenter), 1) + repmat(isArtifactWindowCenter, 1, length(windowFrame));
@@ -69,4 +71,4 @@ for i=1:length(fallingEdge)
     rejectionWindows =cat(1, rejectionWindows, [rejectionWinowStart rejectionWinowEnd]);
 end;
 
-isFrameAnArtifact=logical(isFrameAnArtifact'); 
+artifact_indexes=logical(isFrameAnArtifact'); 

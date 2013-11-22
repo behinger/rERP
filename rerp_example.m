@@ -28,10 +28,10 @@
 % either expressed or implied, of the FreeBSD Project.
 
 %% Startup script 
-%Example uses Rapid Serial Visual Presentation dataset
+%Example using Rapid Serial Visual Presentation dataset
 %http://headit-beta.ucsd.edu/studies/8004e8ee-a236-11e2-b5e7-0050563f2612
-
-EEG = pop_loadset('filepath', fullfile(rerp_dependencies.getuserdir, 'Dropbox', 'SCCN', 'ERP_Regression', 'exp53', 'realtime'), 'filename', 'exp53_continuous_with_ica.set');
+path2rsvpdataset='/data/projects/RSVP/exp53/realtime/';
+EEG = pop_loadset('filepath', path2rsvpdataset, 'filename', 'exp53_continuous_with_ica.set');
 EEG.icaact=eeg_getica(EEG);
 
 % Add HED tags to EEG struct
@@ -74,7 +74,6 @@ rerp_comps=1:EEG.nbchan;
 rerp_result = pop_rerp(EEG);
 rerp_result = pop_rerp(EEG, rerp_profile, 'force_gui', 1);
 rerp_result = pop_rerp({}, rerp_profile, 'view_only', 1);
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Penalized estimation
