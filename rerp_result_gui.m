@@ -118,7 +118,12 @@ handles.UserData.current_dataset=handles.UserData.datasets{1};
 if ~isempty(p.Results.EEG)
     handles.UserData.eegpath = p.Results.EEG.filepath;
     eeg_dir=dir(fullfile(p.Results.EEG.filepath,'*.rerp_result'));
-    names = eeg_dir(:).name;
+    
+    if ~isempty(eeg_dir)
+        names = eeg_dir(:).name;
+    else
+        names={};
+    end
     
     if ~iscell(names)
         names={names};
@@ -347,11 +352,12 @@ end
 
 [fn,fp] = uigetfile('rerp_result','Select rerp results:',start_path,'MultiSelect','on');
 
-if ~iscell(fn)
-    fn={fn};
-end
-
-if fn
+if fn~=0
+    
+    if ~iscell(fn)
+        fn={fn};
+    end
+    
     for i=1:length(fn)
         this_dir = dir(fp);
         thisfn = fullfile(fp,fn{i});

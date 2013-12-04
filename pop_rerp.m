@@ -368,7 +368,7 @@ return;
             'value', []);
         
         if s.hed_enable
-            set(ui_enableHed,'String','HED tags - wait, loading hierarchy ... ');
+            set(ui_enableHed,'String','Hierarchical regression - wait, loading hierarchy ... ');
             drawnow;
             reload_hed;
         end
@@ -392,7 +392,7 @@ return;
             'value', []);
         
         if s.hed_enable
-            set(ui_enableHed,'String','HED tags - wait, loading hierarchy ... ');
+            set(ui_enableHed,'String','Hierarchical regression - wait, loading hierarchy ... ');
             drawnow;
             reload_hed;
         end
@@ -404,7 +404,7 @@ return;
         
         if props.Value==1
             enableHedStatus = 'on';
-            set(ui_enableHed,'String','HED - wait... loading');
+            set(ui_enableHed,'String','Hierarchical regression - wait... loading');
             drawnow;
             
             s.hed_enable=1;
@@ -415,7 +415,7 @@ return;
         else
             enableHedStatus = 'off';
             s.hed_enable=0;
-            set(ui_enableHed,'String','HED');
+            set(ui_enableHed,'String','Hierarchical regression');
             set(ui_enforceHed,'String','Enforce HED specification');
         end
         
@@ -868,7 +868,7 @@ return;
             current_included_hed_tree = hedTree(cp.include_tag);
             set(ui_enforceHed,'String','Enforce HED specification');
         end
-        set(ui_enableHed,'String','HED');
+        set(ui_enableHed,'String','Hierarchical regression');
         update_parameter_count;
     end
 
@@ -929,6 +929,8 @@ return;
         else
             message = ['Exclude ' type_of_processing];
         end
+        
+        time_series=unique(time_series); 
     end
 
     function update_parameter_count
@@ -1066,7 +1068,7 @@ return;
             { 'Style', 'pushbutton', 'string', 'Remove >>', 'horizontalalignment', 'left','tag', 'removeevent_typeButton', 'callback',@cllbk_event_type_remove,'tooltipstring','move the included tag to the excluded list'},...
             { 'Style', 'pushbutton', 'string', '<< Add', 'horizontalalignment', 'left','tag', 'addevent_typeButton', 'callback',@cllbk_event_type_add,'tooltipstring','move the excluded tag to the included list'},...
             {},...%HED tags
-            { 'Style', 'checkbox', 'tag', 'enableHed', 'string', 'HED tags', 'value', s.hed_enable,'fontweight', 'bold','callback',@cllbk_hed_enable},...
+            { 'Style', 'checkbox', 'tag', 'enableHed', 'string', 'Hierarchical Regression', 'value', s.hed_enable,'fontweight', 'bold','callback',@cllbk_hed_enable},...
             { 'Style', 'checkbox', 'tag', 'enforceHed', 'string', 'Enforce HED specification', 'value', s.enforce_hed_spec,'enable',enableHedStatus,'callback',@cllbk_enforce_hedspec,'tooltipstring','perform regression on HED tags; tags are stored in the EEG.event(i).hedTag field' },...
             { 'Style', 'pushbutton', 'string', 'Change HED specification', 'horizontalalignment', 'left','tag', 'changeHedSpec','enable',enableHedStatus,'callback', @cllbk_change_hedspec,'tooltipstring','check each tag for HED specification compliance; runs much slower' },...
             { 'Style', 'pushbutton', 'string', 'Display HED hierarchy', 'horizontalalignment', 'left','tag', 'displayHierarchy','enable',enableHedStatus,'callback',@cllbk_view_hierarchy,'tooltipstring','show a tree of the included HED tags'},...
