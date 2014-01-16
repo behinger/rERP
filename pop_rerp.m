@@ -82,7 +82,7 @@ if nargin < 1
 end;
 
 %Get path to toolbox
-rerp_path_components=regexp(strtrim(mfilename('fullpath')),sprintf('[%s]',filesep),'split');
+rerp_path_components=regexp(strtrim(mfilename('fullpath')),'[\/\\]','split');
 rerp_path = [filesep fullfile(rerp_path_components{1:(end-1)})];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
