@@ -313,8 +313,8 @@ classdef RerpProfile < matlab.mixin.Copyable
                 'num_xvalidation_folds', 5,...number of folds to use during cross validation 
                 'num_grid_zoom_levels', 1,...number of levels of grid search zooming
                 'num_grid_points', 8,...number of points to sample at each grid level
-                'first_phase_lambda', [0 logspace(log10(1e-6), log10(1e8), 15)]',... the initial sample space for grid search
-                'elasticnet_quick_zoom', 0,...for ElasticNet (L1+L2) penalty. find optimal lambda1 and lambda2 serpately first, then 2D grid search around those values
+                'first_phase_lambda', [0 logspace(log10(1e-6), log10(1e8), 20)]',... the initial sample space for grid search
+                'elasticnet_quick_zoom', 1,...for ElasticNet (L1+L2) penalty. find optimal lambda1 and lambda2 serpately first, then 2D grid search around those values
                 'penalty_func',{'L2 norm'},...penalty function
                 'penalty_options',{'L1 norm' 'L2 norm' 'Elastic net'}... available options for penalty function
                 }; 
