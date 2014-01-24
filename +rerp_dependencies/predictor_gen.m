@@ -206,7 +206,7 @@ end
 % Generate predictor matrix from lists
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-m=cell2mat(ii);
+m=round(cell2mat(ii));
 n=cell2mat(jj);
 v=cell2mat(value);
 
