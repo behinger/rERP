@@ -88,7 +88,7 @@ else
     % Time frequency decomposition
     t=((0:rerp_profile.pnts-1)/rerp_profile.sample_rate)';
     ts = rerp_dependencies.timeSeries(data, t, repmat({'label'}, 1, size(data,2)), rerp_profile.sample_rate);
-    
+   
     wname = 'cmor1-1.5';
     fmin = 1;
     fmax = rerp_profile.sample_rate/2;
@@ -128,17 +128,4 @@ final_result = RerpResult.combineRerpResults(results);
 final_result.compute_time_seconds=toc;
 final_result.date_completed=datestr(now,'yyyy-mm-dd-HH:MM:SS');
 final_result.ersp_flag=ersp_flag;
-
-final_result.saveRerpResult('path',fullfile(rerp_path, 'results', 'last.rerp_result'));
-
-if rerp_profile.settings.rerp_result_autosave
-    temp = regexp(rerp_profile.eeglab_dataset_name, '^.*[\/\\](.*).set$', 'tokens');
-    fn = temp{1}{1};
-    try
-        save(fullfile(rerp_profile.autosave_results_path, [fn '  ' final_result.analysis_name '  ' final_result.date_completed '.rerp_result']), 'final_result');
-    catch
-        disp('pop_rerp: auto-save results path not valid, saving in "rerp/results" folder');
-        save(fullfile(rerp_path, 'results', [fn '  ' final_result.analysis_name '  ' final_result.date_completed '.rerp_result']), 'final_result');
-    end
-end
 

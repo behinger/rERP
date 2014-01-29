@@ -231,13 +231,13 @@ return;
     function cllbk_result_autosave_path(src, eventdata)
         newpath=uigetdir(EEG.filepath);
         if newpath
-            s.rerp_result_autosave_path = newpath; 
+            cp.autosave_results_path = newpath; 
             cllbk_autosave_path_label;
         end
     end
 
     function cllbk_autosave_path_label(src, eventdata)
-        set(ui_autosavePathLabel, 'enable', enableAutosaveStatus, 'string', s.rerp_result_autosave_path);
+        set(ui_autosavePathLabel, 'enable', enableAutosaveStatus, 'string', cp.autosave_results_path);
     end
 
 %ENTER epoch boundary
@@ -728,6 +728,7 @@ return;
         import rerp_dependencies.*
         set(gui_handle,'Visible','off');
         drawnow; 
+        
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Deprecated
 %         % Get the right data (IC or channel)
@@ -813,12 +814,29 @@ return;
         cp.saveRerpProfile('path',fullfile(rerp_path, 'profiles','last.rerp_profile'));
         
         EEGOUT.rerp_profile = cp;
+        
+        % Compute estimates 
         if ~isempty(s.penalty_func) &&  matlabpool('size') > 4
             rerp_result = rerp_parfor(EEG, cp);
         else
             rerp_result = rerp_parfor(EEG, cp,'disable_parfor',1);
         end
         
+        % Save results
+        rerp_result.saveRerpResult('path',fullfile(rerp_path, 'results', 'last.rerp_result'));
+
+        if cp.settings.rerp_result_autosave
+            temp = regexp(cp.eeglab_dataset_name, '^.*[\/\\](.*).set$', 'tokens');
+            fn = temp{1}{1};
+            try
+                save(fullfile(cp.autosave_results_path, [fn '  ' rerp_result.analysis_name '  ' rerp_result.date_completed '.rerp_result']), 'rerp_result');
+            catch
+                disp('pop_rerp: auto-save results path not valid, saving in "rerp/results" folder');
+                save(fullfile(rerp_path, 'results', [fn '  ' rerp_result.analysis_name '  ' rerp_result.date_completed '.rerp_result']), 'rerp_result');
+            end
+        end
+
+        % Exit
         if ~isempty(gui_handle)
             close(gui_handle);
         end
