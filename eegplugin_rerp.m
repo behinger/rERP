@@ -50,7 +50,7 @@ runmenu = uimenu( submenu, 'label', 'Run dataset','userdata','study:off; startup
 uimenu( runmenu, 'label', 'Profile from disk', 'callback', cllbk_profile_from_disk);
 uimenu( runmenu, 'label', 'Default profile', 'callback', cllbk_default_profile);
 uimenu( runmenu, 'label', 'Last profile', 'callback', cllbk_last_profile);
-uimenu( runmenu, 'label', 'New profile', 'callback', cllbk_new_profile);
+%uimenu( runmenu, 'label', 'New profile', 'callback', cllbk_new_profile);
 
 % TODO Implement study callbacks
 % runstudymenu = uimenu( submenu, 'label', 'Run study','userdata','study:on;startup:off','enable','off');

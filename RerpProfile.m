@@ -299,7 +299,7 @@ classdef RerpProfile < matlab.mixin.Copyable
                 ...
                 'exclude_event_types',{},...event types to exclude from regression
                 ...
-                'hed_enable', 1,...enable hierarchical regression
+                'hed_enable', 0,...enable hierarchical regression
                 'enforce_hed_spec',0,...throw an error if a hed tag does not comply with the hed spec (very slow)
                 'hed_spec_path',fullfile('hed', 'hed_specification_1.3.xml'),...
                 ...
@@ -310,8 +310,8 @@ classdef RerpProfile < matlab.mixin.Copyable
                 'regularization_enable', 1,...enable penalized regression 
                 'lambda',[1 1],...specify lambda to use if cross validation is disabled
                 'cross_validate_enable', 1,...do a grid search for lambda 
-                'num_xvalidation_folds', 10,...number of folds to use during cross validation 
-                'num_grid_zoom_levels', 2,...number of levels of grid search zooming
+                'num_xvalidation_folds', 5,...number of folds to use during cross validation 
+                'num_grid_zoom_levels', 1,...number of levels of grid search zooming
                 'num_grid_points', 10,...number of points to sample at each grid level
                 'first_phase_lambda', [0 logspace(log10(1e-6), log10(1e8), 20)]',... the initial sample space for grid search
                 'elasticnet_quick_zoom', 1,...for ElasticNet (L1+L2) penalty. find optimal lambda1 and lambda2 serpately first, then 2D grid search around those values
