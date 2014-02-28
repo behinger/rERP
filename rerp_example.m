@@ -69,6 +69,7 @@ rerp_profile.settings.autosave_enable=0;
 
 rersp_comps=17;
 rerp_comps=1:EEG.nbchan;
+
 %% GUI functionality
 
 rerp_result = pop_rerp(EEG);

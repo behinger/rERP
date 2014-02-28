@@ -56,17 +56,8 @@ classdef RerpPluginCallbacks
         end
         
         function defaultProfile(EEG)
-            tok=regexp(strtrim(mfilename('fullpath')),'(.*)[\\\/].*', 'tokens');
-            rerp_path = tok{1}{1};
-            rerp_profile = RerpProfile.loadRerpProfile('path', fullfile(rerp_path,'profiles','default.rerp_profile'));
-            
-            tok = regexp(rerp_profile.eeglab_dataset_name,'.*[\/\\](.*.set)','tokens');
-            if ~strcmp(EEG.filename, tok{1}{1})
-                rerp_profile = RerpProfile(EEG, rerp_profile);
-            end
-            
-            rerp_profile.settings.rerp_result_autosave=1;
-            res = pop_rerp(EEG, rerp_profile, 'force_gui',1);
+
+            res = pop_rerp(EEG);
             
             if isa(res,'RerpResult')
                 rerp_result_gui('EEG', EEG);

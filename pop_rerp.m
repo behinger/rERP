@@ -704,8 +704,11 @@ return;
 
 %SET current profile as default
     function cllbk_set_default_profile(src, eventdata)
-        cp.settings = s;
+        olds=s;
+        olds.exclude_tag=0;
+        cp.settings = olds;
         cp.saveRerpProfile('path',fullfile(rerp_path, 'profiles','default.rerp_profile'));
+        cp.settings=s; 
     end
 
 %SAVE current profile
