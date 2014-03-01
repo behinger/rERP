@@ -477,7 +477,7 @@ return;
         end
     end
 
-%REMOVE selected serparator tags and include in regression
+%DESIGNATE selected tags as seperator tags
     function cllbk_tag_seperator(src, eventdata)
         import rerp_dependencies.*
         if hed_list_selected == ui_seperatorTagsList
@@ -513,7 +513,7 @@ return;
         end
     end
 
-%INCLUDE selected tags as seperator tags
+%DESIGNATE selected tags as continuous tags
     function cllbk_tag_continuous(src, eventdata)
         import rerp_dependencies.*
         if hed_list_selected == ui_continuousTagsList
@@ -548,7 +548,7 @@ return;
         end
     end
 
-%INCLUDE selected tags
+%DESIGNATE selected tags as included tags
     function cllbk_tag_include(src, eventdata)
         import rerp_dependencies.*
         if hed_list_selected == ui_includeUniqueTagsList
@@ -583,7 +583,7 @@ return;
         end
     end
 
-%EXCLUDE selected tags
+%%DESIGNATE selected tags as excluded tags
     function cllbk_tag_exclude(src, eventdata)
         import rerp_dependencies.*
         if hed_list_selected == ui_excludeUniqueTagsList

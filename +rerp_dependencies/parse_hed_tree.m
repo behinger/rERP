@@ -7,7 +7,7 @@ import rerp_dependencies.*
 
 tags = hed_tree.uniqueTag;
 ids = hed_tree.originalHedStringId;
-disp('parse_hed_tree: removing exclude/seperator/continuous tags'); 
+disp('parse_hed_tree: removing exclude/seperator/continuous tags');
 
 %Remove exclude_tags, seperator_tags and continuous_tags
 k=1;
@@ -103,13 +103,13 @@ import rerp_dependencies.*
 context_group=cell(size(seperator_tag));
 remove=[];
 k=1;
-rem_tags = {}; 
+rem_tags = {};
 for i=1:length(seperator_tag)
-    fprintf('parse_hed_tree: creating context group %d/%d\n', i,length(seperator_tag)); 
+    fprintf('parse_hed_tree: creating context group %d/%d\n', i,length(seperator_tag));
     this_seperator_tag = seperator_tag{i};
     node_seq = regexp(this_seperator_tag, '[/]', 'split');
     
-    these_children = struct;
+    these_children = [];
     m=1;
     %Determine which tags are children of seperator_tag and mark them as { }
     for j=1:length(tags)
@@ -125,9 +125,9 @@ for i=1:length(seperator_tag)
                 
                 this_original_id = ids{j};
                 these_children(m).tag = this_unique_tag;
-                these_children(m).ids = this_original_id;   
+                these_children(m).ids = this_original_id;
                 these_children(m).hed_tree = hedTree(hed_tree.originalHedStrings(these_children(m).ids));
-
+                
                 remove(k) = j;
                 k=k+1;
                 m=m+1;
@@ -136,59 +136,62 @@ for i=1:length(seperator_tag)
     end
     
     %We don't want the context groups to affect each other's children
-    %(keeps them seperated). 
-    rem_tags = {rem_tags{:} tags{remove}}; 
+    %(keeps them seperated).
+    rem_tags = {rem_tags{:} tags{remove}};
     
     % Determine which tags to replicate in the context groups (co-occurring
     % tags) and mark them as {{ }}
     if ~isempty(these_children)
         hedtag_set={};
-
-        for n = 1:length(these_children)
-           hedtag_set = {hedtag_set{:} these_children(n).hed_tree.uniqueTag{:}};  
-        end 
         
-        sub_hed_tree = hedTree(hedtag_set); 
+        for n = 1:length(these_children)
+            hedtag_set = {hedtag_set{:} these_children(n).hed_tree.uniqueTag{:}};
+        end
+        
+        sub_hed_tree = hedTree(hedtag_set);
         context_group{i}.affected_tags=sub_hed_tree.uniqueTag;
         context_group{i}.children=these_children;
-        context_group{i}.name=this_seperator_tag;     
+        context_group{i}.name=this_seperator_tag;
     end
 end
 
 % Mark the tags which are affected by context groups. This will show any
 % intersections of context groups by marking along with the
 % seperator tags.
-[~, rem_idx,~] = intersect(tags, rem_tags); 
+[~, rem_idx,~] = intersect(tags, rem_tags);
 sub_tags_idx = setdiff(1:length(tags), rem_idx);
-sub_tags = tags(sub_tags_idx); 
+sub_tags = tags(sub_tags_idx);
 
 for i=1:length(context_group)
-    this_group = context_group{i}; 
-    [stripped_hit_tags, this_idx, ~] = intersect(RerpTagList.strip_affected_brackets(sub_tags), this_group.affected_tags);
-    hit_tags = sub_tags(this_idx); 
+    this_group = context_group{i};
     
-    %Find the affected ids which are included for each child
-    for j=1:length(this_group.children)
-        this_child = this_group.children(j);
-        [context_group{i}.children(j).included_tag, incld_idx] = intersect(this_child.hed_tree.uniqueTag, stripped_hit_tags);
+    if ~isempty(this_group)
+        [stripped_hit_tags, this_idx, ~] = intersect(RerpTagList.strip_affected_brackets(sub_tags), this_group.affected_tags);
+        hit_tags = sub_tags(this_idx);
         
-        % Find the original hed string ids associated with the tags which
-        % fall under this child (seperated according to tag)
-        for k=1:length(context_group{i}.children(j).included_tag)
-            included_tag_id = this_child.hed_tree.originalHedStringId{incld_idx(k)};
-            context_group{i}.children(j).included_ids{k} = sort(this_child.ids(included_tag_id)); 
-        end
-    end
-    
-    %Some of the included tags were affected, mark them
-    if ~isempty(hit_tags)
-        for j=1:length(hit_tags)
-            hit_tags(j) = { ['{{    ' hit_tags{j} '    (' this_group.name ')    }}']};
+        %Find the affected ids which are included for each child
+        for j=1:length(this_group.children)
+            this_child = this_group.children(j);
+            [context_group{i}.children(j).included_tag, incld_idx] = intersect(this_child.hed_tree.uniqueTag, stripped_hit_tags);
+            
+            % Find the original hed string ids associated with the tags which
+            % fall under this child (seperated according to tag)
+            for k=1:length(context_group{i}.children(j).included_tag)
+                included_tag_id = this_child.hed_tree.originalHedStringId{incld_idx(k)};
+                context_group{i}.children(j).included_ids{k} = sort(this_child.ids(included_tag_id));
+            end
         end
         
-        %We work in the sub_tags index space, but then have to index back into tags 
-        tags(sub_tags_idx(this_idx)) = hit_tags;
-        sub_tags(this_idx) = hit_tags;
+        %Some of the included tags were affected, mark them
+        if ~isempty(hit_tags)
+            for j=1:length(hit_tags)
+                hit_tags(j) = { ['{{    ' hit_tags{j} '    (' this_group.name ')    }}']};
+            end
+            
+            %We work in the sub_tags index space, but then have to index back into tags
+            tags(sub_tags_idx(this_idx)) = hit_tags;
+            sub_tags(this_idx) = hit_tags;
+        end
     end
 end
 
@@ -201,7 +204,7 @@ continuous_var=cell(size(continuous_tags));
 k=1;
 remove=[];
 for i=1:length(continuous_tags)
-    fprintf('parse_hed_tree: creating continuous variable %d/%d\n', i,length(continuous_tags)); 
+    fprintf('parse_hed_tree: creating continuous variable %d/%d\n', i,length(continuous_tags));
     
     this_continuous_tag = continuous_tags{i};
     node_seq = regexp(this_continuous_tag, '[/]', 'split');
@@ -210,7 +213,7 @@ for i=1:length(continuous_tags)
         node_seq(1)=[];
     end
     
-    this_continuous_var=struct;
+    this_continuous_var=[];
     for j=1:length(tags)
         this_unique_tag = tags{j};
         this_node_seq = regexp(this_unique_tag, '[/]', 'split');

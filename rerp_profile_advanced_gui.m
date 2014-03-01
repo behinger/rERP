@@ -22,7 +22,7 @@ function varargout = rerp_profile_advanced_gui(varargin)
 
 % Edit the above text to modify the response to help rerp_profile_advanced_gui
 
-% Last Modified by GUIDE v2.5 27-Feb-2014 13:00:08
+% Last Modified by GUIDE v2.5 28-Feb-2014 20:01:51
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -63,19 +63,21 @@ try
     lambdastr=num2str(handles.UserData.rerp_profile.settings.first_phase_lambda(:)'); 
     set(handles.first_phase_lambda, 'String', lambdastr); 
 catch
-    disp('error setting ffl'); 
 end
 
 try
     set(handles.num_grid_points, 'String', num2str(handles.UserData.rerp_profile.settings.num_grid_points)); 
 catch
-    disp('error setting ngp'); 
 end
 
 try
     set(handles.num_grid_zoom_levels, 'String', num2str(handles.UserData.rerp_profile.settings.num_grid_zoom_levels)); 
 catch
-    disp('error setting ngzl'); 
+end
+
+try
+    set(handles.num_xvalidation_folds, 'String', num2str(handles.UserData.rerp_profile.settings.num_xvalidation_folds)); 
+catch
 end
 
 % Choose default command line output for rerp_profile_advanced_gui
@@ -224,3 +226,31 @@ function cancel_Callback(hObject, eventdata, handles)
 handles.UserData.rerp_profile.settings=handles.Userdata.old_settings; 
 close(handles.output); 
 
+
+
+function num_xvalidation_folds_Callback(hObject, eventdata, handles)
+% hObject    handle to num_xvalidation_folds (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of num_xvalidation_folds as text
+%        str2double(get(hObject,'String')) returns contents of num_xvalidation_folds as a double
+try
+    num_xvalidation_folds = str2double (get(hObject, 'String'));
+    assert(length(num_xvalidation_folds)==1); 
+    handles.UserData.rerp_profile.settings.num_xvalidation_folds = num_xvalidation_folds;
+catch
+    set(hObject, 'String', num2str(handles.UserData.rerp_profile.settings.num_xvalidation_folds)); 
+end
+
+% --- Executes during object creation, after setting all properties.
+function num_xvalidation_folds_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to num_xvalidation_folds (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

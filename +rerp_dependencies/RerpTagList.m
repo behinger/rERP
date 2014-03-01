@@ -30,7 +30,7 @@ classdef RerpTagList
 
     properties (Constant=true)
         %Regular expression string for all tags with brackets 
-        regexp_str_all = '^\s*[\[{]+\s*(.*)\s+[\]}]+\s*$';
+        regexp_str_all = '^\s*[\[{*]+\s*(.*)\s+[\]}*]+\s*$';
         
         %Regular expression string for context affected tags with brackets 
         regexp_str_affected = '^\s*[\[{]+\s+(.*)\s+(?:\(.*\))\s+[\]}]+\s*$';
@@ -159,13 +159,15 @@ classdef RerpTagList
             context_group = rerp_profile.context_group;
             for i=1:length(context_group)
                 this_group = context_group{i};
-                included_affected = intersect(this_group.affected_tags, context_affected_tags);
-                rerp_profile.context_group{i}.included_affected = included_affected;
+                if ~isempty(this_group)
+                    included_affected = intersect(this_group.affected_tags, context_affected_tags);
+                    rerp_profile.context_group{i}.included_affected = included_affected;
 
-                nchld = length(this_group.children);
-                ncontextchldrn = ncontextchldrn + nchld;
-                thisnum = length(included_affected)*nchld;
-                ncontextvars = ncontextvars + thisnum;
+                    nchld = length(this_group.children);
+                    ncontextchldrn = ncontextchldrn + nchld;
+                    thisnum = length(included_affected)*nchld;
+                    ncontextvars = ncontextvars + thisnum;
+                end
             end
         end
         
