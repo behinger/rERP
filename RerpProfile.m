@@ -75,8 +75,7 @@ classdef RerpProfile < matlab.mixin.Copyable
         %See RerpProfile.getDefaultRerpProfile method for details. 
         settings;
         
-        eeglab_dataset_name=[];% Full path to dataset 
-        autosave_results_path=[];        % pop_rerp automatically saves a copy of the regression result to this path if settings.rerp_result_autosave==1
+        eeglab_dataset_name=[]; % Full path to dataset 
         sample_rate=[];
         pnts=[];
         nbchan=[]; 
@@ -187,7 +186,7 @@ classdef RerpProfile < matlab.mixin.Copyable
             
             rerp_path_components=regexp(strtrim(mfilename('fullpath')),'[\/\\]','split');
             results_path = [filesep fullfile(rerp_path_components{1:(end-1)}) filesep 'results'];
-            obj.autosave_results_path=results_path;
+            s.autosave_results_path=results_path;
             
             obj.settings = s;
             
@@ -286,9 +285,11 @@ classdef RerpProfile < matlab.mixin.Copyable
             disp('RerpProfile: loading default settings');
             default_settings = {...
                 'type_proc', 0,... 0 for ICA or 1 for channels
+                'include_exclude',1,...
                 'ersp_enable',0,...perform time-frequency decomposition first
                 'nbins', 64,...number of freq bins to use when ersp_enable==1          
                 'rerp_result_autosave', 1,...automatically save the regression result 
+                'autosave_results_path',[],... % pop_rerp automatically saves a copy of the regression result to this path if settings.rerp_result_autosave==1
                 ...
                 'category_epoch_boundaries',[-1 2],...sets window for categorical variables like event types
                 'continuous_epoch_boundaries',[-1 2],...sets window for continuous variables; only for hed
@@ -377,9 +378,13 @@ validateNumeric = @(x) isnumeric(x);
 %These arguments are all required, but it is more readable to use
 %name-value pairs (i.e. addOptional).
 addOptional(p,'type_proc', [], validateBinary);
+addOptional(p,'include_exclude', [], validateBinary);
+
 addOptional(p,'ersp_enable', [], validateBinary);
 addOptional(p,'nbins', [], validateNumeric);
+
 addOptional(p,'rerp_result_autosave', [], validateBinary);
+addOptional(p,'autosave_results_path',[], validateChar); 
 
 addOptional(p,'category_epoch_boundaries', [], validateBoundaries);
 addOptional(p,'continuous_epoch_boundaries', [], validateBoundaries);
@@ -389,7 +394,6 @@ addOptional(p,'artifact_variable_enable',[], validateBinary);
 addOptional(p,'artifact_function_name', [], validateChar);
 
 addOptional(p,'exclude_event_types',[],validateCell);
-
 addOptional(p,'hed_enable',[], validateBinary);
 addOptional(p,'enforce_hed_spec',[], validateBinary);
 addOptional(p,'hed_spec_path',[], validateChar);

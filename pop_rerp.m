@@ -238,13 +238,13 @@ return;
     function cllbk_result_autosave_path(src, eventdata)
         newpath=uigetdir(EEG.filepath);
         if newpath
-            cp.autosave_results_path = newpath;
+            s.autosave_results_path = newpath;
             cllbk_autosave_path_label;
         end
     end
 
     function cllbk_autosave_path_label(src, eventdata)
-        set(ui_autosavePathLabel, 'enable', enableAutosaveStatus, 'string', cp.autosave_results_path);
+        set(ui_autosavePathLabel, 'enable', enableAutosaveStatus, 'string', s.autosave_results_path);
     end
 
 %ENTER epoch boundary
@@ -813,10 +813,10 @@ return;
             fn = temp{1}{1};
                       
             try
-                if isempty(dir(cp.autosave_results_path))
-                    mkdir(cp.autosave_results_path);
+                if isempty(dir(s.autosave_results_path))
+                    mkdir(s.autosave_results_path);
                 end
-                save(fullfile(cp.autosave_results_path, [fn '  ' rerp_result.analysis_name '  ' rerp_result.date_completed '.rerp_result']), 'rerp_result');
+                save(fullfile(s.autosave_results_path, [fn '  ' rerp_result.analysis_name '  ' rerp_result.date_completed '.rerp_result']), 'rerp_result');
             catch
                 disp('pop_rerp: auto-save results path not valid, saving in "rerp/results" folder');
                 if isempty(dir(fullfile(rerp_path, 'results')))
@@ -1044,7 +1044,7 @@ return;
         
         uilist = { ...
             { 'Style', 'checkbox', 'string', 'Auto-save results','tag', 'autoSaveResultsEnable', 'value', s.rerp_result_autosave,'callback', @cllbk_result_autosave_enable,'tooltipstring','Automatically save results in directory to the right'},...
-            { 'Style', 'text', 'string', cp.autosave_results_path, 'horizontalalignment', 'left', 'tag','autosavePathLabel','enable', enableAutosaveStatus},...
+            { 'Style', 'text', 'string', s.autosave_results_path, 'horizontalalignment', 'left', 'tag','autosavePathLabel','enable', enableAutosaveStatus},...
             { 'Style', 'Pushbutton', 'string', 'Set auto-save path', 'horizontalalignment', 'left','callback',@cllbk_result_autosave_path,'enable', enableAutosaveStatus,'tooltipstring','Set the autosave path for this profile'},...
             ...
             { 'Style', 'text', 'string', message, 'horizontalalignment', 'left','fontweight', 'bold', 'tag','typeProcLabel'},...
