@@ -1,17 +1,17 @@
 % Copyright (C) 2013 Matthew Burns, Swartz Center for Computational
-% Neuroscience. 
+% Neuroscience.
 %
 % User feedback welcome: email rerptoolbox@gmail.com
 %
 % Redistribution and use in source and binary forms, with or without
-% modification, are permitted provided that the following conditions are met: 
-% 
+% modification, are permitted provided that the following conditions are met:
+%
 % 1. Redistributions of source code must retain the above copyright notice, this
-%    list of conditions and the following disclaimer. 
+%    list of conditions and the following disclaimer.
 % 2. Redistributions in binary form must reproduce the above copyright notice,
 %    this list of conditions and the following disclaimer in the documentation
-%    and/or other materials provided with the distribution. 
-% 
+%    and/or other materials provided with the distribution.
+%
 % THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 % ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 % WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -22,14 +22,14 @@
 % ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 % (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 % SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-% 
+%
 % The views and conclusions contained in the software and documentation are those
-% of the authors and should not be interpreted as representing official policies, 
+% of the authors and should not be interpreted as representing official policies,
 % either expressed or implied, of the FreeBSD Project.
 
 function [rerp_result, EEGOUT, com] = pop_rerp(EEG, rerp_profile, varargin)
 % POP_RERP() - user interface to rerp function. tooltips are available
-% within the GUI. 
+% within the GUI.
 %
 % Usage:
 %   >>  [rerp_result, EEGOUT, com] = pop_rerp( EEG, rerp_profile, varargin);
@@ -40,16 +40,16 @@ function [rerp_result, EEGOUT, com] = pop_rerp(EEG, rerp_profile, varargin)
 %                   data.
 %
 %   rerp_profile - RerpProfile object to pass to rerp function. if not
-%                   specified or empty, a default profile will be generated 
+%                   specified or empty, a default profile will be generated
 %
 %   varargin     - view_only (0): only view the profile, do not execute
 %                   rerp function call
 %                  force_gui (0): force the GUI to come up, even if a
 %                   rerp_profile was specified. Lets us examine a profile
-%                   before calling rerp function. 
+%                   before calling rerp function.
 %
-% GUI description: read wiki and see tool tips by hovering over labels. 
-%   
+% GUI description: read wiki and see tool tips by hovering over labels.
+%
 % Outputs:
 %  EEGOUT        - output dataset
 %
@@ -99,10 +99,10 @@ if nargin > 1
         toks = regexp(rerp_profile.eeglab_dataset_name, '.*[\\\/](.*.set)','tokens');
         assert(strcmp(toks{1}{1}, EEG.filename), 'pop_rerp: profile does not match EEG.filename');
     else
-        force_gui=1; 
+        force_gui=1;
     end
- 
- 
+    
+    
 else
     %Otherwise, use default profile
     cp = RerpProfile.getDefaultProfile(EEG);
@@ -112,7 +112,7 @@ s = cp.settings;
 current_included_hed_tree={};
 processing_types = {'components' 'channels'};
 hed_list_selected = [];
-gui_handle=[]; 
+gui_handle=[];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % pop up window
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -124,8 +124,8 @@ if nargin < 2 || force_gui==1
     g3 = [16.67 16.66 16.67];
     g4 = [12.5 12.5 12.5 12.5];
     g5 = [10 10 10 10 10];
-
-    geomhoriz    = { [17 25 8]  [17 15 10 8]  [17 8 17 8]     [17 33 ] [17 15 18 ] [17 15 18 ]   g2 g2 g2 1   1 [17 16.5 16.5] g2 g2 g2 g2 g4 1 1     [15 10 12.5 12.5] [15 10 12.5 12.5] [15 10 12.5 12.5] };
+    
+    geomhoriz    = { [17 25 8]  [17 15 10 8]  [17 8 17 8]     [17 33 ] [17 15 18 ] [17 15 18 ]   g2 g2 g2 1   g2 g2   g2 g2 g2 g2 g4 1 1     [15 10 12.5 12.5] [15 10 12.5 12.5] [15 10 12.5 12.5] };
     geomvert = [1       1 1       1 1 1      1 5 1 1   1 1 1 5 1 5 1 1 1       1 1 2 ];
     
     title = 'pop_rerp() - Use multiple regression to learn overlapping ERPs';
@@ -133,14 +133,17 @@ if nargin < 2 || force_gui==1
     %We load the defaults only only when force_gui is not active. Lets us
     %examine a function call in the gui. User can specify which profile to override.
     default_path = fullfile(rerp_path, 'profiles','default.rerp_profile');
+    
     if exist(default_path, 'file') == 2 && ~force_gui
         disp('pop_rerp: loading default settings');
         default_profile = RerpProfile.loadRerpProfile('path', default_path);
-        olds=s; 
+        olds=s;
         s = default_profile.settings;
         s.exclude_tag=olds.exclude_tag;
         s.seperator_tag=olds.seperator_tag;
-        s.continuous_tag=olds.continuous_tag; 
+        s.continuous_tag=olds.continuous_tag;
+    else
+        cllbk_set_default_profile; 
     end
     
     %Make sure gui handles are scoped to this level, available to nested functions
@@ -155,8 +158,8 @@ if nargin < 2 || force_gui==1
         enableRegularizationStatus,enableXvalidationStatus,enableAutosaveStatus, ui_autosavePathLabel ] = deal([]);
     
     make_gui;
-    uiwait(gui_handle); 
-
+    uiwait(gui_handle);
+    
 else
     cllbk_ok;
 end
@@ -229,13 +232,13 @@ return;
             s.rerp_result_autosave=0;
             enableAutosaveStatus='off';
         end
-            cllbk_autosave_path_label;
+        cllbk_autosave_path_label;
     end
 
     function cllbk_result_autosave_path(src, eventdata)
         newpath=uigetdir(EEG.filepath);
         if newpath
-            cp.autosave_results_path = newpath; 
+            cp.autosave_results_path = newpath;
             cllbk_autosave_path_label;
         end
     end
@@ -277,7 +280,7 @@ return;
         try
             RerpProfile.get_artifact_handle(instr);
             s.artifact_function_name = instr;
-            cp.settings.artifact_function_name=instr; 
+            cp.settings.artifact_function_name=instr;
             fprintf('pop_rerp: using artifact function %s\n', s.artifact_function_name);
         catch e
             set(src, 'String', s.artifact_function_name);
@@ -289,7 +292,7 @@ return;
     function cllbk_compute_artifact(src, eventdata)
         cp.compute_artifact_indexes(EEG);
         refresh_artifact_counter;
-        drawnow; 
+        drawnow;
     end
 
 %ENABLE use of artifact variable from workspace
@@ -464,7 +467,9 @@ return;
     function cllbk_change_hedspec(src, eventdata)
         [fn,pn] = uigetfile('*.xml','Select the HED specification XML file');
         fprintf('\npop_rerp: using %s\n',fn);
-        s.hed_spec_path = [pn fn];
+        if fn
+            s.hed_spec_path = [pn fn];
+        end
         reload_hed;
     end
 
@@ -632,7 +637,7 @@ return;
             enableRegularizationStatus = 'on';
             s.regularization_enable=1;
             penalties = get(ui_penaltyFunctionList);
-            s.penalty_func = penalties.String(penalties.Value); 
+            s.penalty_func = penalties.String(penalties.Value);
             cllbk_enable_xvalidation(ui_enableXValidate);
         else
             enableRegularizationStatus = 'off';
@@ -704,11 +709,16 @@ return;
 
 %SET current profile as default
     function cllbk_set_default_profile(src, eventdata)
+        
+        if isempty(dir(fullfile(rerp_path, 'profiles')))
+            mkdir(fullfile(rerp_path, 'profiles'));
+        end
+        
         olds=s;
         olds.exclude_tag=0;
         cp.settings = olds;
         cp.saveRerpProfile('path',fullfile(rerp_path, 'profiles','default.rerp_profile'));
-        cp.settings=s; 
+        cp.settings=s;
     end
 
 %SAVE current profile
@@ -727,9 +737,9 @@ return;
 
 %SET advanced options for profile
     function cllbk_set_advanced_options(src, eventdata)
-        cp.settings=s; 
-        uiwait(rerp_profile_advanced_gui('rerp_profile', cp)); 
-        s=cp.settings;  
+        cp.settings=s;
+        uiwait(rerp_profile_advanced_gui('rerp_profile', cp));
+        s=cp.settings;
     end
 
 %CANCEL gui
@@ -741,53 +751,8 @@ return;
     function cllbk_ok(src, eventdata)
         import rerp_dependencies.*
         set(gui_handle,'Visible','off');
-        drawnow; 
+        drawnow;
         
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Deprecated
-%         % Get the right data (IC or channel)
-%         if s.type_proc == 0
-%             if ~isempty(EEG.icaact)
-%                 data=EEG.icaact;
-%             else
-%                 data=eeg_getica(EEG);
-%             end
-%         else
-%             if ~isempty(EEG.data)
-%                 data=EEG.data;
-%             else
-%                 error('pop_rerp: EEG.data must be populated if operating on channels');
-%             end
-%         end
-%         
-%         % Remove specified time series 
-%         [~, ~, time_series] = get_proc_types;
-%         
-%         % Perform time_frequency decomposition    
-%         if s.ersp_enable
-%             data = data(time_series, :)'; 
-%             disp('pop_rerp: performing time frequency decomposition');
-%             t=((0:cp.pnts-1)/cp.sample_rate)';
-%             ts = timeSeries(data, t, repmat({'label'}, 1, size(data,2)), cp.sample_rate); 
-% 
-%             wname = 'cmor1-1.5'; 
-%             fmin = 1;
-%             fmax = cp.sample_rate/2;
-%             plotFlag = false; 
-%             [coefficients, data, angle, frequency, time] = ts.waveletTimeFrequencyAnalysis(wname,fmin,fmax, s.nbins, plotFlag);   
-%             true_time = (0:(cp.pnts-1))/cp.sample_rate; 
-%             %true_freq = linspace(1,cp.sample_rate/2,s.nbins); 
-%             
-%             td = find(true_time==time(1))-1;
-%             to = length(true_time) - find(true_time==time(end));
-%             data = permute(data, [1 3 2]);
-%             data = [zeros(td, size(data,2), size(data,3)); data; zeros(to, size(data,2),size(data,3))];
-%          
-%         else 
-%             data = data(setdiff(1:size(data,1),time_series), :)';
-%         end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
         %Dummy var, used to update profile
         artifact_indexes = [];
         % Set up artifact indexes based on profile
@@ -816,20 +781,24 @@ return;
                         error('pop_rerp: artifact rejection is enabled, but could not find or compute artifact indexes');
                     else
                         disp(['pop_rerp: computing artifact indexes with ' s.artifact_function_name]);
-                            cp.compute_artifact_indexes(EEG);
-                    end              
+                        cp.compute_artifact_indexes(EEG);
+                    end
                     
                 catch
                 end
             end
-        end       
+        end
         
         cp.settings = s;
+        
+        if isempty(dir(fullfile(rerp_path, 'profiles')))
+            mkdir(fullfile(rerp_path, 'profiles'));
+        end
         cp.saveRerpProfile('path',fullfile(rerp_path, 'profiles','last.rerp_profile'));
         
         EEGOUT.rerp_profile = cp;
         
-        % Compute estimates 
+        % Compute estimates
         if ~isempty(s.penalty_func) &&  matlabpool('size') > 4
             rerp_result = rerp_parfor(EEG, cp);
         else
@@ -838,24 +807,31 @@ return;
         
         % Save results
         rerp_result.saveRerpResult('path',fullfile(rerp_path, 'results', 'last.rerp_result'));
-
+        
         if cp.settings.rerp_result_autosave
             temp = regexp(cp.eeglab_dataset_name, '^.*[\/\\](.*).set$', 'tokens');
             fn = temp{1}{1};
+                      
             try
+                if isempty(dir(cp.autosave_results_path))
+                    mkdir(cp.autosave_results_path);
+                end
                 save(fullfile(cp.autosave_results_path, [fn '  ' rerp_result.analysis_name '  ' rerp_result.date_completed '.rerp_result']), 'rerp_result');
             catch
                 disp('pop_rerp: auto-save results path not valid, saving in "rerp/results" folder');
+                if isempty(dir(fullfile(rerp_path, 'results')))
+                    mkdir(fullfile(rerp_path, 'results'));
+                end
                 save(fullfile(rerp_path, 'results', [fn '  ' rerp_result.analysis_name '  ' rerp_result.date_completed '.rerp_result']), 'rerp_result');
             end
         end
-
+        
         % Exit
         if ~isempty(gui_handle)
             close(gui_handle);
         end
         
-        disp('pop_rerp: done'); 
+        disp('pop_rerp: done');
     end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -962,7 +938,7 @@ return;
             message = ['Exclude ' type_of_processing];
         end
         
-        time_series=unique(time_series); 
+        time_series=unique(time_series);
     end
 
     function update_parameter_count
@@ -1004,7 +980,7 @@ return;
         end
         
         try
-            close(gui_handle); 
+            close(gui_handle);
         catch
         end
         
@@ -1215,7 +1191,7 @@ idx_range = 1:length(event_types);
 [~, include_event_types_idx] = setdiff(event_types, exclude_event_types);
 
 include_event_types_idx = sort(include_event_types_idx,'ascend');
-include_event_types = event_types(include_event_types_idx); 
+include_event_types = event_types(include_event_types_idx);
 
 exclude_event_types_idx = setdiff(idx_range, include_event_types_idx);
 exclude_event_types_idx = sort(exclude_event_types_idx,'ascend');

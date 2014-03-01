@@ -67,25 +67,23 @@ classdef RerpPluginCallbacks
         function lastProfile(EEG)
             tok=regexp(strtrim(mfilename('fullpath')),'(.*)[\\\/].*', 'tokens');
             rerp_path = tok{1}{1};
-            rerp_profile = RerpProfile.loadRerpProfile('path', fullfile(rerp_path,'profiles','last.rerp_profile'));
+            last_path=fullfile(rerp_path,'profiles','last.rerp_profile');
+            if exist(last_path, 'file')
+                rerp_profile = RerpProfile.loadRerpProfile('path', last_path);
             
-            tok = regexp(rerp_profile.eeglab_dataset_name,'.*[\/\\](.*.set)','tokens');
-            if ~strcmp(EEG.filename, tok{1}{1})
-                rerp_profile = RerpProfile(EEG, rerp_profile);
-            end
-            
-            rerp_profile.settings.rerp_result_autosave=1;            
-            res = pop_rerp(EEG, rerp_profile, 'force_gui',1);
-            
-            if isa(res,'RerpResult')
-                rerp_result_gui('EEG', EEG);
-            end 
-        end
-        
-        function newProfile(EEG)
-            res = pop_rerp(EEG);
-            if isa(res,'RerpResult')
-                rerp_result_gui('EEG', EEG);
+                tok = regexp(rerp_profile.eeglab_dataset_name,'.*[\/\\](.*.set)','tokens');
+                if ~strcmp(EEG.filename, tok{1}{1})
+                    rerp_profile = RerpProfile(EEG, rerp_profile);
+                end
+
+                rerp_profile.settings.rerp_result_autosave=1;            
+                res = pop_rerp(EEG, rerp_profile, 'force_gui',1);
+
+                if isa(res,'RerpResult')
+                    rerp_result_gui('EEG', EEG);
+                end 
+            else
+                disp('rerp: last profile not found'); 
             end
         end
         
