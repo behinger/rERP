@@ -125,37 +125,46 @@ if nargin < 2 || force_gui==1
     g4 = [12.5 12.5 12.5 12.5];
     g5 = [10 10 10 10 10];
     
-    geomhoriz    = { [17 25 8]  [17 15 10 8]  [17 8 17 8]     [17 33 ] [17 15 18 ] [17 15 18 ]   g2 g2 g2 1   g2 g2   g2 g2 g2 g2 g4 1 1     [15 10 12.5 12.5] [15 10 12.5 12.5] [15 10 12.5 12.5] };
-    geomvert = [1       1 1       1 1 1      1 5 1 1   1 1 1 5 1 5 1 1 1       1 1 2 ];
+    geomhoriz    = { [17 22 11]  [17 11 11 11]     [17 11 11 11]  [17 8 17 8]     [17 33 ] [17 15 18 ] [17 15 18 ]   g2 g2 g2   g2 g2   g2 g2 g2 g2 g4 1 1     [15 10 12.5 12.5] [15 10 12.5 12.5] [15 10 12.5 12.5] };
+    geomvert = [1 1      1 1       1 1 1      1 5 1    1 1 1 5 1 5 1 1 1       1 1 2 ];
     
     title = 'pop_rerp() - Use multiple regression to learn overlapping ERPs';
     
-    %We load the defaults only only when force_gui is not active. Lets us
-    %examine a function call in the gui. User can specify which profile to override.
+    %We load the defaults only only when force_gui is not active.
     default_path = fullfile(rerp_path, 'profiles','default.rerp_profile');
-    
-    if exist(default_path, 'file') == 2 && ~force_gui
-        disp('pop_rerp: loading default settings');
-        default_profile = RerpProfile.loadRerpProfile('path', default_path);
-        olds=s;
-        s = default_profile.settings;
-        s.exclude_tag=olds.exclude_tag;
-        s.seperator_tag=olds.seperator_tag;
-        s.continuous_tag=olds.continuous_tag;
+    if exist(default_path, 'file') == 2  
+        if ~force_gui
+            disp('pop_rerp: loading default settings');
+            default_profile = RerpProfile.loadRerpProfile('path', default_path);
+
+            %Copy the settings from the default profile to this profile. Make
+            %sure we don't overwrite the exclude tags, which is specific to
+            %this dataset. 
+            if isempty(setdiff(fieldnames(s), fieldnames(default_profile.settings)))
+                olds = s;
+                s = default_profile.settings;
+                s.exclude_tag=olds.exclude_tag;
+                s.seperator_tag=olds.seperator_tag;
+                s.continuous_tag=olds.continuous_tag;
+            else
+                cllbk_set_default_profile; 
+            end
+        end
     else
         cllbk_set_default_profile; 
     end
     
     %Make sure gui handles are scoped to this level, available to nested functions
-    [ui_enterExcludeChans, ui_typeProcLabel, ui_switchTypeButton, ui_rejectedFramesCounter,...
+    [ui_enterExcludeChans, ui_typeProcLabel, ui_switchIncludeExcludeButton, ui_enterNumBins, ui_numBinsLabel, ui_switchTypeButton, ui_rejectedFramesCounter,...
         ui_enableArtifactVariable, ui_enterArtifactVariable, ui_enterArtifactFunction, ui_artifactFunction,...
         ui_computeArtifactButton, ui_includeUniqueevent_typesList, ui_excludeUniqueevent_typesList, ui_enableHed,...
         ui_enforceHed, ui_changeHedSpec, ui_displayHierarchy, ui_includeUniqueTagsList, ui_excludeUniqueTagsList,...
         ui_continuousTagsList, ui_seperatorTagsList, ui_tagIncludeButton, ui_tagExcludeButton, ui_tagSeperatorButton,...
         ui_tagContinuousButton, ui_parameterCountLabel, ui_includeTagsLabel, ui_excludeTagsLabel, ui_continuousTagsLabel,...
         ui_seperatorTagsLabel, ui_enterLambda, ui_enableXValidate, ui_enterNumFolds, ui_penaltyFunctionList, ui_lambdaLabel,...
-        ui_penaltyLabel,enableHedStatus,enableArtifactRejectionStatus,enableArtifactVariableStatus,enableLambdaStatus,...
-        enableRegularizationStatus,enableXvalidationStatus,enableAutosaveStatus, ui_autosavePathLabel ] = deal([]);
+        ui_penaltyLabel, ui_autosavePathLabel, enableHedStatus,enableArtifactRejectionStatus,enableArtifactVariableStatus,enableLambdaStatus,...
+        enableRegularizationStatus,enableXvalidationStatus,enableAutosaveStatus,include_exclude_status,...
+        enableErspStatus] = deal([]);
     
     make_gui;
     uiwait(gui_handle);
@@ -175,13 +184,13 @@ return;
         src_props = get(src);
         time_series = str2num(src_props.String);
         if s.type_proc==0
-            if s.ersp_enable
+            if s.include_exclude
                 cp.include_comps = time_series;
             else
                 cp.include_comps = setdiff(1:cp.nbchan,time_series);
             end
         else
-            if s.ersp_enable
+            if s.include_exclude
                 cp.include_chans = time_series;
             else
                 cp.include_chans = setdiff(1:cp.nbchan, time_series);
@@ -205,19 +214,53 @@ return;
         cllbk_get_time_series(ui_enterExcludeChans);
     end
 
+%CHOOSE whether to include or exclude ICs or channels
+    function cllbk_switch_include_exclude(src, eventdata)
+ 
+        if s.include_exclude
+            s.include_exclude=0;
+            include_exclude_status='Exclude';
+            inc_excl_message='Include';
+            cp.include_comps=1:cp.nbchan;
+            cp.include_chans=1:cp.nbchan;
+            
+        else
+            s.include_exclude=1; 
+            include_exclude_status='Include';
+            inc_excl_message='Exclude';
+            cp.include_comps=[];
+            cp.include_chans=[];
+        end
+        
+        [type_of_processing, other_type, time_series, message] = get_proc_types;
+        
+        set(ui_typeProcLabel, 'string', message);
+        set(ui_switchIncludeExcludeButton, 'string',inc_excl_message);
+        set(ui_enterExcludeChans, 'string', num2str(time_series));
+        cllbk_get_time_series(ui_enterExcludeChans);
+    end
+
 %USE profile last.rerp_profile
     function cllbk_enable_ersp(src, eventdata)
         src_props = get(src);
         a=ver;
         toolboxes={a(:).Name};
         
-        if ~any(strcmp('Statistics Toolbox',toolboxes))
+        if ~any(strcmp('Wavelet Toolbox',toolboxes))
             s.ersp_enable=0;
+            set(src, 'Value',0); 
             warning('pop_rerp: time frequncy decmposition for rERSP requires wavelet toolbox');
         else
             s.ersp_enable=src_props.Value;
         end
         
+        if s.ersp_enable
+            enableErspStatus='on';
+        else
+            enableErspStatus='off';
+        end
+        
+        set([ui_enterNumBins ui_numBinsLabel],'enable', enableErspStatus); 
         [type_of_processing, other_type, time_series, message] = get_proc_types;
         set(ui_typeProcLabel, 'string', message);
         cllbk_get_time_series(ui_enterExcludeChans);
@@ -914,28 +957,29 @@ return;
             type_of_processing = 'components';
             temp = setdiff(processing_types, {type_of_processing});
             other_type = temp{:};
-            
-            if s.ersp_enable
+
+            if s.include_exclude
                 time_series = cp.include_comps;
             else
-                time_series = setdiff(cp.include_comps, 1:cp.nbchan);
+                time_series = setdiff(1:cp.nbchan, cp.include_comps);
             end
+
         else
             type_of_processing = 'channels';
             temp = setdiff(processing_types, {type_of_processing});
             other_type = temp{:};
             
-            if s.ersp_enable
+            if s.include_exclude
                 time_series = cp.include_chans;
             else
-                time_series = setdiff(cp.include_chans, 1:cp.nbchan);
+                time_series = setdiff(1:cp.nbchan, cp.include_chans);
             end
         end
         
         if s.ersp_enable
-            message = ['ERSP include ' type_of_processing];
+            message = [include_exclude_status ' ' type_of_processing ' (rERSP)'];
         else
-            message = ['Exclude ' type_of_processing];
+            message = [include_exclude_status ' ' type_of_processing];
         end
         
         time_series=unique(time_series);
@@ -984,13 +1028,13 @@ return;
         catch
         end
         
-        if s.hed_enable==1
+        if s.hed_enable
             enableHedStatus = 'on';
         else
             enableHedStatus = 'off';
         end
         
-        if s.artifact_rejection_enable==1
+        if s.artifact_rejection_enable
             enableArtifactRejectionStatus='on';
         else
             enableArtifactRejectionStatus='off';
@@ -1002,11 +1046,11 @@ return;
             enableAutosaveStatus='off';
         end
         
-        if s.artifact_variable_enable==1
+        if s.artifact_variable_enable
             artifact_src = cp.artifact_variable_name;
             mess = sprintf('%d artifact frames identified (%s)', nnz(cp.variable_artifact_indexes), artifact_src);
             
-            if s.artifact_rejection_enable==1
+            if s.artifact_rejection_enable
                 enableArtifactVariableStatus='on';
             else
                 enableArtifactVariableStatus='off';
@@ -1018,9 +1062,9 @@ return;
         end
         
         %Set regularization section enable
-        if s.regularization_enable==1
+        if s.regularization_enable
             enableRegularizationStatus = 'on';
-            if s.cross_validate_enable==1
+            if s.cross_validate_enable
                 enableLambdaStatus='off';
                 enableXvalidationStatus='on';
                 
@@ -1034,6 +1078,20 @@ return;
             enableXvalidationStatus='off';
         end
         
+        if s.include_exclude
+            include_exclude_status='Include';
+            inc_excl_message='Exclude';
+        else
+            include_exclude_status='Exclude';
+            inc_excl_message='Include';
+        end
+            
+        if s.ersp_enable
+            enableErspStatus='on';
+        else
+            enableErspStatus='off';
+        end
+        
         [~, pen_idx] = intersect(s.penalty_options, s.penalty_func);
         if isempty(pen_idx)
             pen_idx=2;
@@ -1044,13 +1102,18 @@ return;
         
         uilist = { ...
             { 'Style', 'checkbox', 'string', 'Auto-save results','tag', 'autoSaveResultsEnable', 'value', s.rerp_result_autosave,'callback', @cllbk_result_autosave_enable,'tooltipstring','Automatically save results in directory to the right'},...
-            { 'Style', 'text', 'string', s.autosave_results_path, 'horizontalalignment', 'left', 'tag','autosavePathLabel','enable', enableAutosaveStatus},...
-            { 'Style', 'Pushbutton', 'string', 'Set auto-save path', 'horizontalalignment', 'left','callback',@cllbk_result_autosave_path,'enable', enableAutosaveStatus,'tooltipstring','Set the autosave path for this profile'},...
+            { 'Style', 'edit', 'string', s.autosave_results_path, 'horizontalalignment', 'left', 'fontsize', 8, 'tag','autosavePathLabel','enable', enableAutosaveStatus},...
+            { 'Style', 'Pushbutton', 'string', 'Browse path', 'horizontalalignment', 'left','callback',@cllbk_result_autosave_path,'enable', enableAutosaveStatus,'tooltipstring','Set the autosave path for this profile'},...
+            ...
+            { 'Style', 'checkbox', 'string', 'rERSP','tag', 'erspEnable', 'value', s.ersp_enable,'callback', @cllbk_enable_ersp,'tooltipstring','perform time-frequency decomposition on the time-series, then perform analysis on each frequency seperately. if performing time-frequency decomposition outside of this GUI, DO NOT check this box'},...
+            { 'Style', 'text', 'string', 'Number of bins', 'horizontalalignment', 'left', 'fontsize', 12,'tag','numBinsLabel','enable', enableErspStatus},...
+            { 'Style', 'edit', 'string', num2str(s.nbins), 'horizontalalignment', 'left', 'fontsize', 12, 'tag','enterNumBins','enable', enableErspStatus},...
+            {},...
             ...
             { 'Style', 'text', 'string', message, 'horizontalalignment', 'left','fontweight', 'bold', 'tag','typeProcLabel'},...
             { 'Style', 'edit', 'string', num2str(time_series),'tag', 'enterExcludeChans','callback',@cllbk_get_time_series},...
             { 'Style', 'pushbutton', 'string', ['Switch to ' other_type], 'horizontalalignment', 'left','tag', 'switchTypeButton','callback',@cllbk_switch_type},...
-            { 'Style', 'checkbox', 'string', 'rERSP','tag', 'erspEnable', 'value', s.ersp_enable,'callback', @cllbk_enable_ersp,'tooltipstring','perform time-frequency decomposition on the time-series, then perform analysis on each frequency seperately. if performing time-frequency decomposition outside of this GUI, DO NOT check this box'},...
+            { 'Style', 'pushbutton', 'string', inc_excl_message, 'horizontalalignment', 'left','tag', 'switchIncludeExcludeButton','callback',@cllbk_switch_include_exclude,'tooltipstring','choose whether to include or exclude certain ICs or channels'},...
             ...%Channel selection, Epoch/HED settings
             { 'Style', 'text', 'string', 'Category epoch boundaries (sec)', 'horizontalalignment', 'left','fontweight', 'bold', 'tag','catepoch','tooltipstring','determines number of parameters and position for categorical variables'},...
             { 'Style', 'edit', 'string', num2str(s.category_epoch_boundaries),'tag', 'enterEpochBoundary', 'callback',@cllbk_enter_epoch_boundaries},...
@@ -1075,7 +1138,7 @@ return;
             { 'Style', 'listbox', 'string', exclude_descriptions_event_types, 'Max', 1e7,'tag', 'excludeUniqueevent_typesList'},...
             { 'Style', 'pushbutton', 'string', 'Remove >>', 'horizontalalignment', 'left','tag', 'removeevent_typeButton', 'callback',@cllbk_event_type_remove,'tooltipstring','move the included tag to the excluded list'},...
             { 'Style', 'pushbutton', 'string', '<< Add', 'horizontalalignment', 'left','tag', 'addevent_typeButton', 'callback',@cllbk_event_type_add,'tooltipstring','move the excluded tag to the included list'},...
-            {},...%HED tags
+            ...%HED tags
             { 'Style', 'checkbox', 'tag', 'enableHed', 'string', 'Hierarchical Regression', 'value', s.hed_enable,'fontweight', 'bold','callback',@cllbk_hed_enable},...
             { 'Style', 'checkbox', 'tag', 'enforceHed', 'string', 'Enforce HED specification', 'value', s.enforce_hed_spec,'enable',enableHedStatus,'callback',@cllbk_enforce_hedspec,'tooltipstring','perform regression on HED tags; tags are stored in the EEG.event(i).hedTag field' },...
             { 'Style', 'pushbutton', 'string', 'Change HED specification', 'horizontalalignment', 'left','tag', 'changeHedSpec','enable',enableHedStatus,'callback', @cllbk_change_hedspec,'tooltipstring','check each tag for HED specification compliance; runs much slower' },...
@@ -1126,11 +1189,15 @@ return;
         ui_enterExcludeChans = findobj([all_handlers{:}],'flat', 'tag','enterExcludeChans');
         ui_typeProcLabel = findobj([all_handlers{:}],'flat','tag', 'typeProcLabel');
         ui_switchTypeButton = findobj([all_handlers{:}],'flat','tag', 'switchTypeButton');
+        ui_switchIncludeExcludeButton = findobj([all_handlers{:}],'flat','tag', 'switchIncludeExcludeButton');
         
         ui_autoSaveResultsEnable=findobj([all_handlers{:}],'flat','tag', 'autoSaveResultsEnable');
         ui_erspEnable=findobj([all_handlers{:}],'flat','tag', 'erspEnable');
         ui_enableArtifactRejection=findobj([all_handlers{:}],'flat','tag', 'enableArtifactRejection');
         ui_enableRegularization = findobj([all_handlers{:}],'flat','tag', 'enableRegularization');
+        
+        ui_enterNumBins=findobj([all_handlers{:}],'flat','tag', 'enterNumBins');
+        ui_numBinsLabel=findobj([all_handlers{:}],'flat','tag', 'numBinsLabel');
         
         ui_rejectedFramesCounter = findobj([all_handlers{:}],'flat', 'tag','rejectedFramesCounter');
         ui_enableArtifactVariable = findobj([all_handlers{:}],'flat', 'tag','enableArtifactVariable');

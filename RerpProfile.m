@@ -285,7 +285,7 @@ classdef RerpProfile < matlab.mixin.Copyable
             disp('RerpProfile: loading default settings');
             default_settings = {...
                 'type_proc', 0,... 0 for ICA or 1 for channels
-                'include_exclude',1,...
+                'include_exclude', 0,...
                 'ersp_enable',0,...perform time-frequency decomposition first
                 'nbins', 64,...number of freq bins to use when ersp_enable==1          
                 'rerp_result_autosave', 1,...automatically save the regression result 
@@ -384,7 +384,7 @@ addOptional(p,'ersp_enable', [], validateBinary);
 addOptional(p,'nbins', [], validateNumeric);
 
 addOptional(p,'rerp_result_autosave', [], validateBinary);
-addOptional(p,'autosave_results_path',[], validateChar); 
+addOptional(p,'autosave_results_path',[]); 
 
 addOptional(p,'category_epoch_boundaries', [], validateBoundaries);
 addOptional(p,'continuous_epoch_boundaries', [], validateBoundaries);
