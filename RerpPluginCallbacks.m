@@ -87,6 +87,11 @@ classdef RerpPluginCallbacks
             end
         end
         
+        function plotResultsFromDirectory(EEG)
+            dirname = uigetdir(EEG.filepath, 'Choose results directory: ');
+            rerp_result_gui('EEG', EEG, 'results_dir',dirname);
+        end
+        
         function profileStudyFromDisk(STUDY) 
         end
         
@@ -94,9 +99,6 @@ classdef RerpPluginCallbacks
         end
         
         function lastStudyProfile(STUDY)
-        end
-        
-        function newStudyProfile(STUDY)
         end
         
     end   

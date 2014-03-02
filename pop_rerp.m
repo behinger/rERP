@@ -60,6 +60,13 @@ function [rerp_result, EEGOUT, com] = pop_rerp(EEG, rerp_profile, varargin)
 
 import rerp_dependencies.*
 
+% display help if not enough arguments
+% ------------------------------------
+if nargin < 1
+    help pop_rerp;
+    return;
+end;
+
 p=inputParser;
 addOptional(p,'view_only', 0);
 addOptional(p,'force_gui', 0);
@@ -73,13 +80,6 @@ force_gui=p.Results.force_gui||view_only;
 com = ''; % this initialization ensure that the function will return something
 EEGOUT = EEG;
 rerp_result={};
-
-% display help if not enough arguments
-% ------------------------------------
-if nargin < 1
-    help pop_rerp;
-    return;
-end;
 
 %Get path to toolbox
 rerp_path_components=regexp(strtrim(mfilename('fullpath')),'[\/\\]','split');
@@ -715,9 +715,7 @@ return;
             if props.Value==1
                 enableLambdaStatus = 'off';
                 enableXvalidationStatus = 'on';
-                s.cross_validate_enable=1;
-                cllbk_enter_num_folds(ui_enterNumFolds);
-                
+                s.cross_validate_enable=1;                
             else
                 enableLambdaStatus = 'on';
                 enableXvalidationStatus = 'off';
@@ -733,17 +731,7 @@ return;
         set(ui_enterLambda, 'enable', enableLambdaStatus);
         %set(ui_enterNumFolds, 'enable', enableXvalidationStatus);
     end
-%ENTER number of cross validation folds
-    function cllbk_enter_num_folds(src, eventdata)
-        props =get(src);
-        instr = strtrim(props.String);
-        try
-            new_numfolds = str2num(instr);
-            s.num_xvalidation_folds = new_numfolds;
-        catch
-            disp('pop_rerp: number of folds not accepted, must be numeric, expressions allowed');
-        end
-    end
+
 %CHOOSE penalty funtion
     function cllbk_choose_penalty(src, eventdata)
         props = get(src);

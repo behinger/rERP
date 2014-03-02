@@ -33,14 +33,15 @@ vers='rerp-0.1b';
 cllbk_profile_from_disk='RerpPluginCallbacks.profileFromDisk(EEG);';
 cllbk_default_profile='RerpPluginCallbacks.defaultProfile(EEG);';
 cllbk_last_profile='RerpPluginCallbacks.lastProfile(EEG);';
-cllbk_new_profile='RerpPluginCallbacks.newProfile(EEG);';
 
-cllbk_study_profile_from_disk='RerpPluginCallbacks.profileStudyFromDisk(STUDY);';
-cllbk_study_default_profile='RerpPluginCallbacks.defaultStudyProfile(STUDY);';
-cllbk_study_last_profile='RerpPluginCallbacks.lastStudyProfile(STUDY);';
-cllbk_study_new_profile='RerpPluginCallbacks.newStudyProfile(STUDY);';
+
+% TODO Implement study callbacks
+% cllbk_study_profile_from_disk='RerpPluginCallbacks.profileStudyFromDisk(STUDY);';
+% cllbk_study_default_profile='RerpPluginCallbacks.defaultStudyProfile(STUDY);';
+% cllbk_study_last_profile='RerpPluginCallbacks.lastStudyProfile(STUDY);';
 
 cllbk_plot_result_eeg='rerp_result_gui(''EEG'', EEG);';
+cllbk_plot_result_from_folder_eeg='RerpPluginCallbacks.plotResultsFromDirectory(EEG);';
 
 % create menu
 toolsmenu = findobj(fig, 'tag', 'tools');
@@ -50,15 +51,15 @@ runmenu = uimenu( submenu, 'label', 'Run dataset','userdata','study:off; startup
 uimenu( runmenu, 'label', 'Profile from disk', 'callback', cllbk_profile_from_disk);
 uimenu( runmenu, 'label', 'Default profile', 'callback', cllbk_default_profile);
 uimenu( runmenu, 'label', 'Last profile', 'callback', cllbk_last_profile);
-%uimenu( runmenu, 'label', 'New profile', 'callback', cllbk_new_profile);
 
 % TODO Implement study callbacks
 % runstudymenu = uimenu( submenu, 'label', 'Run study','userdata','study:on;startup:off','enable','off');
 % uimenu( runstudymenu, 'label', 'Profile from disk', 'callback', cllbk_study_profile_from_disk);
 % uimenu( runstudymenu, 'label', 'Default profile', 'callback', cllbk_study_default_profile);
 % uimenu( runstudymenu, 'label', 'Last profile', 'callback', cllbk_study_last_profile);
-% uimenu( runstudymenu, 'label', 'New profile', 'callback', cllbk_study_new_profile);
 
-uimenu( submenu, 'label', 'Plot results', 'userdata','startup:on', 'callback', cllbk_plot_result_eeg);
+plotmenu=uimenu( submenu, 'label', 'Plot results', 'userdata','startup:on');
+uimenu(plotmenu, 'label','From default directory','userdata','startup:on', 'callback', cllbk_plot_result_eeg);
+uimenu(plotmenu, 'label','From another directory','userdata','startup:on', 'callback', cllbk_plot_result_from_folder_eeg);
 end
 

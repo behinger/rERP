@@ -230,7 +230,12 @@ if s.regularization_enable
                     this_result.analysis_name= 'Elastic net';
                 end
                 
-                rerp_result = rerp_grid_search(this_result, 1);                             
+                %Keep either the full result, or a lightweight copy 
+                rerp_result = rerp_grid_search(this_result, 1);
+                if ~s.save_grid_search
+                    rerp_result.gridsearch=[];
+                end
+                                                 
             else
                 
                 %Specified Lambda

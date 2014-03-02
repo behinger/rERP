@@ -317,7 +317,8 @@ classdef RerpProfile < matlab.mixin.Copyable
                 'first_phase_lambda', [0 logspace(log10(1e-6), log10(1e8), 20)]',... the initial sample space for grid search
                 'elasticnet_quick_zoom', 1,...for ElasticNet (L1+L2) penalty. find optimal lambda1 and lambda2 serpately first, then 2D grid search around those values
                 'penalty_func',{'L2 norm'},...penalty function
-                'penalty_options',{'L1 norm' 'L2 norm' 'Elastic net'}... available options for penalty function
+                'penalty_options',{'L1 norm' 'L2 norm' 'Elastic net'},... available options for penalty function
+                'save_grid_search',0,...
                 }; 
             
             %Initialize profile
@@ -412,6 +413,7 @@ addOptional(p,'first_phase_lambda',[],validateNumeric);
 addOptional(p,'elasticnet_quick_zoom',[],validateBinary);
 addOptional(p,'penalty_func',[]);
 addOptional(p,'penalty_options',[], validateCell);
+addOptional(p,'save_grid_search',[],validateBinary);
 end
 
 

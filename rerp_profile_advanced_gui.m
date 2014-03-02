@@ -22,7 +22,7 @@ function varargout = rerp_profile_advanced_gui(varargin)
 
 % Edit the above text to modify the response to help rerp_profile_advanced_gui
 
-% Last Modified by GUIDE v2.5 28-Feb-2014 20:01:51
+% Last Modified by GUIDE v2.5 02-Mar-2014 09:21:00
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -253,4 +253,17 @@ function num_xvalidation_folds_CreateFcn(hObject, eventdata, handles)
 %       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in save_grid_search.
+function save_grid_search_Callback(hObject, eventdata, handles)
+% hObject    handle to save_grid_search (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of save_grid_search
+try
+    handles.UserData.rerp_profile.settings.save_grid_search=get(hObject, 'Value'); 
+catch 
 end

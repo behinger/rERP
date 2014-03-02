@@ -51,7 +51,7 @@ function varargout = rerp_result_gui(varargin)
 
 % Edit the above text to modify the response to help rerp_result_gui
 
-% Last Modified by GUIDE v2.5 15-Nov-2013 18:36:16
+% Last Modified by GUIDE v2.5 01-Mar-2014 11:40:12
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 0;
@@ -72,6 +72,10 @@ else
 end
 % End initialization code - DO NOT EDIT
 
+%TODO verify that the list of results are compatible
+function consistent = verify_results_are_consistent(results)
+    consistent=1; 
+
 % --- Executes just before rerp_result_gui is made visible.
 function rerp_result_gui_OpeningFcn(hObject, eventdata, handles, varargin)
 % This function has no output args, see OutputFcn
@@ -81,101 +85,44 @@ function rerp_result_gui_OpeningFcn(hObject, eventdata, handles, varargin)
 % varargin   command line arguments to rerp_result_gui (see VARARGIN)
 p=inputParser;
 addOptional(p,'EEG', []);
+addOptional(p,'results_dir', []);
 parse(p, varargin{:});
+results_dir=p.Results.results_dir; 
+handles.UserData.results=struct([]);
 
 % Get last result and see if it matches the dataset
 rerp_path = regexp(strtrim(mfilename('fullpath')),'(.*)[\\\/].*','tokens');
-handles.UserData.rerp_path=rerp_path{1}{1};
-try
-    last_result = RerpResult.loadRerpResult('path', fullfile(rerp_path{1}{1}, 'results', 'last.rerp_result'));
-    last_dsname = regexp(last_result.rerp_profile.eeglab_dataset_name,'.*[\\\/](.*.set)','tokens');
-    handles.UserData.results{1}=last_result;
-    handles.UserData.result_names{1}='last';
-    
-    if ~isempty(p.Results.EEG)
-        dsname = p.Results.EEG.filename;
-        if strcmp(dsname, last_dsname)
-            handles.UserData.datasets{1}=fullfile(p.Results.EEG.filename,p.Results.EEG.filepath);
-        else
-            handles.UserData.datasets{1}=last_result.rerp_profile.eeglab_dataset_name;
-        end
-        
-    else
-        handles.UserData.datasets{1}=last_result.rerp_profile.eeglab_dataset_name;
-    end
-    
-catch
-    
-    handles.UserData.results{1}=[];
-    handles.UserData.result_names{1}='';
-    handles.UserData.datasets{1}=[];
-end
-handles.UserData.plotfig=[];
-handles.UserData.current_result=handles.UserData.results{1};
-handles.UserData.current_dataset=handles.UserData.datasets{1};
+rerp_path=rerp_path{1}{1}; 
+handles.UserData.rerp_path=rerp_path;
 
-% Get the matching results from the EEG directory, if any
-if ~isempty(p.Results.EEG)
-    handles.UserData.eegpath = p.Results.EEG.filepath;
-    eeg_dir=dir(fullfile(p.Results.EEG.filepath,'*.rerp_result'));
-    
-    if ~isempty(eeg_dir)
-        names = eeg_dir(:).name;
-    else
-        names={};
-    end
-    
-    if ~iscell(names)
-        names={names};
-    end
-    
-    for i=1:length(names)
-        this_name=names{i};
-        try
-            this_result = RerpResult.loadRerpResult('path',this_name);
-            result_dataset = regexp(this_result.rerp_profile.eeglab_dataset_name, '.*[\\\/](.*.set)','tokens');
-            
-            if strcmp(result_dataset{1}{1}, p.Results.EEG.filename) && ~strcmp(this_name, 'last.rerp_result')
-                handles.UserData.results{end+1}=this_result;
-                handles.UserData.datasets{end+1}= fullfile(p.Results.EEG.filename,p.Results.EEG.filepath);
-                handles.UserData.result_names{end+1}=this_name;
-            end
-            
-        catch
-        end
-    end
-else
-    % Get result from the results folder
-    handles.UserData.eegpath = [];
+if isempty(results_dir)
+    results_dir = fullfile(rerp_path, 'results'); 
 end
-resultsdir = dir(fullfile(rerp_path{1}{1}, 'results'));
-names = {resultsdir(:).name};
+
+these_results = dir(fullfile(results_dir, '*.rerp_result'));
+names = {these_results(:).name};
 
 for i=1:length(names)
-    this_name=names{i};
-    try
-        this_result = RerpResult.loadRerpResult('path',fullfile(rerp_path{1}{1}, 'results', this_name));
-        
-        if ~strcmp(this_name, 'last.rerp_result')
-            handles.UserData.results{end+1}=this_result;
-            handles.UserData.datasets{end+1}= this_result.rerp_profile.eeglab_dataset_name;
-            handles.UserData.result_names{end+1}=this_name;
-        end
-        
-    catch
-    end
+    this_result = RerpResult.loadRerpResult('path', fullfile(results_dir, names{i}));
+    this_result.gridsearch=[]; 
+    handles.UserData.results(end+1).result=this_result;
+    handles.UserData.results(end).name=names{i};
+    handles.UserData.results(end).path=fullfile(results_dir, names{i}); 
 end
 
-
-set(handles.typeplotlist,'max',1,'value',1);
-set(handles.resultslist,'string',handles.UserData.result_names,'max',1);
-set(handles.channelslist,'max', 1e7);
+try
+    set(handles.typeplotlist,'max',1,'value',1);
+    set(handles.resultslist,'string',{handles.UserData.results(:).name},'max',1);
+    set(handles.channelslist,'max', 1e7);
+catch 
+end
 
 handles.UserData.locking_idx=1;
 handles.UserData.sorting_idx=1;
 handles.UserData.locksort=0;
 handles.UserData.rerpimage=0;
 handles.UserData.lastplot='';
+handles.UserData.plotfig=[];
 
 handles = set_options(handles);
 
@@ -211,9 +158,16 @@ function resultslist_Callback(hObject, eventdata, handles)
 % Hints: contents = cellstr(get(hObject,'String')) returns resultslist contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from resultslist
 itemnum = get(hObject,'Value');
-handles.UserData.current_result=handles.UserData.results{itemnum};
-handles.UserData.current_dataset=handles.UserData.datasets{itemnum};
-handles.UserData.current_name=handles.UserData.result_names{itemnum};
+
+new_results={handles.UserData.results(itemnum).result};
+if ~verify_results_are_consistent(new_results)
+    warning('rerp_profile_gui: some results selected were not compatible'); 
+end
+
+handles.UserData.current.result=new_results;
+handles.UserData.current.path={handles.UserData.results(itemnum).path};
+handles.UserData.current.name={handles.UserData.results(itemnum).name};
+
 handles = set_options(handles);
 guidata(hObject, handles);
 
@@ -229,7 +183,6 @@ function resultslist_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
 
 % --- Executes on selection change in typeplotlist.
 function typeplotlist_Callback(hObject, eventdata, handles)
@@ -484,74 +437,84 @@ handles.UserData.lastplot = plottype;
 % Update handles structure
 guidata(hObject, handles);
 
-function [opts, funcs] = get_all_plotting_opts(result)
+function [opts, funcs] = get_all_plotting_opts(first_result, study)
 opts=[];
-if isempty(result)
+if isempty(first_result)
     return;
 end
 
-if result.rerp_profile.settings.type_proc;
+if first_result.rerp_profile.settings.type_proc;
     typeproc = 'by channel';
 else
     typeproc = 'by component';
 end
 
-if result.rerp_profile.settings.hed_enable
+if first_result.rerp_profile.settings.hed_enable
     type= 'by HED tag';
 else
     type= 'by event type';
 end
 
-if result.ersp_flag
-    opts = {'Rersp'};
-    funcs = {@result.plotRersp};
-else
-    opts = {['Rerp ' type], ['Rerp ' typeproc], 'R-Squared total', ['R-Squared ' type], 'Rerp image'};
-    
-    if isempty(result.gridsearch)
-        
+%Just one dataset is being plotted
+if ~study
+    if first_result.ersp_flag
+        opts = {'Rersp'};
     else
-        opts = {opts{:} 'Grid search'};
+        opts = {['Rerp ' type], ['Rerp ' typeproc], 'R-Squared total', ['R-Squared ' type], 'Rerp image'};
+
+        if ~isempty(first_result.gridsearch)
+            opts = {opts{:} 'Grid search'};
+        end
+    end
+    
+%Combine plotting from multiple datasets
+else
+    if first_result.ersp_flag
+        opts = {};
+    else
+        opts = {'R-Squared total', ['R-Squared ' type]};
     end
 end
 
 % Fills in lists based on current result and settings
 function handles = set_options(handles)
 
-set(handles.resultslist,'string',handles.UserData.result_names);
-result = handles.UserData.current_result;
+set(handles.resultslist,'String', {handles.UserData.results(:).name});
+try
+    result = handles.UserData.current.result;
+catch
+    return;
+end
 
+%We could have selected many results. This assumes that they are all
+%compatible.
 if isempty(result)
     set(handles.typeplotlist, 'string', '');
     set(handles.channelslist, 'string', '');
     return;
+else
+    first_result=result{1};
 end
 
 % Setup result options for plotting. Populate channels/components. Populate event types/tags
-opts=get_all_plotting_opts(result);
+opts=get_all_plotting_opts(first_result, length(result)>1);
 set(handles.typeplotlist, 'string', opts, 'value', min(length(opts), get(handles.typeplotlist,'Value')));
 
-if result.rerp_profile.settings.type_proc
-    channels = result.rerp_profile.include_chans;
-else
-    channels = result.rerp_profile.include_comps;
-end
-
-assert(length(channels)==size(result.rerp_estimate,2), 'pop_plot_rerp_result: problem matching dataset to result');
-
-if result.rerp_profile.settings.type_proc
+if first_result.rerp_profile.settings.type_proc
+    channels = first_result.rerp_profile.include_chans;
     set(handles.typeproclabel, 'string', 'Channels (R-Squared)');
-    time_series_str = num2str(unique(result.rerp_profile.include_chans'));
 else
+    channels = first_result.rerp_profile.include_comps;
     set(handles.typeproclabel, 'string', 'Components (R-Squared)');
-    time_series_str = num2str(unique(result.rerp_profile.include_comps'));
 end
+time_series_str = num2str(unique(channels'));
+assert(length(channels)==size(first_result.rerp_estimate,2), 'pop_plot_rerp_result: problem matching dataset to result');
 
-if result.ersp_flag
-    nbins=result.rerp_profile.settings.nbins;
-    rsq = max(reshape(result.average_total_rsquare, [nbins, length(result.average_total_rsquare)/nbins]));
+if first_result.ersp_flag
+    nbins=first_result.rerp_profile.settings.nbins;
+    rsq = max(reshape(first_result.average_total_rsquare, [nbins, length(first_result.average_total_rsquare)/nbins]));
 else
-    rsq = result.average_total_rsquare;
+    rsq = first_result.average_total_rsquare;
 end
 
 if get(handles.sortbyrsqaurebox, 'Value')
@@ -570,11 +533,11 @@ cts=get(handles.channelslist,'Value');
 tsstr=ts_str_w_rsq(handles.UserData.sort_idx);
 set(handles.channelslist, 'string', tsstr, 'value', cts(cts<=length(tsstr)));
 
-tags = result.get_plotting_params;
+tags = first_result.get_plotting_params;
 ctags = get(handles.tagslist,'value');
 set(handles.tagslist, 'string', tags, 'value', ctags(ctags<=length(tags)));
 
-if result.rerp_profile.settings.hed_enable
+if first_result.rerp_profile.settings.hed_enable
     set(handles.tagslabel, 'string', 'HED tags');
 else
     set(handles.tagslabel, 'string', 'Event types');
@@ -688,3 +651,10 @@ function exclude_insignif_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of exclude_insignif
+
+
+% --- Executes on button press in select_folder.
+function select_folder_Callback(hObject, eventdata, handles)
+% hObject    handle to select_folder (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
