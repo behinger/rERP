@@ -124,16 +124,13 @@ handles.UserData.rerpimage=0;
 handles.UserData.lastplot='';
 handles.UserData.plotfig=[];
 
-handles = set_options(handles);
-
-% Populate channels or ICs and event types or tags
-
 % Choose default command line output for rerp_result_gui
 handles.output = hObject;
 
 % Update handles structure
 guidata(hObject, handles);
 
+resultslist_Callback(handles.resultslist,[], handles); 
 % UIWAIT makes rerp_result_gui wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 
@@ -296,30 +293,32 @@ function loadresultsbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+start_path=fullfile(handles.UserData.rerp_path, 'results');
 
-if isempty(handles.UserData.eegpath)
-    start_path=fullfile(handles.UserData.rerp_path, 'results');
-else
-    start_path=handles.UserData.eegpath;
+
+[fn,fp] = uigetfile('*.rerp_result','Select rerp results:',start_path,'MultiSelect','on');
+if ~iscell(fn)
+    fn={fn};
+    fp={fp};
 end
 
-[fn,fp] = uigetfile('rerp_result','Select rerp results:',start_path,'MultiSelect','on');
-
-if fn~=0
+if fn{1} 
     
     if ~iscell(fn)
         fn={fn};
     end
     
     for i=1:length(fn)
-        this_dir = dir(fp);
-        thisfn = fullfile(fp,fn{i});
-        this_result = RerpResult.loadRerpResult('path',thisfn);
+        this_dir = dir(fullfile(fp,'*.rerp_result'));
+        thisfn = fullfile(fp, fn{i});
+        this_result = RerpResult.loadRerpResult('path', thisfn);
         this_eegpath=this_result.rerp_profile.eeglab_dataset_name;
         eegfn=regexp(this_eegpath, '(.*[\\\/])(.*.set)','tokens');
         eegdir = dir(eegfn{1}{1});
-        handles.UserData.results{end+1}=this_result;
-        handles.UserData.result_names{end+1}= fn{i};
+        
+        handles.UserData.results(end+1).result=this_result;
+        handles.UserData.results(end).name = fn{i};
+        handles.UserData.results(end).path = fullfile(fp{i}, fn{i}); 
         
         if ~isempty(eegdir)
             [~, idx]=intersect({eegdir(:).name}, eegfn{1}{2});
@@ -374,9 +373,6 @@ event_idx = get(handles.tagslist,'Value');
 if ~isempty(handles.UserData.plotfig)
     try
         get(handles.UserData.plotfig);
-%         if ~strcmp(handles.UserData.lastplot, plottype)
-%             clf(handles.UserData.plotfig);
-%         end
         
     catch
         handles.UserData.plotfig=figure;
@@ -390,46 +386,36 @@ set(handles.UserData.plotfig,'color', [1 1 1]);
 significance_level=str2double(get(handles.significancelevel,'String'));
 exclude_insignificant=get(handles.exclude_insignif, 'value'); 
 
+%Combine multiple results into object for study plotting
+rerp_study = RerpResultStudy(handles.UserData.current.result, handles.UserData.current.path, handles.UserData.current.name); 
+
 if strcmp(plottype, 'Rerp by event type')||strcmp(plottype,'Rerp by HED tag')
-    handles.UserData.current_result.plotRerpEventTypes(event_idx, ts_idx, handles.UserData.plotfig, exclude_insignificant, significance_level);
+    rerp_study.plotRerpEventTypes(event_idx, ts_idx, handles.UserData.plotfig, exclude_insignificant, significance_level);
 end
 
 if strcmp(plottype, 'Rerp by component')||strcmp(plottype,'Rerp by channel')
-    handles.UserData.current_result.plotRerpTimeSeries(event_idx, ts_idx, handles.UserData.plotfig,exclude_insignificant, significance_level);
+    rerp_study.plotRerpTimeSeries(event_idx, ts_idx, handles.UserData.plotfig,exclude_insignificant, significance_level);
 end
 
 if strcmp(plottype, 'R-Squared total')
-    handles.UserData.current_result.plotRerpTotalRsquared(ts_idx, significance_level, handles.UserData.plotfig);
+    rerp_study.plotRerpTotalRsquared(ts_idx, significance_level, handles.UserData.plotfig);
 end
 
 if strcmp(plottype, 'R-Squared by event type')||strcmp(plottype, 'R-Squared by HED tag')
-    handles.UserData.current_result.plotRerpEventRsquared(ts_idx, significance_level, event_idx, handles.UserData.plotfig);
+    rerp_study.plotRerpEventRsquared(ts_idx, significance_level, event_idx, handles.UserData.plotfig);
 end
 
-if strcmp(plottype, 'Rerp image')
-    
-    if isempty(handles.UserData.current_dataset)
-        nm = handles.UserData.current_dataset.rerp_profile.eeglab_dataset_name;
-        [fn, fp] = uigetfile('*.set', 'Locate the EEGLAB .set file for this result:', nm);
-        handles.UserData.current_dataset=fullfile(fn, fp);
-        handles.UserData.current_result.rerp_profile.eeglab_dataset_name=fullfile(fn, fp);
-    end
-    
-    EEG=pop_loadset(handles.UserData.current_dataset);
-    if ~handles.UserData.current_result.rerp_profile.settings.type_proc && isempty(EEG.icaact)
-        EEG.icaact=eeg_getica(EEG);
-    end
-    
+if strcmp(plottype, 'Rerp image')       
     window_size_ms = str2double(get(handles.enterwindow,'String'));
-    handles.UserData.current_result.plotRerpImage(EEG, handles.UserData.locking_idx, handles.UserData.sorting_idx, ts_idx, window_size_ms, handles.UserData.plotfig);
+    rerp_study.plotRerpImage(handles.UserData.locking_idx, handles.UserData.sorting_idx, ts_idx, window_size_ms, handles.UserData.plotfig);
 end
 
 if strcmp(plottype, 'Grid search')
-    handles.UserData.current_result.plotGridSearch(ts_idx, handles.UserData.plotfig);
+    rerp_study.plotGridSearch(ts_idx, handles.UserData.plotfig);
 end
 
 if strcmp(plottype, 'Rersp')
-    handles.UserData.current_result.plotRersp(event_idx, ts_idx, handles.UserData.plotfig);
+    rerp_study.plotRersp(event_idx, ts_idx, handles.UserData.plotfig);
 end
 
 handles.UserData.lastplot = plottype;
@@ -559,7 +545,8 @@ function displayprofilebutton_Callback(hObject, eventdata, handles)
 % hObject    handle to displayprofilebutton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-pop_rerp({}, handles.UserData.current_result.rerp_profile,'view_only',1);
+
+pop_rerp({}, handles.UserData.current.result{1}.rerp_profile,'view_only',1);
 
 
 
@@ -641,7 +628,12 @@ function saveresultas_Callback(hObject, eventdata, handles)
 % hObject    handle to saveresultas (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles.UserData.current_result.saveRerpResult;
+if length(handles.UserData.current.result)==1
+    handles.UserData.current.result{1}.saveRerpResult;
+else
+    error('rerp_result_gui: can not save multiple results simultaneously');
+end
+    
 
 
 % --- Executes on button press in exclude_insignif.
@@ -651,10 +643,3 @@ function exclude_insignif_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of exclude_insignif
-
-
-% --- Executes on button press in select_folder.
-function select_folder_Callback(hObject, eventdata, handles)
-% hObject    handle to select_folder (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)

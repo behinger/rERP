@@ -132,14 +132,14 @@ if nargin < 2 || force_gui==1
     
     %We load the defaults only only when force_gui is not active.
     default_path = fullfile(rerp_path, 'profiles','default.rerp_profile');
-    if exist(default_path, 'file') == 2  
+    if exist(default_path, 'file') == 2
         if ~force_gui
             disp('pop_rerp: loading default settings');
             default_profile = RerpProfile.loadRerpProfile('path', default_path);
-
+            
             %Copy the settings from the default profile to this profile. Make
             %sure we don't overwrite the exclude tags, which is specific to
-            %this dataset. 
+            %this dataset.
             if isempty(setdiff(fieldnames(s), fieldnames(default_profile.settings)))
                 olds = s;
                 s = default_profile.settings;
@@ -147,11 +147,11 @@ if nargin < 2 || force_gui==1
                 s.seperator_tag=olds.seperator_tag;
                 s.continuous_tag=olds.continuous_tag;
             else
-                cllbk_set_default_profile; 
+                cllbk_set_default_profile;
             end
         end
     else
-        cllbk_set_default_profile; 
+        cllbk_set_default_profile;
     end
     
     %Make sure gui handles are scoped to this level, available to nested functions
@@ -216,7 +216,7 @@ return;
 
 %CHOOSE whether to include or exclude ICs or channels
     function cllbk_switch_include_exclude(src, eventdata)
- 
+        
         if s.include_exclude
             s.include_exclude=0;
             include_exclude_status='Exclude';
@@ -225,7 +225,7 @@ return;
             cp.include_chans=1:cp.nbchan;
             
         else
-            s.include_exclude=1; 
+            s.include_exclude=1;
             include_exclude_status='Include';
             inc_excl_message='Exclude';
             cp.include_comps=[];
@@ -248,7 +248,7 @@ return;
         
         if ~any(strcmp('Wavelet Toolbox',toolboxes))
             s.ersp_enable=0;
-            set(src, 'Value',0); 
+            set(src, 'Value',0);
             warning('pop_rerp: time frequncy decmposition for rERSP requires wavelet toolbox');
         else
             s.ersp_enable=src_props.Value;
@@ -260,7 +260,7 @@ return;
             enableErspStatus='off';
         end
         
-        set([ui_enterNumBins ui_numBinsLabel],'enable', enableErspStatus); 
+        set([ui_enterNumBins ui_numBinsLabel],'enable', enableErspStatus);
         [type_of_processing, other_type, time_series, message] = get_proc_types;
         set(ui_typeProcLabel, 'string', message);
         cllbk_get_time_series(ui_enterExcludeChans);
@@ -715,7 +715,7 @@ return;
             if props.Value==1
                 enableLambdaStatus = 'off';
                 enableXvalidationStatus = 'on';
-                s.cross_validate_enable=1;                
+                s.cross_validate_enable=1;
             else
                 enableLambdaStatus = 'on';
                 enableXvalidationStatus = 'off';
@@ -842,7 +842,7 @@ return;
         if cp.settings.rerp_result_autosave
             temp = regexp(cp.eeglab_dataset_name, '^.*[\/\\](.*).set$', 'tokens');
             fn = temp{1}{1};
-                      
+            
             try
                 if isempty(dir(s.autosave_results_path))
                     mkdir(s.autosave_results_path);
@@ -945,13 +945,13 @@ return;
             type_of_processing = 'components';
             temp = setdiff(processing_types, {type_of_processing});
             other_type = temp{:};
-
+            
             if s.include_exclude
                 time_series = cp.include_comps;
             else
                 time_series = setdiff(1:cp.nbchan, cp.include_comps);
             end
-
+            
         else
             type_of_processing = 'channels';
             temp = setdiff(processing_types, {type_of_processing});
@@ -1005,232 +1005,250 @@ return;
 % Creates a new gui window based on the current profile, refreshes
 % handles
     function make_gui
-        if view_only
-            okbuttonstatus='off';
-        else
-            okbuttonstatus='on';
-        end
-        
         try
-            close(gui_handle);
-        catch
-        end
-        
-        if s.hed_enable
-            enableHedStatus = 'on';
-        else
-            enableHedStatus = 'off';
-        end
-        
-        if s.artifact_rejection_enable
-            enableArtifactRejectionStatus='on';
-        else
-            enableArtifactRejectionStatus='off';
-        end
-        
-        if s.rerp_result_autosave
-            enableAutosaveStatus='on';
-        else
-            enableAutosaveStatus='off';
-        end
-        
-        if s.artifact_variable_enable
-            artifact_src = cp.artifact_variable_name;
-            mess = sprintf('%d artifact frames identified (%s)', nnz(cp.variable_artifact_indexes), artifact_src);
+            if view_only
+                okbuttonstatus='off';
+            else
+                okbuttonstatus='on';
+            end
+            
+            try
+                close(gui_handle);
+            catch
+            end
+            
+            if s.hed_enable
+                enableHedStatus = 'on';
+            else
+                enableHedStatus = 'off';
+            end
             
             if s.artifact_rejection_enable
-                enableArtifactVariableStatus='on';
+                enableArtifactRejectionStatus='on';
             else
+                enableArtifactRejectionStatus='off';
+            end
+            
+            if s.rerp_result_autosave
+                enableAutosaveStatus='on';
+            else
+                enableAutosaveStatus='off';
+            end
+            
+            if s.artifact_variable_enable
+                artifact_src = cp.artifact_variable_name;
+                mess = sprintf('%d artifact frames identified (%s)', nnz(cp.variable_artifact_indexes), artifact_src);
+                
+                if s.artifact_rejection_enable
+                    enableArtifactVariableStatus='on';
+                else
+                    enableArtifactVariableStatus='off';
+                end
+            else
+                artifact_src = cp.computed_artifact_indexes_function_name;
+                mess = sprintf('%d artifact frames identified (%s)', nnz(cp.computed_artifact_indexes), artifact_src);
                 enableArtifactVariableStatus='off';
             end
-        else
-            artifact_src = cp.computed_artifact_indexes_function_name;
-            mess = sprintf('%d artifact frames identified (%s)', nnz(cp.computed_artifact_indexes), artifact_src);
-            enableArtifactVariableStatus='off';
-        end
-        
-        %Set regularization section enable
-        if s.regularization_enable
-            enableRegularizationStatus = 'on';
-            if s.cross_validate_enable
-                enableLambdaStatus='off';
-                enableXvalidationStatus='on';
-                
+            
+            %Set regularization section enable
+            if s.regularization_enable
+                enableRegularizationStatus = 'on';
+                if s.cross_validate_enable
+                    enableLambdaStatus='off';
+                    enableXvalidationStatus='on';
+                    
+                else
+                    enableLambdaStatus='on';
+                    enableXvalidationStatus='off';
+                end
             else
-                enableLambdaStatus='on';
+                enableRegularizationStatus='off';
+                enableLambdaStatus='off';
                 enableXvalidationStatus='off';
             end
-        else
-            enableRegularizationStatus='off';
-            enableLambdaStatus='off';
-            enableXvalidationStatus='off';
-        end
-        
-        if s.include_exclude
-            include_exclude_status='Include';
-            inc_excl_message='Exclude';
-        else
-            include_exclude_status='Exclude';
-            inc_excl_message='Include';
-        end
             
-        if s.ersp_enable
-            enableErspStatus='on';
-        else
-            enableErspStatus='off';
+            
+            if s.include_exclude
+                include_exclude_status='Include';
+                inc_excl_message='Exclude';
+            else
+                include_exclude_status='Exclude';
+                inc_excl_message='Include';
+            end
+            
+            
+            if s.ersp_enable
+                enableErspStatus='on';
+            else
+                enableErspStatus='off';
+            end
+            
+            [~, pen_idx] = intersect(s.penalty_options, s.penalty_func);
+            if isempty(pen_idx)
+                pen_idx=2;
+            end
+            
+            [cp.include_event_types, include_event_types_idx, exclude_event_types_idx, include_descriptions_event_types, exclude_descriptions_event_types ] = get_event_type_split(cp.event_types, s.exclude_event_types, cp.event_type_descriptions);
+            [type_of_processing, other_type, time_series, message] = get_proc_types;
+            
+            uilist = { ...
+                { 'Style', 'checkbox', 'string', 'Auto-save results','tag', 'autoSaveResultsEnable', 'value', s.rerp_result_autosave,'callback', @cllbk_result_autosave_enable,'tooltipstring','Automatically save results in directory to the right'},...
+                { 'Style', 'edit', 'string', s.autosave_results_path, 'horizontalalignment', 'left', 'fontsize', 8, 'tag','autosavePathLabel','enable', enableAutosaveStatus},...
+                { 'Style', 'Pushbutton', 'string', 'Browse path', 'horizontalalignment', 'left','callback',@cllbk_result_autosave_path,'enable', enableAutosaveStatus,'tooltipstring','Set the autosave path for this profile'},...
+                ...
+                { 'Style', 'checkbox', 'string', 'rERSP','tag', 'erspEnable', 'value', s.ersp_enable,'callback', @cllbk_enable_ersp,'tooltipstring','perform time-frequency decomposition on the time-series, then perform analysis on each frequency seperately. if performing time-frequency decomposition outside of this GUI, DO NOT check this box'},...
+                { 'Style', 'text', 'string', 'Number of bins', 'horizontalalignment', 'left', 'fontsize', 12,'tag','numBinsLabel','enable', enableErspStatus},...
+                { 'Style', 'edit', 'string', num2str(s.nbins), 'horizontalalignment', 'left', 'fontsize', 12, 'tag','enterNumBins','enable', enableErspStatus},...
+                {},...
+                ...
+                { 'Style', 'text', 'string', message, 'horizontalalignment', 'left','fontweight', 'bold', 'tag','typeProcLabel'},...
+                { 'Style', 'edit', 'string', num2str(time_series),'tag', 'enterExcludeChans','callback',@cllbk_get_time_series},...
+                { 'Style', 'pushbutton', 'string', ['Switch to ' other_type], 'horizontalalignment', 'left','tag', 'switchTypeButton','callback',@cllbk_switch_type},...
+                { 'Style', 'pushbutton', 'string', inc_excl_message, 'horizontalalignment', 'left','tag', 'switchIncludeExcludeButton','callback',@cllbk_switch_include_exclude,'tooltipstring','choose whether to include or exclude certain ICs or channels'},...
+                ...%Channel selection, Epoch/HED settings
+                { 'Style', 'text', 'string', 'Category epoch boundaries (sec)', 'horizontalalignment', 'left','fontweight', 'bold', 'tag','catepoch','tooltipstring','determines number of parameters and position for categorical variables'},...
+                { 'Style', 'edit', 'string', num2str(s.category_epoch_boundaries),'tag', 'enterEpochBoundary', 'callback',@cllbk_enter_epoch_boundaries},...
+                { 'Style', 'text', 'string', 'Continuous epoch boundaries (sec)', 'horizontalalignment', 'left','fontweight', 'bold' , 'tag','conepoch','tooltipstring','determines number of parameters and position for continuous variables'},...
+                { 'Style', 'edit', 'string', num2str(s.continuous_epoch_boundaries),'tag', 'enterEpochBoundary', 'callback',@cllbk_enter_epoch_boundaries},...
+                ...%Artifact handling
+                { 'Style', 'checkbox', 'string', 'Artifact rejection', 'horizontalalignment', 'left','tag', 'enableArtifactRejection','fontweight', 'bold','value',s.artifact_rejection_enable,'callback', @cllbk_enable_artifact_rejection,'tooltipstring','Automatically ensure that artifact frames are excluded from analysis (recommended)'},...
+                { 'Style', 'text', 'string', mess, 'horizontalalignment', 'right','tag', 'rejectedFramesCounter', 'enable',enableArtifactRejectionStatus },...
+                ...
+                { 'Style', 'text', 'string', '    Artifact function', 'horizontalalignment', 'left','tag', 'artifactFunction','enable',enableArtifactRejectionStatus,'tooltipstring','the function used to identify artifact frames; see rerp_reject_samples_robcov for function prototype'},...
+                { 'Style', 'edit', 'string', s.artifact_function_name,'tag', 'enterArtifactFunction', 'enable', enableArtifactRejectionStatus,'callback',@cllbk_enter_artifact_function_name,'tag','enterArtifactFunction'},...
+                { 'Style', 'pushbutton', 'string', 'Force recompute artifact frames', 'horizontalalignment', 'left','tag', 'computeArtifactButton', 'callback', @cllbk_compute_artifact, 'enable',enableArtifactRejectionStatus},...
+                ...
+                { 'Style', 'checkbox', 'string', 'Artifact variable', 'horizontalalignment', 'left','tag', 'enableArtifactVariable','value',s.artifact_variable_enable,'callback', @cllbk_enable_artifact_name, 'enable',enableArtifactRejectionStatus,'tooltipstring','specify a logical artifact variable in the base workspace'},...
+                { 'Style', 'edit', 'string', cp.artifact_variable_name,'tag', 'enterArtifactVariable', 'enable', enableArtifactVariableStatus,'callback',@cllbk_enter_artifact_name},...
+                {},...
+                ...
+                ...%Event event_types
+                { 'Style', 'text', 'string', 'Included event types', 'horizontalalignment', 'left','fontweight', 'bold','tag','includeevttypelabel','tooltipstring','event types included in the regression; removing event types will affect which hed tags are available in the HED section'},...
+                { 'Style', 'text', 'string', 'Excluded event types', 'horizontalalignment', 'left','fontweight', 'bold','tag','excludeevttypelabel','tooltipstring','event types excluded from the regression; removing event types will affect which hed tags are available in the HED section'},...
+                { 'Style', 'listbox', 'string', include_descriptions_event_types, 'Max', 1e7,'tag', 'includeUniqueevent_typesList'},...
+                { 'Style', 'listbox', 'string', exclude_descriptions_event_types, 'Max', 1e7,'tag', 'excludeUniqueevent_typesList'},...
+                { 'Style', 'pushbutton', 'string', 'Remove >>', 'horizontalalignment', 'left','tag', 'removeevent_typeButton', 'callback',@cllbk_event_type_remove,'tooltipstring','move the included tag to the excluded list'},...
+                { 'Style', 'pushbutton', 'string', '<< Add', 'horizontalalignment', 'left','tag', 'addevent_typeButton', 'callback',@cllbk_event_type_add,'tooltipstring','move the excluded tag to the included list'},...
+                ...%HED tags
+                { 'Style', 'checkbox', 'tag', 'enableHed', 'string', 'Hierarchical Regression', 'value', s.hed_enable,'fontweight', 'bold','callback',@cllbk_hed_enable},...
+                { 'Style', 'checkbox', 'tag', 'enforceHed', 'string', 'Enforce HED specification', 'value', s.enforce_hed_spec,'enable',enableHedStatus,'callback',@cllbk_enforce_hedspec,'tooltipstring','perform regression on HED tags; tags are stored in the EEG.event(i).hedTag field' },...
+                { 'Style', 'pushbutton', 'string', 'Change HED specification', 'horizontalalignment', 'left','tag', 'changeHedSpec','enable',enableHedStatus,'callback', @cllbk_change_hedspec,'tooltipstring','check each tag for HED specification compliance; runs much slower' },...
+                { 'Style', 'pushbutton', 'string', 'Display HED hierarchy', 'horizontalalignment', 'left','tag', 'displayHierarchy','enable',enableHedStatus,'callback',@cllbk_view_hierarchy,'tooltipstring','show a tree of the included HED tags'},...
+                ...
+                { 'Style', 'text', 'string', 'Include tags', 'horizontalalignment', 'left','fontweight', 'bold','enable',enableHedStatus, 'tag','includeTagsLabel','tooltipstring','tags which are included in regression'},...
+                { 'Style', 'text', 'string', '*   Exclude tags   *', 'horizontalalignment', 'left','fontweight', 'bold','enable',enableHedStatus, 'tag','excludeTagsLabel','tooltipstring','tags which are excluded from regression'},...
+                { 'Style', 'listbox', 'string', cp.include_tag,'Max',1e7,'tag', 'includeUniqueTagsList','enable',enableHedStatus,'callback',@cllbk_list_select},...
+                { 'Style', 'listbox', 'string', s.exclude_tag,'Max',1e7,'tag', 'excludeUniqueTagsList','enable',enableHedStatus,'callback',@cllbk_list_select},...
+                ...
+                { 'Style', 'text', 'string', '{   Separator tags   }', 'horizontalalignment', 'left','fontweight', 'bold','enable', enableHedStatus, 'tag','seperatorTagsLabel','tooltipstring','tags which separate children into seperate variable groups'},...
+                { 'Style', 'text', 'string', '[   Continuous tags   ]', 'horizontalalignment', 'left','fontweight', 'bold','enable', enableHedStatus, 'tag','continuousTagsLabel','tooltipstring','tags which have an associated magnitude (e.g. Stimulus/Visual/Luminance/0.25)'},...
+                { 'Style', 'listbox', 'Max',1e7, 'string', s.seperator_tag,'tag', 'seperatorTagsList','enable',enableHedStatus,'callback',@cllbk_list_select},...
+                { 'Style', 'listbox', 'Max',1e7, 'string', s.continuous_tag,'tag', 'continuousTagsList','enable',enableHedStatus,'callback',@cllbk_list_select},...
+                ...
+                { 'Style', 'pushbutton', 'string', 'Include', 'horizontalalignment', 'left','tag', 'tagIncludeButton','enable',enableHedStatus, 'callback', @cllbk_tag_include},...
+                { 'Style', 'pushbutton', 'string', 'Exclude', 'horizontalalignment', 'left','tag', 'tagExcludeButton','enable',enableHedStatus,'callback',@cllbk_tag_exclude},...
+                { 'Style', 'pushbutton', 'string', 'Seperator', 'horizontalalignment', 'left','tag', 'tagSeperatorButton','enable',enableHedStatus,'callback',@cllbk_tag_seperator},...
+                { 'Style', 'pushbutton', 'string', 'Continuous', 'horizontalalignment', 'left','tag', 'tagContinuousButton','enable',enableHedStatus,'callback', @cllbk_tag_continuous},...
+                { 'Style', 'text','string','parameter count: <unknown>', 'tag','parameterCountLabel'},...
+                {},...
+                ...%Regularization options
+                { 'Style', 'checkbox', 'string', 'Regularization','tag', 'enableRegularization', 'value', s.regularization_enable,'fontweight', 'bold', 'callback',@cllbk_enable_regularization,'tooltipstring', 'enables penalized regression; discourages overfitting'},...
+                { 'Style', 'checkbox', 'string', 'Grid search','tag', 'enableXValidate', 'value', s.cross_validate_enable, 'enable', enableRegularizationStatus, 'callback',@cllbk_enable_xvalidation ,'tooltipstring', 'search for lambda using cross-validation based on R-Square;'},...
+                { 'Style', 'pushbutton', 'string', 'Load profile', 'horizontalalignment', 'left','tag', 'loadProfileButton','callback',@cllbk_load_profile},...
+                { 'Style', 'pushbutton', 'string', 'Save profile', 'horizontalalignment', 'left','tag', 'saveProfileButton','callback',@cllbk_save_profile},...
+                ...
+                { 'Style', 'text', 'string', 'Lambda [L1 Norm, L2 Norm]', 'horizontalalignment', 'left', 'tag','lambdaLabel', 'enable', enableRegularizationStatus,'tooltipstring', 'two entry vector; specify the penalty multiplier for L1 norm and L2 norm penalty functions'},...
+                { 'Style', 'edit','horizontalalignment', 'left','tag', 'enterLambda','string', num2str(s.lambda), 'enable', enableLambdaStatus,'callback', @cllbk_enter_lambda},...
+                { 'Style', 'pushbutton', 'string', 'Set default profile', 'horizontalalignment', 'left','tag', 'setDefaultProfileButton','callback',@cllbk_set_default_profile,'tooltipstring', 'sets profile which will be loaded when starting a new profile'},...
+                { 'Style', 'pushbutton', 'string', 'Set advanced options', 'horizontalalignment', 'left','tag', 'setAdvancedOptionsButton','callback', @cllbk_set_advanced_options, 'tooltipstring', 'sets advanced profile options'},...
+                ...
+                { 'Style', 'text', 'string', 'Penalty function ', 'tag','penaltyLabel', 'horizontalalignment', 'left','enable', enableRegularizationStatus,'tooltipstring', 'choose a penalty function; L2 norm recommended, fastest'},...
+                { 'Style', 'listbox', 'string', s.penalty_options, 'horizontalalignment', 'left','Max',1,'value', pen_idx,'tag', 'penaltyFunctionList', 'enable', enableRegularizationStatus,'callback', @cllbk_choose_penalty},...
+                { 'Style', 'pushbutton', 'string', 'Cancel', 'tag', 'cancel', 'fontweight', 'bold', 'callback', @cllbk_cancel,'visible', okbuttonstatus},...
+                { 'Style', 'pushbutton', 'tag', 'ok', 'string', 'Run', 'fontweight', 'bold','visible', okbuttonstatus,'callback',@cllbk_ok,'tooltipstring', 'execute rerp function'},...
+                };
+            
+            [ ~, ~, all_handlers ] = supergui(...
+                'geomhoriz', geomhoriz,...
+                'geomvert', geomvert,...
+                'uilist', uilist,...
+                'title', title);
+            
+            gui_handle = gcf;
+            
+            
+            
+            %Bring relevent ui handles into scope.
+            ui_enterExcludeChans = findobj([all_handlers{:}],'flat', 'tag','enterExcludeChans');
+            ui_typeProcLabel = findobj([all_handlers{:}],'flat','tag', 'typeProcLabel');
+            ui_switchTypeButton = findobj([all_handlers{:}],'flat','tag', 'switchTypeButton');
+            ui_switchIncludeExcludeButton = findobj([all_handlers{:}],'flat','tag', 'switchIncludeExcludeButton');
+            
+            ui_autoSaveResultsEnable=findobj([all_handlers{:}],'flat','tag', 'autoSaveResultsEnable');
+            ui_erspEnable=findobj([all_handlers{:}],'flat','tag', 'erspEnable');
+            ui_enableArtifactRejection=findobj([all_handlers{:}],'flat','tag', 'enableArtifactRejection');
+            ui_enableRegularization = findobj([all_handlers{:}],'flat','tag', 'enableRegularization');
+            
+            ui_enterNumBins=findobj([all_handlers{:}],'flat','tag', 'enterNumBins');
+            ui_numBinsLabel=findobj([all_handlers{:}],'flat','tag', 'numBinsLabel');
+            
+            ui_rejectedFramesCounter = findobj([all_handlers{:}],'flat', 'tag','rejectedFramesCounter');
+            ui_enableArtifactVariable = findobj([all_handlers{:}],'flat', 'tag','enableArtifactVariable');
+            ui_enterArtifactVariable = findobj([all_handlers{:}],'flat', 'tag','enterArtifactVariable');
+            ui_enterArtifactFunction = findobj([all_handlers{:}],'flat', 'tag','enterArtifactFunction');
+            ui_artifactFunction = findobj([all_handlers{:}],'flat', 'tag','artifactFunction');
+            ui_computeArtifactButton = findobj([all_handlers{:}],'flat', 'tag','computeArtifactButton');
+            
+            ui_catepoch = findobj([all_handlers{:}],'flat', 'tag','catepoch');
+            ui_conepoch = findobj([all_handlers{:}],'flat', 'tag','conepoch');
+            ui_inclevttypelabel= findobj([all_handlers{:}],'flat', 'tag','includeevttypelabel');
+            ui_exclevttypelabel= findobj([all_handlers{:}],'flat', 'tag','excludeevttypelabel');
+            ui_includeUniqueevent_typesList= findobj([all_handlers{:}],'flat', 'tag','includeUniqueevent_typesList');
+            ui_excludeUniqueevent_typesList = findobj([all_handlers{:}],'flat', 'tag','excludeUniqueevent_typesList');
+            
+            ui_enableHed = findobj([all_handlers{:}],'flat', 'tag','enableHed');
+            ui_enforceHed = findobj([all_handlers{:}],'flat', 'tag','enforceHed');
+            
+            ui_changeHedSpec = findobj([all_handlers{:}],'flat', 'tag','changeHedSpec');
+            ui_displayHierarchy = findobj([all_handlers{:}],'flat', 'tag','displayHierarchy');
+            
+            ui_includeUniqueTagsList = findobj([all_handlers{:}],'flat', 'tag','includeUniqueTagsList');
+            ui_excludeUniqueTagsList = findobj([all_handlers{:}],'flat', 'tag','excludeUniqueTagsList');
+            ui_continuousTagsList = findobj([all_handlers{:}],'flat', 'tag','continuousTagsList');
+            ui_seperatorTagsList = findobj([all_handlers{:}],'flat', 'tag','seperatorTagsList');
+            
+            ui_tagIncludeButton= findobj([all_handlers{:}],'flat', 'tag','tagIncludeButton');
+            ui_tagExcludeButton= findobj([all_handlers{:}],'flat', 'tag','tagExcludeButton');
+            ui_tagSeperatorButton= findobj([all_handlers{:}],'flat', 'tag','tagSeperatorButton');
+            ui_tagContinuousButton= findobj([all_handlers{:}],'flat', 'tag','tagContinuousButton');
+            
+            ui_parameterCountLabel= findobj([all_handlers{:}],'flat', 'tag','parameterCountLabel');
+            
+            ui_includeTagsLabel = findobj([all_handlers{:}],'flat', 'tag','includeTagsLabel');
+            ui_excludeTagsLabel = findobj([all_handlers{:}],'flat', 'tag','excludeTagsLabel');
+            ui_continuousTagsLabel = findobj([all_handlers{:}],'flat', 'tag','continuousTagsLabel');
+            ui_seperatorTagsLabel = findobj([all_handlers{:}],'flat', 'tag','seperatorTagsLabel');
+            
+            ui_enterLambda = findobj([all_handlers{:}],'flat', 'tag','enterLambda');
+            ui_enableXValidate = findobj([all_handlers{:}],'flat', 'tag','enableXValidate');
+            ui_enterNumFolds = findobj([all_handlers{:}],'flat', 'tag','enterNumFolds');
+            ui_penaltyFunctionList = findobj([all_handlers{:}],'flat', 'tag','penaltyFunctionList');
+            ui_lambdaLabel = findobj([all_handlers{:}],'flat', 'tag','lambdaLabel');
+            ui_penaltyLabel = findobj([all_handlers{:}],'flat', 'tag','penaltyLabel');
+            ui_autosavePathLabel = findobj([all_handlers{:}],'flat', 'tag','autosavePathLabel');
+            
+        % We have an earlier version RerpProfile: initialize the field and
+        % recall make_gui.
+        catch e
+            field=regexp(e.message,'.*''(.*)''','tokens');
+            if (~isempty(field))&&view_only
+                s.(field{1}{1})=[];
+                make_gui;
+            else
+                disp('pop_rerp: problem with profile, possibly an outdated version'); 
+                throw(e); 
+            end
         end
-        
-        [~, pen_idx] = intersect(s.penalty_options, s.penalty_func);
-        if isempty(pen_idx)
-            pen_idx=2;
-        end
-        
-        [cp.include_event_types, include_event_types_idx, exclude_event_types_idx, include_descriptions_event_types, exclude_descriptions_event_types ] = get_event_type_split(cp.event_types, s.exclude_event_types, cp.event_type_descriptions);
-        [type_of_processing, other_type, time_series, message] = get_proc_types;
-        
-        uilist = { ...
-            { 'Style', 'checkbox', 'string', 'Auto-save results','tag', 'autoSaveResultsEnable', 'value', s.rerp_result_autosave,'callback', @cllbk_result_autosave_enable,'tooltipstring','Automatically save results in directory to the right'},...
-            { 'Style', 'edit', 'string', s.autosave_results_path, 'horizontalalignment', 'left', 'fontsize', 8, 'tag','autosavePathLabel','enable', enableAutosaveStatus},...
-            { 'Style', 'Pushbutton', 'string', 'Browse path', 'horizontalalignment', 'left','callback',@cllbk_result_autosave_path,'enable', enableAutosaveStatus,'tooltipstring','Set the autosave path for this profile'},...
-            ...
-            { 'Style', 'checkbox', 'string', 'rERSP','tag', 'erspEnable', 'value', s.ersp_enable,'callback', @cllbk_enable_ersp,'tooltipstring','perform time-frequency decomposition on the time-series, then perform analysis on each frequency seperately. if performing time-frequency decomposition outside of this GUI, DO NOT check this box'},...
-            { 'Style', 'text', 'string', 'Number of bins', 'horizontalalignment', 'left', 'fontsize', 12,'tag','numBinsLabel','enable', enableErspStatus},...
-            { 'Style', 'edit', 'string', num2str(s.nbins), 'horizontalalignment', 'left', 'fontsize', 12, 'tag','enterNumBins','enable', enableErspStatus},...
-            {},...
-            ...
-            { 'Style', 'text', 'string', message, 'horizontalalignment', 'left','fontweight', 'bold', 'tag','typeProcLabel'},...
-            { 'Style', 'edit', 'string', num2str(time_series),'tag', 'enterExcludeChans','callback',@cllbk_get_time_series},...
-            { 'Style', 'pushbutton', 'string', ['Switch to ' other_type], 'horizontalalignment', 'left','tag', 'switchTypeButton','callback',@cllbk_switch_type},...
-            { 'Style', 'pushbutton', 'string', inc_excl_message, 'horizontalalignment', 'left','tag', 'switchIncludeExcludeButton','callback',@cllbk_switch_include_exclude,'tooltipstring','choose whether to include or exclude certain ICs or channels'},...
-            ...%Channel selection, Epoch/HED settings
-            { 'Style', 'text', 'string', 'Category epoch boundaries (sec)', 'horizontalalignment', 'left','fontweight', 'bold', 'tag','catepoch','tooltipstring','determines number of parameters and position for categorical variables'},...
-            { 'Style', 'edit', 'string', num2str(s.category_epoch_boundaries),'tag', 'enterEpochBoundary', 'callback',@cllbk_enter_epoch_boundaries},...
-            { 'Style', 'text', 'string', 'Continuous epoch boundaries (sec)', 'horizontalalignment', 'left','fontweight', 'bold' , 'tag','conepoch','tooltipstring','determines number of parameters and position for continuous variables'},...
-            { 'Style', 'edit', 'string', num2str(s.continuous_epoch_boundaries),'tag', 'enterEpochBoundary', 'callback',@cllbk_enter_epoch_boundaries},...
-            ...%Artifact handling
-            { 'Style', 'checkbox', 'string', 'Artifact rejection', 'horizontalalignment', 'left','tag', 'enableArtifactRejection','fontweight', 'bold','value',s.artifact_rejection_enable,'callback', @cllbk_enable_artifact_rejection,'tooltipstring','Automatically ensure that artifact frames are excluded from analysis (recommended)'},...
-            { 'Style', 'text', 'string', mess, 'horizontalalignment', 'right','tag', 'rejectedFramesCounter', 'enable',enableArtifactRejectionStatus },...
-            ...
-            { 'Style', 'text', 'string', '    Artifact function', 'horizontalalignment', 'left','tag', 'artifactFunction','enable',enableArtifactRejectionStatus,'tooltipstring','the function used to identify artifact frames; see rerp_reject_samples_robcov for function prototype'},...
-            { 'Style', 'edit', 'string', s.artifact_function_name,'tag', 'enterArtifactFunction', 'enable', enableArtifactRejectionStatus,'callback',@cllbk_enter_artifact_function_name,'tag','enterArtifactFunction'},...
-            { 'Style', 'pushbutton', 'string', 'Force recompute artifact frames', 'horizontalalignment', 'left','tag', 'computeArtifactButton', 'callback', @cllbk_compute_artifact, 'enable',enableArtifactRejectionStatus},...
-            ...
-            { 'Style', 'checkbox', 'string', 'Artifact variable', 'horizontalalignment', 'left','tag', 'enableArtifactVariable','value',s.artifact_variable_enable,'callback', @cllbk_enable_artifact_name, 'enable',enableArtifactRejectionStatus,'tooltipstring','specify a logical artifact variable in the base workspace'},...
-            { 'Style', 'edit', 'string', cp.artifact_variable_name,'tag', 'enterArtifactVariable', 'enable', enableArtifactVariableStatus,'callback',@cllbk_enter_artifact_name},...
-            {},...
-            ...
-            ...%Event event_types
-            { 'Style', 'text', 'string', 'Included event types', 'horizontalalignment', 'left','fontweight', 'bold','tag','includeevttypelabel','tooltipstring','event types included in the regression; removing event types will affect which hed tags are available in the HED section'},...
-            { 'Style', 'text', 'string', 'Excluded event types', 'horizontalalignment', 'left','fontweight', 'bold','tag','excludeevttypelabel','tooltipstring','event types excluded from the regression; removing event types will affect which hed tags are available in the HED section'},...
-            { 'Style', 'listbox', 'string', include_descriptions_event_types, 'Max', 1e7,'tag', 'includeUniqueevent_typesList'},...
-            { 'Style', 'listbox', 'string', exclude_descriptions_event_types, 'Max', 1e7,'tag', 'excludeUniqueevent_typesList'},...
-            { 'Style', 'pushbutton', 'string', 'Remove >>', 'horizontalalignment', 'left','tag', 'removeevent_typeButton', 'callback',@cllbk_event_type_remove,'tooltipstring','move the included tag to the excluded list'},...
-            { 'Style', 'pushbutton', 'string', '<< Add', 'horizontalalignment', 'left','tag', 'addevent_typeButton', 'callback',@cllbk_event_type_add,'tooltipstring','move the excluded tag to the included list'},...
-            ...%HED tags
-            { 'Style', 'checkbox', 'tag', 'enableHed', 'string', 'Hierarchical Regression', 'value', s.hed_enable,'fontweight', 'bold','callback',@cllbk_hed_enable},...
-            { 'Style', 'checkbox', 'tag', 'enforceHed', 'string', 'Enforce HED specification', 'value', s.enforce_hed_spec,'enable',enableHedStatus,'callback',@cllbk_enforce_hedspec,'tooltipstring','perform regression on HED tags; tags are stored in the EEG.event(i).hedTag field' },...
-            { 'Style', 'pushbutton', 'string', 'Change HED specification', 'horizontalalignment', 'left','tag', 'changeHedSpec','enable',enableHedStatus,'callback', @cllbk_change_hedspec,'tooltipstring','check each tag for HED specification compliance; runs much slower' },...
-            { 'Style', 'pushbutton', 'string', 'Display HED hierarchy', 'horizontalalignment', 'left','tag', 'displayHierarchy','enable',enableHedStatus,'callback',@cllbk_view_hierarchy,'tooltipstring','show a tree of the included HED tags'},...
-            ...
-            { 'Style', 'text', 'string', 'Include tags', 'horizontalalignment', 'left','fontweight', 'bold','enable',enableHedStatus, 'tag','includeTagsLabel','tooltipstring','tags which are included in regression'},...
-            { 'Style', 'text', 'string', '*   Exclude tags   *', 'horizontalalignment', 'left','fontweight', 'bold','enable',enableHedStatus, 'tag','excludeTagsLabel','tooltipstring','tags which are excluded from regression'},...
-            { 'Style', 'listbox', 'string', cp.include_tag,'Max',1e7,'tag', 'includeUniqueTagsList','enable',enableHedStatus,'callback',@cllbk_list_select},...
-            { 'Style', 'listbox', 'string', s.exclude_tag,'Max',1e7,'tag', 'excludeUniqueTagsList','enable',enableHedStatus,'callback',@cllbk_list_select},...
-            ...
-            { 'Style', 'text', 'string', '{   Separator tags   }', 'horizontalalignment', 'left','fontweight', 'bold','enable', enableHedStatus, 'tag','seperatorTagsLabel','tooltipstring','tags which separate children into seperate variable groups'},...
-            { 'Style', 'text', 'string', '[   Continuous tags   ]', 'horizontalalignment', 'left','fontweight', 'bold','enable', enableHedStatus, 'tag','continuousTagsLabel','tooltipstring','tags which have an associated magnitude (e.g. Stimulus/Visual/Luminance/0.25)'},...
-            { 'Style', 'listbox', 'Max',1e7, 'string', s.seperator_tag,'tag', 'seperatorTagsList','enable',enableHedStatus,'callback',@cllbk_list_select},...
-            { 'Style', 'listbox', 'Max',1e7, 'string', s.continuous_tag,'tag', 'continuousTagsList','enable',enableHedStatus,'callback',@cllbk_list_select},...
-            ...
-            { 'Style', 'pushbutton', 'string', 'Include', 'horizontalalignment', 'left','tag', 'tagIncludeButton','enable',enableHedStatus, 'callback', @cllbk_tag_include},...
-            { 'Style', 'pushbutton', 'string', 'Exclude', 'horizontalalignment', 'left','tag', 'tagExcludeButton','enable',enableHedStatus,'callback',@cllbk_tag_exclude},...
-            { 'Style', 'pushbutton', 'string', 'Seperator', 'horizontalalignment', 'left','tag', 'tagSeperatorButton','enable',enableHedStatus,'callback',@cllbk_tag_seperator},...
-            { 'Style', 'pushbutton', 'string', 'Continuous', 'horizontalalignment', 'left','tag', 'tagContinuousButton','enable',enableHedStatus,'callback', @cllbk_tag_continuous},...
-            { 'Style', 'text','string','parameter count: <unknown>', 'tag','parameterCountLabel'},...
-            {},...
-            ...%Regularization options
-            { 'Style', 'checkbox', 'string', 'Regularization','tag', 'enableRegularization', 'value', s.regularization_enable,'fontweight', 'bold', 'callback',@cllbk_enable_regularization,'tooltipstring', 'enables penalized regression; discourages overfitting'},...
-            { 'Style', 'checkbox', 'string', 'Grid search','tag', 'enableXValidate', 'value', s.cross_validate_enable, 'enable', enableRegularizationStatus, 'callback',@cllbk_enable_xvalidation ,'tooltipstring', 'search for lambda using cross-validation based on R-Square;'},...
-            { 'Style', 'pushbutton', 'string', 'Load profile', 'horizontalalignment', 'left','tag', 'loadProfileButton','callback',@cllbk_load_profile},...
-            { 'Style', 'pushbutton', 'string', 'Save profile', 'horizontalalignment', 'left','tag', 'saveProfileButton','callback',@cllbk_save_profile},...
-            ...
-            { 'Style', 'text', 'string', 'Lambda [L1 Norm, L2 Norm]', 'horizontalalignment', 'left', 'tag','lambdaLabel', 'enable', enableRegularizationStatus,'tooltipstring', 'two entry vector; specify the penalty multiplier for L1 norm and L2 norm penalty functions'},...
-            { 'Style', 'edit','horizontalalignment', 'left','tag', 'enterLambda','string', num2str(s.lambda), 'enable', enableLambdaStatus,'callback', @cllbk_enter_lambda},...
-            { 'Style', 'pushbutton', 'string', 'Set default profile', 'horizontalalignment', 'left','tag', 'setDefaultProfileButton','callback',@cllbk_set_default_profile,'tooltipstring', 'sets profile which will be loaded when starting a new profile'},...
-            { 'Style', 'pushbutton', 'string', 'Set advanced options', 'horizontalalignment', 'left','tag', 'setAdvancedOptionsButton','callback', @cllbk_set_advanced_options, 'tooltipstring', 'sets advanced profile options'},...
-            ...
-            { 'Style', 'text', 'string', 'Penalty function ', 'tag','penaltyLabel', 'horizontalalignment', 'left','enable', enableRegularizationStatus,'tooltipstring', 'choose a penalty function; L2 norm recommended, fastest'},...
-            { 'Style', 'listbox', 'string', s.penalty_options, 'horizontalalignment', 'left','Max',1,'value', pen_idx,'tag', 'penaltyFunctionList', 'enable', enableRegularizationStatus,'callback', @cllbk_choose_penalty},...
-            { 'Style', 'pushbutton', 'string', 'Cancel', 'tag', 'cancel', 'fontweight', 'bold', 'callback', @cllbk_cancel,'visible', okbuttonstatus},...
-            { 'Style', 'pushbutton', 'tag', 'ok', 'string', 'Run', 'fontweight', 'bold','visible', okbuttonstatus,'callback',@cllbk_ok,'tooltipstring', 'execute rerp function'},...
-            };
-        
-        [ ~, ~, all_handlers ] = supergui(...
-            'geomhoriz', geomhoriz,...
-            'geomvert', geomvert,...
-            'uilist', uilist,...
-            'title', title);
-        
-        gui_handle = gcf;
-        
-        %Bring relevent ui handles into scope.
-        ui_enterExcludeChans = findobj([all_handlers{:}],'flat', 'tag','enterExcludeChans');
-        ui_typeProcLabel = findobj([all_handlers{:}],'flat','tag', 'typeProcLabel');
-        ui_switchTypeButton = findobj([all_handlers{:}],'flat','tag', 'switchTypeButton');
-        ui_switchIncludeExcludeButton = findobj([all_handlers{:}],'flat','tag', 'switchIncludeExcludeButton');
-        
-        ui_autoSaveResultsEnable=findobj([all_handlers{:}],'flat','tag', 'autoSaveResultsEnable');
-        ui_erspEnable=findobj([all_handlers{:}],'flat','tag', 'erspEnable');
-        ui_enableArtifactRejection=findobj([all_handlers{:}],'flat','tag', 'enableArtifactRejection');
-        ui_enableRegularization = findobj([all_handlers{:}],'flat','tag', 'enableRegularization');
-        
-        ui_enterNumBins=findobj([all_handlers{:}],'flat','tag', 'enterNumBins');
-        ui_numBinsLabel=findobj([all_handlers{:}],'flat','tag', 'numBinsLabel');
-        
-        ui_rejectedFramesCounter = findobj([all_handlers{:}],'flat', 'tag','rejectedFramesCounter');
-        ui_enableArtifactVariable = findobj([all_handlers{:}],'flat', 'tag','enableArtifactVariable');
-        ui_enterArtifactVariable = findobj([all_handlers{:}],'flat', 'tag','enterArtifactVariable');
-        ui_enterArtifactFunction = findobj([all_handlers{:}],'flat', 'tag','enterArtifactFunction');
-        ui_artifactFunction = findobj([all_handlers{:}],'flat', 'tag','artifactFunction');
-        ui_computeArtifactButton = findobj([all_handlers{:}],'flat', 'tag','computeArtifactButton');
-        
-        ui_catepoch = findobj([all_handlers{:}],'flat', 'tag','catepoch');
-        ui_conepoch = findobj([all_handlers{:}],'flat', 'tag','conepoch');
-        ui_inclevttypelabel= findobj([all_handlers{:}],'flat', 'tag','includeevttypelabel');
-        ui_exclevttypelabel= findobj([all_handlers{:}],'flat', 'tag','excludeevttypelabel');
-        ui_includeUniqueevent_typesList= findobj([all_handlers{:}],'flat', 'tag','includeUniqueevent_typesList');
-        ui_excludeUniqueevent_typesList = findobj([all_handlers{:}],'flat', 'tag','excludeUniqueevent_typesList');
-        
-        ui_enableHed = findobj([all_handlers{:}],'flat', 'tag','enableHed');
-        ui_enforceHed = findobj([all_handlers{:}],'flat', 'tag','enforceHed');
-        
-        ui_changeHedSpec = findobj([all_handlers{:}],'flat', 'tag','changeHedSpec');
-        ui_displayHierarchy = findobj([all_handlers{:}],'flat', 'tag','displayHierarchy');
-        
-        ui_includeUniqueTagsList = findobj([all_handlers{:}],'flat', 'tag','includeUniqueTagsList');
-        ui_excludeUniqueTagsList = findobj([all_handlers{:}],'flat', 'tag','excludeUniqueTagsList');
-        ui_continuousTagsList = findobj([all_handlers{:}],'flat', 'tag','continuousTagsList');
-        ui_seperatorTagsList = findobj([all_handlers{:}],'flat', 'tag','seperatorTagsList');
-        
-        ui_tagIncludeButton= findobj([all_handlers{:}],'flat', 'tag','tagIncludeButton');
-        ui_tagExcludeButton= findobj([all_handlers{:}],'flat', 'tag','tagExcludeButton');
-        ui_tagSeperatorButton= findobj([all_handlers{:}],'flat', 'tag','tagSeperatorButton');
-        ui_tagContinuousButton= findobj([all_handlers{:}],'flat', 'tag','tagContinuousButton');
-        
-        ui_parameterCountLabel= findobj([all_handlers{:}],'flat', 'tag','parameterCountLabel');
-        
-        ui_includeTagsLabel = findobj([all_handlers{:}],'flat', 'tag','includeTagsLabel');
-        ui_excludeTagsLabel = findobj([all_handlers{:}],'flat', 'tag','excludeTagsLabel');
-        ui_continuousTagsLabel = findobj([all_handlers{:}],'flat', 'tag','continuousTagsLabel');
-        ui_seperatorTagsLabel = findobj([all_handlers{:}],'flat', 'tag','seperatorTagsLabel');
-        
-        ui_enterLambda = findobj([all_handlers{:}],'flat', 'tag','enterLambda');
-        ui_enableXValidate = findobj([all_handlers{:}],'flat', 'tag','enableXValidate');
-        ui_enterNumFolds = findobj([all_handlers{:}],'flat', 'tag','enterNumFolds');
-        ui_penaltyFunctionList = findobj([all_handlers{:}],'flat', 'tag','penaltyFunctionList');
-        ui_lambdaLabel = findobj([all_handlers{:}],'flat', 'tag','lambdaLabel');
-        ui_penaltyLabel = findobj([all_handlers{:}],'flat', 'tag','penaltyLabel');
-        ui_autosavePathLabel = findobj([all_handlers{:}],'flat', 'tag','autosavePathLabel');
         
     end
 end
