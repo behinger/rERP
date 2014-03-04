@@ -168,6 +168,7 @@ if nargin < 2 || force_gui==1
     
     make_gui;
     uiwait(gui_handle);
+    cp.settings=s; 
     
 else
     cllbk_ok;
