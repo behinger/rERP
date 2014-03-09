@@ -84,7 +84,6 @@ function rerp_result_gui_OpeningFcn(hObject, eventdata, handles, varargin)
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to rerp_result_gui (see VARARGIN)
 p=inputParser;
-addOptional(p,'EEG', []);
 addOptional(p,'results_dir', []);
 parse(p, varargin{:});
 results_dir=p.Results.results_dir; 
@@ -387,7 +386,7 @@ significance_level=str2double(get(handles.significancelevel,'String'));
 exclude_insignificant=get(handles.exclude_insignif, 'value'); 
 
 %Combine multiple results into object for study plotting
-rerp_study = RerpResultStudy(handles.UserData.current.result, handles.UserData.current.path, handles.UserData.current.name); 
+rerp_study = RerpResultStudy(handles.UserData.current.result); 
 
 if strcmp(plottype, 'Rerp by event type')||strcmp(plottype,'Rerp by HED tag')
     rerp_study.plotRerpEventTypes(event_idx, ts_idx, handles.UserData.plotfig, exclude_insignificant, significance_level);
