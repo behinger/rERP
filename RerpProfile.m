@@ -28,57 +28,57 @@
 % either expressed or implied, of the FreeBSD Project.
 
 classdef RerpProfile < matlab.mixin.Copyable
-%RERP_PROFILE Defines the state of the pop_rerp() GUI and used as required argument to rerp().
-% Methods: 
-%   rerp_profile = RerpProfile(EEG, settings) (Constructor)
-%   	Inputs:
-%           EEG: the EEGLAB struct
-%           settings: one of the following - RerpProfile, RerpResult,
-%               RerpProfile.settings, or a cell array of name value pairs
-%               completely describing the RerpProfile.settings struct.
-%       Outputs:
-%           rerp_profile: the RerpProfile object
-%
-%   saveRerpProfile(varargin) (save RerpProfile to disk)
-%       Inputs: 
-%           varargin: 
-%               path: when specified, automatically saves to that path
-%               rerp_path: path which GUI will start looking at
-%
-%   compute_artifact_indexes(EEG) (compute artifact indexes using function in settings.artifact_function_name)
-%
-%   set_artifact_indexes(artifact_indexes) (assign artifact indexes to profile)
-%
-% Static Methods:
-%   rerp_profile = getDefaultRerpProfile (Generates RerpProfile object with the settings defined in this file)
-%       Outputs:
-%           rerp_profile: the RerpProfile object
-%
-%   rerp_profile = loadRerpProfile(varargin) (Load RerpProfile from disk)
-%       Inputs: 
-%           varargin 
-%               path: when specified, automatically loads from that path
-%               rerp_path: path which GUI will start looking at
-%       Outputs: 
-%           rerp_profile: the RerpProfile object
-%
-%   h = get_artifact_handle(artifact_function_name) (returns handle of function specifie by artifact_function_name string
-%       Inputs: 
-%           artifact_function_name: string name of artifact function
-%       Outputs:
-%           h: handle to artifact function
-%
-        
+    %RERP_PROFILE Defines the state of the pop_rerp() GUI and used as required argument to rerp().
+    % Methods:
+    %   rerp_profile = RerpProfile(EEG, settings) (Constructor)
+    %   	Inputs:
+    %           EEG: the EEGLAB struct
+    %           settings: one of the following - RerpProfile, RerpResult,
+    %               RerpProfile.settings, or a cell array of name value pairs
+    %               completely describing the RerpProfile.settings struct.
+    %       Outputs:
+    %           rerp_profile: the RerpProfile object
+    %
+    %   saveRerpProfile(varargin) (save RerpProfile to disk)
+    %       Inputs:
+    %           varargin:
+    %               path: when specified, automatically saves to that path
+    %               rerp_path: path which GUI will start looking at
+    %
+    %   compute_artifact_indexes(EEG) (compute artifact indexes using function in settings.artifact_function_name)
+    %
+    %   set_artifact_indexes(artifact_indexes) (assign artifact indexes to profile)
+    %
+    % Static Methods:
+    %   rerp_profile = getDefaultRerpProfile (Generates RerpProfile object with the settings defined in this file)
+    %       Outputs:
+    %           rerp_profile: the RerpProfile object
+    %
+    %   rerp_profile = loadRerpProfile(varargin) (Load RerpProfile from disk)
+    %       Inputs:
+    %           varargin
+    %               path: when specified, automatically loads from that path
+    %               rerp_path: path which GUI will start looking at
+    %       Outputs:
+    %           rerp_profile: the RerpProfile object
+    %
+    %   h = get_artifact_handle(artifact_function_name) (returns handle of function specifie by artifact_function_name string
+    %       Inputs:
+    %           artifact_function_name: string name of artifact function
+    %       Outputs:
+    %           h: handle to artifact function
+    %
+    
     properties
         %This struct can be applied to many datasets with the same experimental
         %event types/ hed tag structure. Can use it to instantiate new RerpProfile objects.
-        %See RerpProfile.getDefaultRerpProfile method for details. 
+        %See RerpProfile.getDefaultRerpProfile method for details.
         settings;
         
-        eeglab_dataset_name=[]; % Full path to dataset 
+        eeglab_dataset_name=[]; % Full path to dataset
         sample_rate=[];
         pnts=[];
-        nbchan=[]; 
+        nbchan=[];
         
         include_chans=[];        % Channel numbers to include in regression
         include_comps=[];        % Component numbers to include in regression
@@ -88,19 +88,19 @@ classdef RerpProfile < matlab.mixin.Copyable
         num_event_types=[];        % Number of times each event occurs
         event_type_descriptions=[];        % Description of each event type (must enter this manually)
         include_event_types=[];        % Event types to include in regression
-
+        
         variable_artifact_indexes=[];        % Artifact indexes to use when settings.artifact_variable_enable==1
         artifact_variable_name='';        % Name of the variable used as source for variable_artifact_indexes
         computed_artifact_indexes=[];        % Artifact indexes to use when settings.artifact_variable_enable==0
         computed_artifact_indexes_function_name = '';        % Name of function used to generate computed_artifact_indexes
-    
+        
         hed_tree={};        % hedTree object compiled from included hed tags
         include_tag={};        % unique hed tags to include in regression
         include_ids={};        % for each unique tag, the index of the events which are hit by that tag
-
+        
         context_group={}        % cell array of groups generated by seperator tags; 1 group per seperator tag (see pop_rerp for additional info)
         continuous_var={};        % cell array of continuous variables
-
+        
     end
     
     methods
@@ -112,9 +112,6 @@ classdef RerpProfile < matlab.mixin.Copyable
             
             import rerp_dependencies.*
             
-            obj.include_chans=1:EEG.nbchan;
-            obj.include_comps=1:EEG.nbchan;
-            
             events = event;
             obj.these_events = events.eeglab2event(EEG);
             
@@ -124,14 +121,57 @@ classdef RerpProfile < matlab.mixin.Copyable
             obj.event_type_descriptions = cell(size(obj.event_types));
             
             p=makeParser;
-            if length(varargin)==1 
+            passed_profile=[];
+            if length(varargin)==1
                 if isa(varargin{1},'RerpResult')
                     theseargs={varargin{1}.rerp_profile.settings};
+                    passed_profile=varargin{1}.rerp_profile;
                 elseif isa(varargin{1},'RerpProfile')
                     theseargs={varargin{1}.settings};
+                    passed_profile=varargin{1};
                 end
             else
-                theseargs=varargin; 
+                theseargs=varargin;
+            end
+            
+            %Decide whether we include all channels or components based on
+            %passed in profile. If that profile included all channels or comps, we do the same.
+            %Otherwise, we use only the channels or components used in that profile.
+            all_ts_idx=1:EEG.nbchan;
+            if ~isempty(passed_profile)     
+                %Did we include all components in prototype profile?
+                if length(passed_profile.include_comps)==passed_profile.nbchan
+                    include_all_comps=1;
+                else
+                    include_all_comps=0;
+                end
+                %Did we include all channels in prototype profile?
+                if length(passed_profile.include_chans)==passed_profile.nbchan
+                    include_all_chans=1;
+                else
+                    include_all_chans=0;
+                end
+                %Decide whether to include all or subset of components in
+                %this new profile
+                if ~include_all_comps
+                    obj.include_comps=intersect(passed_profile.include_comps, all_ts_idx);
+                else
+                    obj.include_comps=all_ts_idx;
+                end
+                %Decide whether to include all or subset of channels in
+                %this new profile
+                if ~include_all_chans
+                    obj.include_chans=intersect(passed_profile.include_chans, all_ts_idx);
+                else
+                    obj.include_chans=all_ts_idx;
+                end
+                
+                
+            else
+                %No protptype profile was passed, so we include all chans
+                %and comps
+                obj.include_comps=all_ts_idx;
+                obj.include_chans=all_ts_idx;
             end
             
             parse(p, theseargs{:});
@@ -141,7 +181,7 @@ classdef RerpProfile < matlab.mixin.Copyable
                 %Passed a structure
                 missing = setdiff(params, fieldnames(theseargs{1}));
             else
-
+                
                 if iscell(theseargs)
                     %Passed name-value pairs as cell array
                     missing = setdiff(params, theseargs(1:2:end));
@@ -175,14 +215,14 @@ classdef RerpProfile < matlab.mixin.Copyable
             end
             
             if isempty(obj.hed_tree.uniqueTag)
-                s.hed_enable=0; 
-            end     
-
+                s.hed_enable=0;
+            end
+            
             fprintf('RerpProfile: parsing intitial hierarchy\n');
             [obj.include_tag, obj.include_ids, obj.context_group, obj.continuous_var] = parse_hed_tree(obj.hed_tree, s.exclude_tag, s.seperator_tag, s.continuous_tag);
             
-            [~, idx] = setdiff(obj.event_types, s.exclude_event_types);
-            obj.include_event_types = obj.event_types(sort(idx));    
+            possible_excluded = intersect(obj.event_types, s.exclude_event_types);
+            obj.include_event_types = setdiff(obj.event_types, possible_excluded);
             
             rerp_path_components=regexp(strtrim(mfilename('fullpath')),'[\/\\]','split');
             results_path = [filesep fullfile(rerp_path_components{1:(end-1)}) filesep 'results'];
@@ -204,25 +244,36 @@ classdef RerpProfile < matlab.mixin.Copyable
             parse(p, varargin{:});
             temp = regexp(obj.eeglab_dataset_name, '.set', 'split');
             fn = temp{1};
+            path = p.Results.path;
             
-            if isempty(p.Results.path)
+            
+            if isempty(path)
                 %No path specified, launch GUI
                 if ~isempty(fn)
-                    [filename, pathname] = uiputfile('*.rerp_profile', 'Save rerp profile as:', [fn, '.rerp_profile']);
+                    [filename, pathname] = uiputfile('*.rerp_profile', 'Save rerp profile as:', fullfile(RerpProfile.rerp_path, [fn '.rerp_profile']));
                 else
                     [filename, pathname] = uiputfile('*.rerp_profile', 'Save rerp profile as:', fullfile(p.Results.rerp_path, '.rerp_profile'));
                 end
                 path = [pathname filename];
                 
             else
-                path = p.Results.path;
+                path2file = regexp(path, '(.*)[\\\/].*$','tokens');
+                path2file = path2file{1}{1};
+                
+                if isempty(dir(path2file))
+                    mkdir(path2file);
+                end
+                
                 filename=1;
             end
+            
+            path2file = regexp(path, '(.*)(?:\.rerp_profile)','tokens');
+            path2file = path2file{1}{1};
             
             %Save profile to disk
             if ~filename==0
                 try
-                    save(path, 'obj','-mat');
+                    save([path2file '.rerp_profile'], 'obj','-mat');
                     disp(['RerpProfile: saved profile to disk ' path]);
                 catch e
                     disp(['RerpProfile: could not save the specified profile to disk ' path]);
@@ -233,8 +284,8 @@ classdef RerpProfile < matlab.mixin.Copyable
         
         function compute_artifact_indexes(obj, EEG)
             import rerp_dependencies.*
-           
-            assert(size(EEG.data,3)==1, 'pop_rerp: must compute artifact indexes on continuous channel data (not time-frequency or epoched)'); 
+            
+            assert(size(EEG.data,3)==1, 'pop_rerp: must compute artifact indexes on continuous channel data (not time-frequency or epoched)');
             
             artifact_function = RerpProfile.get_artifact_handle(obj.settings.artifact_function_name);
             
@@ -244,13 +295,34 @@ classdef RerpProfile < matlab.mixin.Copyable
                 obj.computed_artifact_indexes_function_name = obj.settings.artifact_function_name;
                 fprintf('RerpProfile: detected %d artifact frames\n', nnz(obj.computed_artifact_indexes));
             end
-        end   
+        end
         
         function set_artifact_indexes (obj, artifact_indexes)
-            assert(length(artifact_indexes)==obj.pnts, 'RerpProfile: artifact indexes must be logical vector same length as data'); 
+            assert(length(artifact_indexes)==obj.pnts, 'RerpProfile: artifact indexes must be logical vector same length as data');
             obj.variable_artifact_indexes= artifact_indexes;
-            obj.artifact_variable_name='passed in'; 
-            obj.settings.artifact_variable_enable=1;  
+            obj.artifact_variable_name='passed in';
+            obj.settings.artifact_variable_enable=1;
+        end
+        
+        
+        function setDefaultProfile(obj)
+            if isempty(dir(fullfile(RerpProfile.rerp_path, 'profiles')))
+                mkdir(fullfile(RerpProfile.rerp_path, 'profiles'));
+            end
+            
+            s=obj.settings;
+            olds=obj.settings;
+            olds.exclude_tag=0;
+            obj.settings = olds;
+            obj.saveRerpProfile('path',fullfile(RerpProfile.rerp_path, 'profiles','default.rerp_profile'));
+            obj.settings=s;
+        end
+        
+        function setLastProfile(obj)
+            if isempty(dir(fullfile(RerpProfile.rerp_path, 'profiles')))
+                mkdir(fullfile(RerpProfile.rerp_path, 'profiles'));
+            end
+            obj.saveRerpProfile('path', fullfile(RerpProfile.rerp_path, 'profiles','last.rerp_profile'));
         end
         
     end
@@ -259,8 +331,8 @@ classdef RerpProfile < matlab.mixin.Copyable
         
         %Updates the artifact function handle with new string. Function must be in a file.
         %This will throw an error if the file is not found.
-        function h = get_artifact_handle(instr)    
-            h=[]; 
+        function h = get_artifact_handle(instr)
+            h=[];
             if ~isempty(instr)
                 try
                     retvar = str2func(strtrim(instr));
@@ -276,19 +348,19 @@ classdef RerpProfile < matlab.mixin.Copyable
                     error('pop_rerp: %s not a valid artifact function name', instr);
                 end
             end
-        end   
+        end
         
         %Returns an RerpProfile initialized to EEG struct.
         function rerp_profile = getDefaultProfile(EEG)
             import rerp_dependencies.*
-
+            
             disp('RerpProfile: loading default settings');
             default_settings = {...
                 'type_proc', 0,... 0 for ICA or 1 for channels
                 'include_exclude', 0,...
                 'ersp_enable',0,...perform time-frequency decomposition first
-                'nbins', 64,...number of freq bins to use when ersp_enable==1          
-                'rerp_result_autosave', 1,...automatically save the regression result 
+                'nbins', 64,...number of freq bins to use when ersp_enable==1
+                'rerp_result_autosave', 1,...automatically save the regression result
                 'autosave_results_path',[],... % pop_rerp automatically saves a copy of the regression result to this path if settings.rerp_result_autosave==1
                 ...
                 'category_epoch_boundaries',[-1 2],...sets window for categorical variables like event types
@@ -304,14 +376,14 @@ classdef RerpProfile < matlab.mixin.Copyable
                 'enforce_hed_spec',0,...throw an error if a hed tag does not comply with the hed spec (very slow)
                 'hed_spec_path',fullfile('hed', 'hed_specification_1.3.xml'),...
                 ...
-                'exclude_tag',0,...tags to exclude from regresion 
+                'exclude_tag',0,...tags to exclude from regresion
                 'seperator_tag',{},...tags to generate seperate groups of variables based on which events are hit by the tag's children.
                 'continuous_tag',{},...tags which have a magnitude associated (e.g. Stimulus/Visual/Luminance/.25)
                 ...
-                'regularization_enable', 1,...enable penalized regression 
+                'regularization_enable', 1,...enable penalized regression
                 'lambda',[1 1],...specify lambda to use if cross validation is disabled
-                'cross_validate_enable', 1,...do a grid search for lambda 
-                'num_xvalidation_folds', 5,...number of folds to use during cross validation 
+                'cross_validate_enable', 1,...do a grid search for lambda
+                'num_xvalidation_folds', 5,...number of folds to use during cross validation
                 'num_grid_zoom_levels', 2,...number of levels of grid search zooming
                 'num_grid_points', 10,...number of points to sample at each grid level
                 'first_phase_lambda', [0 logspace(log10(1e-6), log10(1e8), 20)]',... the initial sample space for grid search
@@ -319,10 +391,16 @@ classdef RerpProfile < matlab.mixin.Copyable
                 'penalty_func',{'L2 norm'},...penalty function
                 'penalty_options',{'L1 norm' 'L2 norm' 'Elastic net'},... available options for penalty function
                 'save_grid_search',0,...
-                }; 
+                };
             
             %Initialize profile
             rerp_profile = RerpProfile(EEG, default_settings{:});
+        end
+        
+        %Get path to toolbox
+        function path = rerp_path
+            rerp_path_components=regexp(strtrim(mfilename('fullpath')),'[\/\\]','split');
+            path = [filesep fullfile(rerp_path_components{1:(end-1)})];
         end
         
         %Load a profile from disk
@@ -361,7 +439,7 @@ classdef RerpProfile < matlab.mixin.Copyable
                     rethrow(e);
                 end
             end
-        end            
+        end
     end
 end
 
@@ -385,7 +463,7 @@ addOptional(p,'ersp_enable', [], validateBinary);
 addOptional(p,'nbins', [], validateNumeric);
 
 addOptional(p,'rerp_result_autosave', [], validateBinary);
-addOptional(p,'autosave_results_path',[]); 
+addOptional(p,'autosave_results_path',[]);
 
 addOptional(p,'category_epoch_boundaries', [], validateBoundaries);
 addOptional(p,'continuous_epoch_boundaries', [], validateBoundaries);
