@@ -59,7 +59,7 @@ for i=1:length(EEG.event)
     end 
 end
 
-rerp_profile = RerpProfile.loadRerpProfile('path', fullfile('profiles', 'exp53_continuous_with_ica_L2_Penalty.rerp_profile'));
+rerp_profile = RerpProfile.loadRerpProfile('path', fullfile('profiles', 'default.rerp_profile'));
 rerp_profile.settings.num_xvalidation_folds=10; 
 rerp_profile.settings.nbins=128;
 rerp_profile.settings.num_grid_zoom_levels=3;
