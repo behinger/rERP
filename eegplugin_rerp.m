@@ -27,39 +27,25 @@
 % of the authors and should not be interpreted as representing official policies,
 % either expressed or implied, of the FreeBSD Project.
 
-function [ vers ] = eegplugin_rerp( fig, trystr, catchstr )
-vers='rerp-0.1b';
+function eegplugin_rerp( fig, trystr, catchstr )
 
-cllbk_profile_from_disk='RerpPluginCallbacks.profileFromDisk(EEG);';
-cllbk_default_profile='RerpPluginCallbacks.defaultProfile(EEG);';
-cllbk_last_profile='RerpPluginCallbacks.lastProfile(EEG);';
-
-
-% TODO Implement study callbacks
-% cllbk_study_profile_from_disk='RerpPluginCallbacks.profileStudyFromDisk(STUDY);';
-% cllbk_study_default_profile='RerpPluginCallbacks.defaultStudyProfile(STUDY);';
-% cllbk_study_last_profile='RerpPluginCallbacks.lastStudyProfile(STUDY);';
-
-cllbk_plot_result_eeg='rerp_result_gui(''EEG'', EEG);';
-cllbk_plot_result_from_folder_eeg='RerpPluginCallbacks.plotResultsFromDirectory(EEG);';
+% cllbk_profile_from_disk='RerpPluginCallbacks.profileFromDisk(EEG);';
+% cllbk_default_profile='RerpPluginCallbacks.defaultProfile(EEG);';
+% cllbk_last_profile='RerpPluginCallbacks.lastProfile(EEG);';
+cllbk_setup_gui='pop_rerp_study(''eeg'', EEG);';
+cllbk_plot_result_eeg='rerp_result_gui;';
+% cllbk_plot_result_from_folder_eeg='RerpPluginCallbacks.plotResultsFromDirectory(EEG);';
 
 % create menu
 toolsmenu = findobj(fig, 'tag', 'tools');
-submenu = uimenu( toolsmenu, 'label', 'rERP','separator','on','userdata','epoch:off');
+submenu = uimenu( toolsmenu, 'label', 'rERP','separator','on','userdata','startup:on;epoch:off;study:on');
 
-runmenu = uimenu( submenu, 'label', 'Run dataset','userdata','study:off; startup:off');
-uimenu( runmenu, 'label', 'Profile from disk', 'callback', cllbk_profile_from_disk);
-uimenu( runmenu, 'label', 'Default profile', 'callback', cllbk_default_profile);
-uimenu( runmenu, 'label', 'Last profile', 'callback', cllbk_last_profile);
+uimenu( submenu, 'label', 'Run analysis', 'callback', cllbk_setup_gui, 'userdata','study:on;startup:on');
+uimenu( submenu, 'label', 'Plot results', 'callback', cllbk_plot_result_eeg,'userdata','study:on;startup:on');
 
-% TODO Implement study callbacks
-% runstudymenu = uimenu( submenu, 'label', 'Run study','userdata','study:on;startup:off','enable','off');
-% uimenu( runstudymenu, 'label', 'Profile from disk', 'callback', cllbk_study_profile_from_disk);
-% uimenu( runstudymenu, 'label', 'Default profile', 'callback', cllbk_study_default_profile);
-% uimenu( runstudymenu, 'label', 'Last profile', 'callback', cllbk_study_last_profile);
+% uimenu( runmenu, 'label', 'Profile from disk', 'callback', cllbk_profile_from_disk);
+% uimenu( runmenu, 'label', 'Default profile', 'callback', cllbk_default_profile);
+% uimenu( runmenu, 'label', 'Last profile', 'callback', cllbk_last_profile);
 
-plotmenu=uimenu( submenu, 'label', 'Plot results', 'userdata','startup:on');
-uimenu(plotmenu, 'label','From default directory','userdata','startup:on', 'callback', cllbk_plot_result_eeg);
-uimenu(plotmenu, 'label','From another directory','userdata','startup:on', 'callback', cllbk_plot_result_from_folder_eeg);
 end
 
