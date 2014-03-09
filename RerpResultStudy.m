@@ -4,15 +4,11 @@ classdef RerpResultStudy
     
     properties
         result
-        path
-        name
     end
     
     methods
-        function obj = RerpResultStudy(result, path, name)
+        function obj = RerpResultStudy(result)
             obj.result=result;
-            obj.path=path;
-            obj.name=name;
         end
         
         function plotRerpEventTypes(obj, event_idx, ts_idx, plotfig, exclude_insignificant, significance_level)
@@ -28,8 +24,7 @@ classdef RerpResultStudy
         function plotRerpTotalRsquared(obj, ts_idx, significance_level, plotfig)
             this_result=obj.result{1};
             this_result.plotRerpTotalRsquared(ts_idx, significance_level, plotfig)
-        end
-        
+        end        
         
         function plotRerpEventRsquared(obj, ts_idx, significance_level, event_idx, plotfig)
             this_result=obj.result{1};
@@ -65,9 +60,5 @@ classdef RerpResultStudy
         end        
     end
     
-    methods(Static=true)
-        function fixBrokenDatasetPaths(paths_to_results)
-        end
-    end
 end
 
