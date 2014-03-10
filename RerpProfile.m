@@ -205,7 +205,7 @@ classdef RerpProfile < matlab.mixin.Copyable
             obj.pnts = EEG.pnts;
             obj.nbchan=EEG.nbchan;
             
-            fprintf('RerpProfile: creating intitial hierarchy\n');
+            fprintf('RerpProfile: creating initial hierarchy\n');
             obj.hed_tree = hedTree(obj.these_events.hedTag);
             
             assert(isempty(setdiff(s.penalty_func, s.penalty_options)), 'RerpProfile: settings.penalty_func must be a subset of settings.penalty_options');
@@ -222,7 +222,7 @@ classdef RerpProfile < matlab.mixin.Copyable
                 s.hed_enable=0;
             end
             
-            fprintf('RerpProfile: parsing intitial hierarchy\n');
+            fprintf('RerpProfile: parsing hierarchy\n');
             [obj.include_tag, obj.include_ids, obj.context_group, obj.continuous_var] = parse_hed_tree(obj.hed_tree, s.exclude_tag, s.seperator_tag, s.continuous_tag);
             
             possible_excluded = intersect(obj.event_types, s.exclude_event_types);
@@ -246,13 +246,14 @@ classdef RerpProfile < matlab.mixin.Copyable
             addOptional(p,'rerp_path', pwd);
             
             parse(p, varargin{:});
-            temp = regexp(obj.eeglab_dataset_name, '.set', 'split');
-            fn = temp{1};
             path = p.Results.path;
             
             
             if isempty(path)
                 %No path specified, launch GUI
+                temp = regexp(obj.eeglab_dataset_name, '.set', 'split');
+                fn = temp{1};
+                
                 if ~isempty(fn)
                     [filename, pathname] = uiputfile('*.rerp_profile', 'Save rerp profile as:', fullfile(RerpProfile.rerp_path, [fn '.rerp_profile']));
                 else
