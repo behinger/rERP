@@ -51,7 +51,7 @@ function varargout = rerp_setup_gui(varargin)
 
 % Edit the above text to modify the response to help rerp_setup_gui
 
-% Last Modified by GUIDE v2.5 10-Mar-2014 10:34:59
+% Last Modified by GUIDE v2.5 10-Mar-2014 13:47:19
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -376,5 +376,3 @@ new_profile.profile.saveRerpProfile('path', fullfile(RerpProfile.rerp_path, 'pro
 handles.UserData.profiles=[handles.UserData.profiles new_profile]; 
 set(handles.profiles_list, 'String', {handles.UserData.profiles(:).name});
 profiles_list_Callback(handles.profiles_list, eventdata, handles);
-
-
