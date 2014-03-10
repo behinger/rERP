@@ -32,7 +32,7 @@ function eegplugin_rerp( fig, trystr, catchstr )
 % cllbk_profile_from_disk='RerpPluginCallbacks.profileFromDisk(EEG);';
 % cllbk_default_profile='RerpPluginCallbacks.defaultProfile(EEG);';
 % cllbk_last_profile='RerpPluginCallbacks.lastProfile(EEG);';
-cllbk_setup_gui='pop_rerp_study(''eeg'', EEG);';
+cllbk_setup_gui='pop_rerp_study(''eeg'', ALLEEG);';
 cllbk_plot_result_eeg='rerp_result_gui;';
 % cllbk_plot_result_from_folder_eeg='RerpPluginCallbacks.plotResultsFromDirectory(EEG);';
 
