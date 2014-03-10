@@ -55,12 +55,12 @@ if ~exist('margin','var') || isempty(margin)
 end
 
 if ~exist('mu','var') || isempty(mu)
-    disp('rerp_default_artifact_function: computing robust mean'); 
+    disp('rerp_reject_samples_robcov: computing robust mean'); 
     mu = median(raw,2); 
 end
 
 if ~exist('sig','var') || isempty(sig)
-    disp('rerp_default_artifact_function: computing robust covariance'); 
+    disp('rerp_reject_samples_robcov: computing robust covariance'); 
     sig = cov_blockgeom(raw); 
 end
 
