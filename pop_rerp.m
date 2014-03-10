@@ -105,32 +105,9 @@ else
     force_gui=1; 
 end
 
-default_path = fullfile(RerpProfile.rerp_path, 'profiles','default.rerp_profile');
-if exist(default_path, 'file') == 2
-    if ~force_gui
-        disp('pop_rerp: loading default settings');
-        default_profile = RerpProfile.loadRerpProfile('path', default_path);
-        
-        %Copy the settings from the default profile to this profile. Make
-        %sure we don't overwrite the exclude tags, which is specific to
-        %this dataset.
-        if isempty(setdiff(fieldnames(cp.settings), fieldnames(default_profile.settings)))
-            olds = cp.settings;
-            cp.settings = default_profile.settings;
-            cp.settings.exclude_tag=olds.exclude_tag;
-            cp.settings.seperator_tag=olds.seperator_tag;
-            cp.settings.continuous_tag=olds.continuous_tag;
-        else
-            cp.setDefaultProfile;
-        end
-    else
-        exitcode = rerp_profile_gui(cp);
-    end
-else
-    cp.setDefaultProfile;
-    if force_gui
-        exitcode = rerp_profile_gui(cp);
-    end
+
+if force_gui
+    exitcode = rerp_profile_gui(cp);
 end
 
 if exitcode
