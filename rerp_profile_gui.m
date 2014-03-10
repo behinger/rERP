@@ -29,7 +29,7 @@
 
 function exitcode = rerp_profile_gui( rerp_profile )
 %RERP_PROFILE_GUI GUI Modifies RerpProfile objects
-assert(isa(rerp_profile,'RerpProfile'),'rerp_profile_gui: can only be called on an RerpProfile object'); 
+assert(isa(rerp_profile,'RerpProfile'),'rerp_profile_gui: can only be called on an RerpProfile object');
 
 exitcode=0;
 view_only=0;
@@ -72,8 +72,8 @@ title = 'RerpProfile - Create settings to use with pop_rerp function';
 
 make_gui;
 uiwait(gui_handle);
-cp.settings=s; 
-drawnow; 
+cp.settings=s;
+drawnow;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %GUI Callbacks
@@ -641,7 +641,7 @@ drawnow;
 %SET current profile as default
     function cllbk_set_default_profile(src, eventdata)
         cp.settings=s;
-        cp.setDefaultProfile; 
+        cp.setDefaultProfile;
     end
 
 %SAVE current profile
@@ -672,7 +672,7 @@ drawnow;
 
 %EXECUTE rerp call
     function cllbk_ok(src, eventdata)
-        exitcode=1; 
+        exitcode=1;
         close(gui_handle);
     end
 
@@ -684,42 +684,43 @@ drawnow;
     function reload_hed
         import rerp_dependencies.*
         
-        assert(~isempty(cp.hed_tree),'pop_rerp: reload profile, hedTree not found');
-        
-        ls = get(ui_excludeUniqueTagsList);
-        s.exclude_tag = ls.String;
-        ls = get(ui_seperatorTagsList);
-        s.seperator_tag = ls.String;
-        ls = get(ui_continuousTagsList);
-        s.continuous_tag = ls.String;
-        
-        %Derive variables based on the GUI lists
-        [cp.include_tag, cp.include_ids, cp.context_group, cp.continuous_var] = parse_hed_tree(cp.hed_tree, s.exclude_tag, s.seperator_tag, s.continuous_tag);
-        
-        set(ui_includeUniqueTagsList, 'String', cp.include_tag, 'Value', []);
-        set(ui_excludeUniqueTagsList, 'String', s.exclude_tag, 'Value', []);
-        
-        %Load the HED specification if desired
-        if s.enforce_hed_spec
-            try
-                hed_manager = hedManager(s.hed_spec_path);
-                current_included_hed_tree = hedTree(cp.include_tag, hed_manager);
-            catch e
-                disp('pop_rerp: could not load the designated HED specification');
-                current_included_hed_tree = hedTree(cp.include_tag);
-                rethrow(e);
-            end
+        if ~isempty(cp.hed_tree)
             
-            %If the GUI is running, update the components
-            if exist('ui_enforceHed','var')
-                set(ui_enforceHed,'String',['Enforce HED specification - version ' get_hed_version]);
+            ls = get(ui_excludeUniqueTagsList);
+            s.exclude_tag = ls.String;
+            ls = get(ui_seperatorTagsList);
+            s.seperator_tag = ls.String;
+            ls = get(ui_continuousTagsList);
+            s.continuous_tag = ls.String;
+            
+            %Derive variables based on the GUI lists
+            [cp.include_tag, cp.include_ids, cp.context_group, cp.continuous_var] = parse_hed_tree(cp.hed_tree, s.exclude_tag, s.seperator_tag, s.continuous_tag);
+            
+            set(ui_includeUniqueTagsList, 'String', cp.include_tag, 'Value', []);
+            set(ui_excludeUniqueTagsList, 'String', s.exclude_tag, 'Value', []);
+            
+            %Load the HED specification if desired
+            if s.enforce_hed_spec
+                try
+                    hed_manager = hedManager(s.hed_spec_path);
+                    current_included_hed_tree = hedTree(cp.include_tag, hed_manager);
+                catch e
+                    disp('pop_rerp: could not load the designated HED specification');
+                    current_included_hed_tree = hedTree(cp.include_tag);
+                    rethrow(e);
+                end
+                
+                %If the GUI is running, update the components
+                if exist('ui_enforceHed','var')
+                    set(ui_enforceHed,'String',['Enforce HED specification - version ' get_hed_version]);
+                end
+            else
+                current_included_hed_tree = hedTree(cp.include_tag);
+                set(ui_enforceHed,'String','Enforce HED specification');
             end
-        else
-            current_included_hed_tree = hedTree(cp.include_tag);
-            set(ui_enforceHed,'String','Enforce HED specification');
+            set(ui_enableHed,'String','Hierarchical regression');
+            update_parameter_count;
         end
-        set(ui_enableHed,'String','Hierarchical regression');
-        update_parameter_count;
     end
 
 %RETRUN hed version from hedManager class
@@ -1057,8 +1058,7 @@ drawnow;
                 disp('pop_rerp: problem with profile, possibly an outdated version');
                 throw(e);
             end
-        end
-        
+        end  
     end
 
 

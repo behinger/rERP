@@ -254,7 +254,7 @@ function add_profiles_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 [FileName,PathName] = uigetfile('*.rerp_profile', 'Select profiles:',...
-    fullfile(RerpResult.rerp_path,'profiles'),'MultiSelect','on');
+    fullfile(RerpProfile.rerp_path,'profiles'),'MultiSelect','on');
 
 if ~iscell(FileName)
     FileName={FileName};
@@ -266,8 +266,8 @@ for i=1:length(FileName)
     new_profiles(i).name=FileName{i};
 end
 
-handles.UserData.profiles(end:(end+length(new_profiles)))=new_profiles;
-set(handles.profiles_list, 'String', handles.UserData.profiles(:).name);
+handles.UserData.profiles = [handles.UserData.profiles new_profiles];
+set(handles.profiles_list, 'String', {handles.UserData.profiles(:).name});
 profiles_list_Callback(handles.profiles_list, eventdata, handles);
 
 % Update handles structure
@@ -352,7 +352,7 @@ function clear_profiles_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles.UserData.profiles=struct([]); 
-set(handles.profiles_list, 'String', {});
+set(handles.profiles_list, 'String', {},'Value',1);
 profiles_list_Callback(handles.profiles_list, eventdata, handles);
 
 % --- Executes on button press in make_profile.
@@ -373,7 +373,7 @@ new_profile.profile=RerpProfile.getDefaultProfile(this_dataset);
 new_profile.name=strrep(this_dataset.filename,'.set','.rerp_profile'); 
 new_profile.profile.saveRerpProfile('path', fullfile(RerpProfile.rerp_path, 'profiles', new_profile.name)); 
 
-handles.UserData.profiles(end+1)=new_profile; 
+handles.UserData.profiles=[handles.UserData.profiles new_profile]; 
 set(handles.profiles_list, 'String', {handles.UserData.profiles(:).name});
 profiles_list_Callback(handles.profiles_list, eventdata, handles);
 
