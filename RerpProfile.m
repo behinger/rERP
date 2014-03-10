@@ -210,8 +210,12 @@ classdef RerpProfile < matlab.mixin.Copyable
             
             assert(isempty(setdiff(s.penalty_func, s.penalty_options)), 'RerpProfile: settings.penalty_func must be a subset of settings.penalty_options');
             
+            % If this is a brand new profile, assign all tags to
+            % exclude_tags. 
             if ~iscell(s.exclude_tag)
                 s.exclude_tag = obj.hed_tree.uniqueTag;
+            else
+                s.exclude_tag=intersect(s.exclude_tag, obj.hed_tree.uniqueTag);
             end
             
             if isempty(obj.hed_tree.uniqueTag)
@@ -304,18 +308,35 @@ classdef RerpProfile < matlab.mixin.Copyable
             obj.settings.artifact_variable_enable=1;
         end
         
-        
-        function setDefaultProfile(obj)
-            if isempty(dir(fullfile(RerpProfile.rerp_path, 'profiles')))
-                mkdir(fullfile(RerpProfile.rerp_path, 'profiles'));
-            end
+        %Saves a stripped down profile to be used as a template for new
+        %profiles. 
+        function setDefaultProfile(obj)            
+            defpro=copy(obj);
+            defpro.settings.exclude_tag=0;
             
-            s=obj.settings;
-            olds=obj.settings;
-            olds.exclude_tag=0;
-            obj.settings = olds;
-            obj.saveRerpProfile('path',fullfile(RerpProfile.rerp_path, 'profiles','default.rerp_profile'));
-            obj.settings=s;
+            [defpro.eeglab_dataset_name,...
+            defpro.sample_rate,...
+            defpro.pnts,...
+            defpro.nbchan,...
+            defpro.include_chans,...  
+            defpro.include_comps,...
+            defpro.these_events,...
+            defpro.event_types,...
+            defpro.num_event_types,...
+            defpro.event_type_descriptions,...
+            defpro.include_event_types,...
+            defpro.variable_artifact_indexes,...
+            defpro.artifact_variable_name,...
+            defpro.computed_artifact_indexes,...
+            defpro.computed_artifact_indexes_function_name] = deal([]); 
+        
+            [defpro.hed_tree,...
+            defpro.include_tag,...
+            defpro.include_ids,...
+            defpro.context_group,...
+            defpro.continuous_var]= deal({});           
+ 
+            defpro.saveRerpProfile('path',fullfile(RerpProfile.rerp_path, 'profiles','default.rerp_profile'));
         end
         
         function setLastProfile(obj)
@@ -355,46 +376,56 @@ classdef RerpProfile < matlab.mixin.Copyable
             import rerp_dependencies.*
             
             disp('RerpProfile: loading default settings');
-            default_settings = {...
-                'type_proc', 0,... 0 for ICA or 1 for channels
-                'include_exclude', 0,...
-                'ersp_enable',0,...perform time-frequency decomposition first
-                'nbins', 64,...number of freq bins to use when ersp_enable==1
-                'rerp_result_autosave', 1,...automatically save the regression result
-                'autosave_results_path',[],... % pop_rerp automatically saves a copy of the regression result to this path if settings.rerp_result_autosave==1
-                ...
-                'category_epoch_boundaries',[-1 2],...sets window for categorical variables like event types
-                'continuous_epoch_boundaries',[-1 2],...sets window for continuous variables; only for hed
-                ...
-                'artifact_rejection_enable', 1,...automatically ensure artifact frames are identified and excluded (recommended)
-                'artifact_variable_enable', 0,...use an artifact variable from the workspace (RerpProfile.variable_artifact_indexes)
-                'artifact_function_name', 'rerp_reject_samples_robcov',...name of function used to compute artifact indexes - reject_samples_robcov uses much more resources than reject_samples_probability, but it is also more thorough
-                ...
-                'exclude_event_types',{},...event types to exclude from regression
-                ...
-                'hed_enable', 0,...enable hierarchical regression
-                'enforce_hed_spec',0,...throw an error if a hed tag does not comply with the hed spec (very slow)
-                'hed_spec_path',fullfile('hed', 'hed_specification_1.3.xml'),...
-                ...
-                'exclude_tag',0,...tags to exclude from regresion
-                'seperator_tag',{},...tags to generate seperate groups of variables based on which events are hit by the tag's children.
-                'continuous_tag',{},...tags which have a magnitude associated (e.g. Stimulus/Visual/Luminance/.25)
-                ...
-                'regularization_enable', 1,...enable penalized regression
-                'lambda',[1 1],...specify lambda to use if cross validation is disabled
-                'cross_validate_enable', 1,...do a grid search for lambda
-                'num_xvalidation_folds', 5,...number of folds to use during cross validation
-                'num_grid_zoom_levels', 2,...number of levels of grid search zooming
-                'num_grid_points', 10,...number of points to sample at each grid level
-                'first_phase_lambda', [0 logspace(log10(1e-6), log10(1e8), 20)]',... the initial sample space for grid search
-                'elasticnet_quick_zoom', 1,...for ElasticNet (L1+L2) penalty. find optimal lambda1 and lambda2 serpately first, then 2D grid search around those values
-                'penalty_func',{'L2 norm'},...penalty function
-                'penalty_options',{'L1 norm' 'L2 norm' 'Elastic net'},... available options for penalty function
-                'save_grid_search',0,...
-                };
-            
-            %Initialize profile
-            rerp_profile = RerpProfile(EEG, default_settings{:});
+            %Create profile based on profiles/default.rerp_profile
+            try 
+                default_path = fullfile(RerpProfile.rerp_path, 'profiles','default.rerp_profile');
+                default_profile = RerpProfile.loadRerpProfile('path', default_path);
+                rerp_profile = RerpProfile(EEG, default_profile);
+                
+            %If it doesn't exist, start a brand new default profile
+            catch
+                default_settings = {...
+                    'type_proc', 0,... 0 for ICA or 1 for channels
+                    'include_exclude', 0,...
+                    'ersp_enable',0,...perform time-frequency decomposition first
+                    'nbins', 64,...number of freq bins to use when ersp_enable==1
+                    'rerp_result_autosave', 1,...automatically save the regression result
+                    'autosave_results_path',[],... % pop_rerp automatically saves a copy of the regression result to this path if settings.rerp_result_autosave==1
+                    ...
+                    'category_epoch_boundaries',[-1 2],...sets window for categorical variables like event types
+                    'continuous_epoch_boundaries',[-1 2],...sets window for continuous variables; only for hed
+                    ...
+                    'artifact_rejection_enable', 1,...automatically ensure artifact frames are identified and excluded (recommended)
+                    'artifact_variable_enable', 0,...use an artifact variable from the workspace (RerpProfile.variable_artifact_indexes)
+                    'artifact_function_name', 'rerp_reject_samples_robcov',...name of function used to compute artifact indexes - reject_samples_robcov uses much more resources than reject_samples_probability, but it is also more thorough
+                    ...
+                    'exclude_event_types',{},...event types to exclude from regression
+                    ...
+                    'hed_enable', 0,...enable hierarchical regression
+                    'enforce_hed_spec',0,...throw an error if a hed tag does not comply with the hed spec (very slow)
+                    'hed_spec_path',fullfile('hed', 'hed_specification_1.3.xml'),...
+                    ...
+                    'exclude_tag',0,...tags to exclude from regresion
+                    'seperator_tag',{},...tags to generate seperate groups of variables based on which events are hit by the tag's children.
+                    'continuous_tag',{},...tags which have a magnitude associated (e.g. Stimulus/Visual/Luminance/.25)
+                    ...
+                    'regularization_enable', 1,...enable penalized regression
+                    'lambda',[1 1],...specify lambda to use if cross validation is disabled
+                    'cross_validate_enable', 1,...do a grid search for lambda
+                    'num_xvalidation_folds', 5,...number of folds to use during cross validation
+                    'num_grid_zoom_levels', 2,...number of levels of grid search zooming
+                    'num_grid_points', 10,...number of points to sample at each grid level
+                    'first_phase_lambda', [0 logspace(log10(1e-6), log10(1e8), 20)]',... the initial sample space for grid search
+                    'elasticnet_quick_zoom', 1,...for ElasticNet (L1+L2) penalty. find optimal lambda1 and lambda2 serpately first, then 2D grid search around those values
+                    'penalty_func',{'L2 norm'},...penalty function
+                    'penalty_options',{'L1 norm' 'L2 norm' 'Elastic net'},... available options for penalty function
+                    'save_grid_search',0,...
+                    };
+
+                %Initialize profile
+                rerp_profile = RerpProfile(EEG, default_settings{:});
+                rerp_profile.setDefaultProfile; 
+            end
         end
         
         %Get path to toolbox
