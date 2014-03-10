@@ -34,16 +34,26 @@ p=inputParser;
 addOptional(p,'rerp_profile', []);
 addOptional(p,'eeg_dataset_paths', {}, @(x) iscell(x));
 addOptional(p,'eeg', struct([]), @(x) isstruct(x));
+addOptional(p,'study', struct([]), @(x) isstruct(x));
 addOptional(p,'force_gui', 0);
 parse(p, varargin{:});
 eeg_dataset_paths=p.Results.eeg_dataset_paths;
 rerp_profile=p.Results.rerp_profile;
-exitcode=1;
 EEG=p.Results.eeg;
-% A study struct was provided, get the dataset paths
-if ~isempty(EEG)
-    for i=1:length(EEG)
-        eeg_dataset_paths{i} = fullfile(EEG(i).filepath, EEG(i).filename);
+STUDY=p.Results.study;
+exitcode=1;
+
+% Get the dataset paths from STUDY or EEG structs if dataset_paths was not
+% specified. 
+if isempty(eeg_dataset_paths)
+    if ~isempty(EEG)
+        for i=1:length(EEG)
+            eeg_dataset_paths{i} = fullfile(EEG(i).filepath, EEG(i).filename);
+        end
+    elseif ~isempty(STUDY.datasetinfo)
+        for i=1:length(EEG)
+            eeg_dataset_paths{i} = fullfile(STUDY.datasetinfo(i).filepath, STUDY.datasetinfo(i).filename);
+        end
     end
 end
 
@@ -55,7 +65,6 @@ end
 
 % Make sure we have everything we need to run the study
 if ~isa(rerp_profile, 'RerpProfile')
-    disp('pop_rerp_study: rerp_profile not specified');
     return;
 elseif isempty(eeg_dataset_paths)||~exitcode
     return;
