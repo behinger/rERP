@@ -28,24 +28,12 @@
 % either expressed or implied, of the FreeBSD Project.
 
 function eegplugin_rerp( fig, trystr, catchstr )
+%eegplugin_rerp(): add toolbox GUI functionality to EEGLAB
 
-% cllbk_profile_from_disk='RerpPluginCallbacks.profileFromDisk(EEG);';
-% cllbk_default_profile='RerpPluginCallbacks.defaultProfile(EEG);';
-% cllbk_last_profile='RerpPluginCallbacks.lastProfile(EEG);';
-cllbk_setup_gui='pop_rerp_study(''eeg'', ALLEEG);';
-cllbk_plot_result_eeg='rerp_result_gui;';
-% cllbk_plot_result_from_folder_eeg='RerpPluginCallbacks.plotResultsFromDirectory(EEG);';
-
-% create menu
 toolsmenu = findobj(fig, 'tag', 'tools');
 submenu = uimenu( toolsmenu, 'label', 'rERP','separator','on','userdata','startup:on;epoch:off;study:on');
 
-uimenu( submenu, 'label', 'Run analysis', 'callback', cllbk_setup_gui, 'userdata','study:on;startup:on');
-uimenu( submenu, 'label', 'Plot results', 'callback', cllbk_plot_result_eeg,'userdata','study:on;startup:on');
-
-% uimenu( runmenu, 'label', 'Profile from disk', 'callback', cllbk_profile_from_disk);
-% uimenu( runmenu, 'label', 'Default profile', 'callback', cllbk_default_profile);
-% uimenu( runmenu, 'label', 'Last profile', 'callback', cllbk_last_profile);
-
+uimenu( submenu, 'label', 'Run analysis', 'callback', 'pop_rerp_study(''eeg'', ALLEEG);', 'userdata','study:on;startup:on');
+uimenu( submenu, 'label', 'Plot results', 'callback', 'rerp_result_gui;','userdata','study:on;startup:on');
 end
 
