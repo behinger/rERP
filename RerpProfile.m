@@ -138,7 +138,7 @@ classdef RerpProfile < matlab.mixin.Copyable
             %passed in profile. If that profile included all channels or comps, we do the same.
             %Otherwise, we use only the channels or components used in that profile.
             all_ts_idx=1:EEG.nbchan;
-            if ~isempty(passed_profile)     
+            if ~isempty(passed_profile)
                 %Did we include all components in prototype profile?
                 if length(passed_profile.include_comps)==passed_profile.nbchan
                     include_all_comps=1;
@@ -211,7 +211,7 @@ classdef RerpProfile < matlab.mixin.Copyable
             assert(isempty(setdiff(s.penalty_func, s.penalty_options)), 'RerpProfile: settings.penalty_func must be a subset of settings.penalty_options');
             
             % If this is a brand new profile, assign all tags to
-            % exclude_tags. 
+            % exclude_tags.
             if ~iscell(s.exclude_tag)
                 s.exclude_tag = obj.hed_tree.uniqueTag;
             else
@@ -247,22 +247,26 @@ classdef RerpProfile < matlab.mixin.Copyable
             
             parse(p, varargin{:});
             path = p.Results.path;
-            
+            rerp_path= p.Results.rerp_path;
             
             if isempty(path)
                 %No path specified, launch GUI
-                temp = regexp(obj.eeglab_dataset_name, '.set', 'split');
-                fn = temp{1};
-                
-                if ~isempty(fn)
-                    [filename, pathname] = uiputfile('*.rerp_profile', 'Save rerp profile as:', fullfile(RerpProfile.rerp_path, [fn '.rerp_profile']));
+                temp = regexp(obj.eeglab_dataset_name, '.*[\\\/](.*)\.set', 'tokens');
+                if ~isempty(temp)
+                    fn = temp{1}{1};
                 else
-                    [filename, pathname] = uiputfile('*.rerp_profile', 'Save rerp profile as:', fullfile(p.Results.rerp_path, '.rerp_profile'));
+                    fn='';
+                end
+                
+                if isempty(rerp_path)
+                    [filename, pathname] = uiputfile('*.rerp_profile', 'Save rerp profile as:', fullfile(RerpProfile.rerp_path, 'profiles', fn));
+                else
+                    [filename, pathname] = uiputfile('*.rerp_profile', 'Save rerp profile as:', fullfile(rerp_path, fn));
                 end
                 path = [pathname filename];
                 
             else
-                path2file = regexp(path, '(.*)[\\\/].*$','tokens');
+                path2file = regexp(path, '(.*)[\\\/].*','tokens');
                 path2file = path2file{1}{1};
                 
                 if isempty(dir(path2file))
@@ -272,13 +276,13 @@ classdef RerpProfile < matlab.mixin.Copyable
                 filename=1;
             end
             
-            path2file = regexp(path, '(.*)(?:\.rerp_profile)','tokens');
-            path2file = path2file{1}{1};
             
             %Save profile to disk
-            if ~filename==0
+            if filename
+                this_path = regexp(path, '(.*)(?:\.rerp_profile)','tokens');
+                this_path = this_path{1}{1};
                 try
-                    save([path2file '.rerp_profile'], 'obj','-mat');
+                    save([this_path '.rerp_profile'], 'obj','-mat');
                     disp(['RerpProfile: saved profile to disk ' path]);
                 catch e
                     disp(['RerpProfile: could not save the specified profile to disk ' path]);
@@ -310,33 +314,30 @@ classdef RerpProfile < matlab.mixin.Copyable
         end
         
         %Saves a stripped down profile to be used as a template for new
-        %profiles. 
-        function setDefaultProfile(obj)            
+        %profiles.
+        function setDefaultProfile(obj)
             defpro=copy(obj);
             defpro.settings.exclude_tag=0;
             
             [defpro.eeglab_dataset_name,...
-            defpro.sample_rate,...
-            defpro.pnts,...
-            defpro.nbchan,...
-            defpro.include_chans,...  
-            defpro.include_comps,...
-            defpro.these_events,...
-            defpro.event_types,...
-            defpro.num_event_types,...
-            defpro.event_type_descriptions,...
-            defpro.include_event_types,...
-            defpro.variable_artifact_indexes,...
-            defpro.artifact_variable_name,...
-            defpro.computed_artifact_indexes,...
-            defpro.computed_artifact_indexes_function_name] = deal([]); 
-        
+                defpro.sample_rate,...
+                defpro.pnts,...
+                defpro.these_events,...
+                defpro.event_types,...
+                defpro.num_event_types,...
+                defpro.event_type_descriptions,...
+                defpro.include_event_types,...
+                defpro.variable_artifact_indexes,...
+                defpro.artifact_variable_name,...
+                defpro.computed_artifact_indexes,...
+                defpro.computed_artifact_indexes_function_name] = deal([]);
+            
             [defpro.hed_tree,...
-            defpro.include_tag,...
-            defpro.include_ids,...
-            defpro.context_group,...
-            defpro.continuous_var]= deal({});           
- 
+                defpro.include_tag,...
+                defpro.include_ids,...
+                defpro.context_group,...
+                defpro.continuous_var]= deal({});
+            
             defpro.saveRerpProfile('path',fullfile(RerpProfile.rerp_path, 'profiles','default.rerp_profile'));
         end
         
@@ -378,12 +379,12 @@ classdef RerpProfile < matlab.mixin.Copyable
             
             disp('RerpProfile: loading default settings');
             %Create profile based on profiles/default.rerp_profile
-            try 
+            try
                 default_path = fullfile(RerpProfile.rerp_path, 'profiles','default.rerp_profile');
                 default_profile = RerpProfile.loadRerpProfile('path', default_path);
                 rerp_profile = RerpProfile(EEG, default_profile);
                 
-            %If it doesn't exist, start a brand new default profile
+                %If it doesn't exist, start a brand new default profile
             catch
                 default_settings = {...
                     'type_proc', 0,... 0 for ICA or 1 for channels
@@ -422,10 +423,10 @@ classdef RerpProfile < matlab.mixin.Copyable
                     'penalty_options',{'L1 norm' 'L2 norm' 'Elastic net'},... available options for penalty function
                     'save_grid_search',0,...
                     };
-
+                
                 %Initialize profile
                 rerp_profile = RerpProfile(EEG, default_settings{:});
-                rerp_profile.setDefaultProfile; 
+                rerp_profile.setDefaultProfile;
             end
         end
         

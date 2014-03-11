@@ -942,16 +942,22 @@ classdef RerpResult < matlab.mixin.Copyable
             addOptional(p,'rerp_path', pwd);
             
             parse(p, varargin{:});
-            temp = regexp(obj.rerp_profile.eeglab_dataset_name, '.set', 'split');
-            fn = temp{1};
+            temp = regexp(obj.rerp_profile.eeglab_dataset_name, '.*[\\\/](.*)\.set', 'tokens');            
+
+            if ~isempty(temp)
+                fn = temp{1}{1};
+            else
+                fn='';
+            end
+
             path = p.Results.path;    
-            
+            rerp_path=p.Results.rerp_path;
             if isempty(path)
                 %No path specified, launch GUI
-                if ~isempty(fn)
-                    [filename, pathname] = uiputfile('*.rerp_result', 'Save rerp result as:', fullfile(RerpProfile.rerp_path, [fn '.rerp_result']));
+                if isempty(rerp_path)
+                    [filename, pathname] = uiputfile('*.rerp_result', 'Save rerp result as:', fullfile(RerpProfile.rerp_path, fn));
                 else
-                    [filename, pathname] = uiputfile('*.rerp_result', 'Save rerp result as:', fullfile(p.Results.rerp_path, '.rerp_result'));
+                    [filename, pathname] = uiputfile('*.rerp_result', 'Save rerp result as:', fullfile(p.Results.rerp_path, fn));
                 end
                 path = [pathname filename];
                 
@@ -972,7 +978,7 @@ classdef RerpResult < matlab.mixin.Copyable
             %Save profile to disk
             if filename
                 try
-                    save(path2file, 'obj','-mat');
+                    save([path2file '.rerp_result'], 'obj','-mat');
                     disp(['RerpResult: saved result to disk ' path]);
                 catch e
                     disp(['RerpResult: could not save the specified result to disk ' path]);
