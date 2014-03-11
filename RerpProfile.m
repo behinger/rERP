@@ -1,84 +1,62 @@
-% Copyright (C) 2013 Matthew Burns, Swartz Center for Computational
-% Neuroscience.
+%RERP_PROFILE Define the regression settings used to call to rerp()
+%   Usage: 
+%       rerp_profile = RerpProfile(EEG); 
+%           Create a profile for EEG using default settings from default.rerp_profile 
+%           or hard coded defaults if file is not available
+%           
+%       rerp_profile = RerpProfile(EEG, settings); 
+%           Create a profile for EEG using the settings from another profile 
+%           (settings=rerp_profile.settings)  
 %
-% User feedback welcome: email rerptoolbox@gmail.com
+%       rerp_profile = RerpProfile(EEG, other_rerp_profile); 
+%           Create a profile for EEG based on another RerpProfile object
 %
-% Redistribution and use in source and binary forms, with or without
-% modification, are permitted provided that the following conditions are met:
+%       rerp_profile = RerpProfile(EEG, rerp_result);
+%           Create a profile for EEG based on RerpResult object (extracts
+%           the settings used to get that result)
 %
-% 1. Redistributions of source code must retain the above copyright notice, this
-%    list of conditions and the following disclaimer.
-% 2. Redistributions in binary form must reproduce the above copyright notice,
-%    this list of conditions and the following disclaimer in the documentation
-%    and/or other materials provided with the distribution.
-%
-% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-% ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-% WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-% DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-% ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-% (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-% LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-% ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-% (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-%
-% The views and conclusions contained in the software and documentation are those
-% of the authors and should not be interpreted as representing official policies,
-% either expressed or implied, of the FreeBSD Project.
+%   See also: rerp_profile_gui, pop_rerp, rerp, RerpResult 
 
 classdef RerpProfile < matlab.mixin.Copyable
-    %RERP_PROFILE Defines the state of the pop_rerp() GUI and used as required argument to rerp().
-    % Methods:
-    %   rerp_profile = RerpProfile(EEG, settings) (Constructor)
-    %   	Inputs:
-    %           EEG: the EEGLAB struct
-    %           settings: one of the following - RerpProfile, RerpResult,
-    %               RerpProfile.settings, or a cell array of name value pairs
-    %               completely describing the RerpProfile.settings struct.
-    %       Outputs:
-    %           rerp_profile: the RerpProfile object
+    % Copyright (C) 2013 Matthew Burns, Swartz Center for Computational
+    % Neuroscience.
     %
-    %   saveRerpProfile(varargin) (save RerpProfile to disk)
-    %       Inputs:
-    %           varargin:
-    %               path: when specified, automatically saves to that path
-    %               rerp_path: path which GUI will start looking at
+    % User feedback welcome: email rerptoolbox@gmail.com
     %
-    %   compute_artifact_indexes(EEG) (compute artifact indexes using function in settings.artifact_function_name)
+    % Redistribution and use in source and binary forms, with or without
+    % modification, are permitted provided that the following conditions are met:
     %
-    %   set_artifact_indexes(artifact_indexes) (assign artifact indexes to profile)
+    % 1. Redistributions of source code must retain the above copyright notice, this
+    %    list of conditions and the following disclaimer.
+    % 2. Redistributions in binary form must reproduce the above copyright notice,
+    %    this list of conditions and the following disclaimer in the documentation
+    %    and/or other materials provided with the distribution.
     %
-    % Static Methods:
-    %   rerp_profile = getDefaultRerpProfile (Generates RerpProfile object with the settings defined in this file)
-    %       Outputs:
-    %           rerp_profile: the RerpProfile object
+    % THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+    % ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    % WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    % DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+    % ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+    % (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+    % LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+    % ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    % (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+    % SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     %
-    %   rerp_profile = loadRerpProfile(varargin) (Load RerpProfile from disk)
-    %       Inputs:
-    %           varargin
-    %               path: when specified, automatically loads from that path
-    %               rerp_path: path which GUI will start looking at
-    %       Outputs:
-    %           rerp_profile: the RerpProfile object
-    %
-    %   h = get_artifact_handle(artifact_function_name) (returns handle of function specifie by artifact_function_name string
-    %       Inputs:
-    %           artifact_function_name: string name of artifact function
-    %       Outputs:
-    %           h: handle to artifact function
-    %
+    % The views and conclusions contained in the software and documentation are those
+    % of the authors and should not be interpreted as representing official policies,
+    % either expressed or implied, of the FreeBSD Project.
     
     properties
         %This struct can be applied to many datasets with the same experimental
         %event types/ hed tag structure. Can use it to instantiate new RerpProfile objects.
-        %See RerpProfile.getDefaultRerpProfile method for details.
+        %See RerpProfile.getDefaultRerpProfile method for default settings.
         settings;
         
         eeglab_dataset_name=[]; % Full path to dataset
-        sample_rate=[];
-        pnts=[];
-        nbchan=[];
+        sample_rate=[]; %Smaple rate of dataset
+        pnts=[]; %Number of samples in dataset
+        nbchan=[];%Number of channels in dataset
         
         include_chans=[];        % Channel numbers to include in regression
         include_comps=[];        % Component numbers to include in regression
@@ -100,144 +78,157 @@ classdef RerpProfile < matlab.mixin.Copyable
         
         context_group={}        % cell array of groups generated by seperator tags; 1 group per seperator tag (see pop_rerp for additional info)
         continuous_var={};        % cell array of continuous variables
-        
     end
     
     methods
-        %Constructor verifies that all required fields are present. Accepts
-        %another RerpProfile object as an argument, a structure
-        %corresponding to the "settings" property or name-value pairs as
-        %cell array.
         function obj = RerpProfile(EEG, varargin)
             
             import rerp_dependencies.*
             
-            events = event;
-            obj.these_events = events.eeglab2event(EEG);
-            
-            obj.event_types = obj.these_events.uniqueLabel;
-            obj.num_event_types = obj.these_events.getNumberOfOccurancesForEachEvent;
-            
-            obj.event_type_descriptions = cell(size(obj.event_types));
-            
-            p=makeParser;
-            passed_profile=[];
-            if length(varargin)==1
-                if isa(varargin{1},'RerpResult')
-                    theseargs={varargin{1}.rerp_profile.settings};
-                    passed_profile=varargin{1}.rerp_profile;
-                elseif isa(varargin{1},'RerpProfile')
-                    theseargs={varargin{1}.settings};
-                    passed_profile=varargin{1};
-                end
+            if nargin == 0
+                help RerpProfile;
+                
+            elseif nargin == 1
+                obj = RerpProfile.getDefaultProfile(EEG);
+                
             else
-                theseargs=varargin;
-            end
-            
-            %Decide whether we include all channels or components based on
-            %passed in profile. If that profile included all channels or comps, we do the same.
-            %Otherwise, we use only the channels or components used in that profile.
-            all_ts_idx=1:EEG.nbchan;
-            if ~isempty(passed_profile)
-                %Did we include all components in prototype profile?
-                if length(passed_profile.include_comps)==passed_profile.nbchan
-                    include_all_comps=1;
+                events = event;
+                obj.these_events = events.eeglab2event(EEG);
+                
+                obj.event_types = obj.these_events.uniqueLabel;
+                obj.num_event_types = obj.these_events.getNumberOfOccurancesForEachEvent;
+                
+                obj.event_type_descriptions = cell(size(obj.event_types));
+                
+                p=makeParser;
+                passed_profile=[];
+                if length(varargin)==1
+                    if isa(varargin{1},'RerpResult')
+                        theseargs={varargin{1}.rerp_profile.settings};
+                        passed_profile=varargin{1}.rerp_profile;
+                    elseif isa(varargin{1},'RerpProfile')
+                        theseargs={varargin{1}.settings};
+                        passed_profile=varargin{1};
+                    end
                 else
-                    include_all_comps=0;
+                    theseargs=varargin;
                 end
-                %Did we include all channels in prototype profile?
-                if length(passed_profile.include_chans)==passed_profile.nbchan
-                    include_all_chans=1;
+                
+                %Decide whether we include all channels or components based on
+                %passed in profile. If that profile included all channels or comps, we do the same.
+                %Otherwise, we use only the channels or components used in that profile.
+                all_ts_idx=1:EEG.nbchan;
+                if ~isempty(passed_profile)
+                    %Did we include all components in prototype profile?
+                    if length(passed_profile.include_comps)==passed_profile.nbchan
+                        include_all_comps=1;
+                    else
+                        include_all_comps=0;
+                    end
+                    %Did we include all channels in prototype profile?
+                    if length(passed_profile.include_chans)==passed_profile.nbchan
+                        include_all_chans=1;
+                    else
+                        include_all_chans=0;
+                    end
+                    %Decide whether to include all or subset of components in
+                    %this new profile
+                    if ~include_all_comps
+                        obj.include_comps=intersect(passed_profile.include_comps, all_ts_idx);
+                    else
+                        obj.include_comps=all_ts_idx;
+                    end
+                    %Decide whether to include all or subset of channels in
+                    %this new profile
+                    if ~include_all_chans
+                        obj.include_chans=intersect(passed_profile.include_chans, all_ts_idx);
+                    else
+                        obj.include_chans=all_ts_idx;
+                    end
+                    
+                    
                 else
-                    include_all_chans=0;
-                end
-                %Decide whether to include all or subset of components in
-                %this new profile
-                if ~include_all_comps
-                    obj.include_comps=intersect(passed_profile.include_comps, all_ts_idx);
-                else
+                    %No protptype profile was passed, so we include all chans
+                    %and comps
                     obj.include_comps=all_ts_idx;
-                end
-                %Decide whether to include all or subset of channels in
-                %this new profile
-                if ~include_all_chans
-                    obj.include_chans=intersect(passed_profile.include_chans, all_ts_idx);
-                else
                     obj.include_chans=all_ts_idx;
                 end
                 
+                parse(p, theseargs{:});
+                params = p.Parameters;
                 
-            else
-                %No protptype profile was passed, so we include all chans
-                %and comps
-                obj.include_comps=all_ts_idx;
-                obj.include_chans=all_ts_idx;
-            end
-            
-            parse(p, theseargs{:});
-            params = p.Parameters;
-            
-            if length(theseargs)==1 && isstruct(theseargs{1})
-                %Passed a structure
-                missing = setdiff(params, fieldnames(theseargs{1}));
-            else
-                
-                if iscell(theseargs)
-                    %Passed name-value pairs as cell array
-                    missing = setdiff(params, theseargs(1:2:end));
+                if length(theseargs)==1 && isstruct(theseargs{1})
+                    %Passed a structure
+                    missing = setdiff(params, fieldnames(theseargs{1}));
+                else
+                    
+                    if iscell(theseargs)
+                        %Passed name-value pairs as cell array
+                        missing = setdiff(params, theseargs(1:2:end));
+                    end
                 end
+                
+                s=p.Results;
+                
+                msg = 'RerpProfile: profile not completely specified, missing parameters\n';
+                for i=1:length(missing)
+                    msg = [msg '\t\t' missing{i} '\n'];
+                end
+                
+                if ~isempty(missing)
+                    fprintf(msg);
+                    error('RerpProfile: failed to create profile');
+                end
+                
+                obj.eeglab_dataset_name = fullfile(EEG.filepath, EEG.filename);
+                obj.sample_rate = EEG.srate;
+                obj.pnts = EEG.pnts;
+                obj.nbchan=EEG.nbchan;
+                
+                fprintf('RerpProfile: creating initial hierarchy\n');
+                obj.hed_tree = hedTree(obj.these_events.hedTag);
+                
+                assert(isempty(setdiff(s.penalty_func, s.penalty_options)), 'RerpProfile: settings.penalty_func must be a subset of settings.penalty_options');
+                
+                % If this is a brand new profile, assign all tags to
+                % exclude_tags.
+                if ~iscell(s.exclude_tag)
+                    s.exclude_tag = obj.hed_tree.uniqueTag;
+                else
+                    s.exclude_tag=intersect(s.exclude_tag, obj.hed_tree.uniqueTag);
+                end
+                
+                if isempty(obj.hed_tree.uniqueTag)
+                    s.hed_enable=0;
+                end
+                
+                fprintf('RerpProfile: parsing hierarchy\n');
+                [obj.include_tag, obj.include_ids, obj.context_group, obj.continuous_var] = parse_hed_tree(obj.hed_tree, s.exclude_tag, s.seperator_tag, s.continuous_tag);
+                
+                possible_excluded = intersect(obj.event_types, s.exclude_event_types);
+                obj.include_event_types = setdiff(obj.event_types, possible_excluded);
+                
+                rerp_path_components=regexp(strtrim(mfilename('fullpath')),'[\/\\]','split');
+                results_path = [filesep fullfile(rerp_path_components{1:(end-1)}) filesep 'results'];
+                s.autosave_results_path=results_path;
+                
+                obj.settings = s;
+                
+                disp('RerpProfile: finished');
             end
-            
-            s=p.Results;
-            
-            msg = 'RerpProfile: profile not completely specified, missing parameters\n';
-            for i=1:length(missing)
-                msg = [msg '\t\t' missing{i} '\n'];
-            end
-            
-            if ~isempty(missing)
-                fprintf(msg);
-                error('RerpProfile: failed to create profile');
-            end
-            
-            obj.eeglab_dataset_name = fullfile(EEG.filepath, EEG.filename);
-            obj.sample_rate = EEG.srate;
-            obj.pnts = EEG.pnts;
-            obj.nbchan=EEG.nbchan;
-            
-            fprintf('RerpProfile: creating initial hierarchy\n');
-            obj.hed_tree = hedTree(obj.these_events.hedTag);
-            
-            assert(isempty(setdiff(s.penalty_func, s.penalty_options)), 'RerpProfile: settings.penalty_func must be a subset of settings.penalty_options');
-            
-            % If this is a brand new profile, assign all tags to
-            % exclude_tags.
-            if ~iscell(s.exclude_tag)
-                s.exclude_tag = obj.hed_tree.uniqueTag;
-            else
-                s.exclude_tag=intersect(s.exclude_tag, obj.hed_tree.uniqueTag);
-            end
-            
-            if isempty(obj.hed_tree.uniqueTag)
-                s.hed_enable=0;
-            end
-            
-            fprintf('RerpProfile: parsing hierarchy\n');
-            [obj.include_tag, obj.include_ids, obj.context_group, obj.continuous_var] = parse_hed_tree(obj.hed_tree, s.exclude_tag, s.seperator_tag, s.continuous_tag);
-            
-            possible_excluded = intersect(obj.event_types, s.exclude_event_types);
-            obj.include_event_types = setdiff(obj.event_types, possible_excluded);
-            
-            rerp_path_components=regexp(strtrim(mfilename('fullpath')),'[\/\\]','split');
-            results_path = [filesep fullfile(rerp_path_components{1:(end-1)}) filesep 'results'];
-            s.autosave_results_path=results_path;
-            
-            obj.settings = s;
-            
-            disp('RerpProfile: finished');
         end
         
         %Save a profile to disk
+        %   Usage:
+        %       rerp_profile.saveRerpProfile; 
+        %           opens a gui to choose the path to save profile
+        %       
+        %       rerp_profile.saveRerpProfile('rerp_path', '/data/projects/RSVP');
+        %           opens gui starting at that path
+        %
+        %       rerp_profile.saveRerpProfile('path', '/data/projects/RSVP/exp_53.rerp_profile');
+        %           save this profile to the specific path (will create the
+        %           dir if does not exist)
         function saveRerpProfile(obj, varargin)
             import rerp_dependencies.*
             
@@ -291,6 +282,13 @@ classdef RerpProfile < matlab.mixin.Copyable
             end
         end
         
+        %Compute artifact frames using the function specified in 
+        %rerp_profile.settings.artifact_function_name and store the indexes
+        %in the profile
+        %   Usage:
+        %       rerp_profile.compute_artifact_indexes(EEG); 
+        %           computes artifact indexes and saves them in
+        %           rerp_profile.computed_artifact_indexes; 
         function compute_artifact_indexes(obj, EEG)
             import rerp_dependencies.*
             
@@ -306,6 +304,11 @@ classdef RerpProfile < matlab.mixin.Copyable
             end
         end
         
+        %Set the artifact indexes of the profile directly
+        %   Usage:
+        %       rerp_profile.set_artifact_indexes(artifact_indexes)
+        %           artifact indexes must be a logical vector same length
+        %           as data. 
         function set_artifact_indexes (obj, artifact_indexes)
             assert(length(artifact_indexes)==obj.pnts, 'RerpProfile: artifact indexes must be logical vector same length as data');
             obj.variable_artifact_indexes= artifact_indexes;
@@ -313,8 +316,11 @@ classdef RerpProfile < matlab.mixin.Copyable
             obj.settings.artifact_variable_enable=1;
         end
         
-        %Saves a stripped down profile to be used as a template for new
-        %profiles.
+        %Save stripped down profile to be used as a template for new
+        %profiles
+        %   Usage:
+        %       rerp_profile.setDefaultProfile; 
+        %           saves a template version of the profile in profiles/default.rerp_profile 
         function setDefaultProfile(obj)
             defpro=copy(obj);
             defpro.settings.exclude_tag=0;
@@ -341,19 +347,22 @@ classdef RerpProfile < matlab.mixin.Copyable
             defpro.saveRerpProfile('path',fullfile(RerpProfile.rerp_path, 'profiles','default.rerp_profile'));
         end
         
+        %Save profile as profiles/last.rerp_profile
+        %   Usage:
+        %       rerp_profile.setLastProfile; 
         function setLastProfile(obj)
-            if isempty(dir(fullfile(RerpProfile.rerp_path, 'profiles')))
-                mkdir(fullfile(RerpProfile.rerp_path, 'profiles'));
-            end
             obj.saveRerpProfile('path', fullfile(RerpProfile.rerp_path, 'profiles','last.rerp_profile'));
         end
-        
     end
     
     methods(Static=true)
         
-        %Updates the artifact function handle with new string. Function must be in a file.
+        %Get the artifact function handle with new string. Function must be in a file.
         %This will throw an error if the file is not found.
+        %   Usage:
+        %       artifact_function_handle = get_artifact_handle('rerp_reject_samples_robcov');
+        %           gets the function handle from the file
+        %           rerp_reject_samples_robcov.m or returns an error
         function h = get_artifact_handle(instr)
             h=[];
             if ~isempty(instr)
@@ -373,7 +382,10 @@ classdef RerpProfile < matlab.mixin.Copyable
             end
         end
         
-        %Returns an RerpProfile initialized to EEG struct.
+        %Get default RerpProfile for single EEG dataset. Same as calling
+        %RerpProfile(EEG). 
+        %   Usage:
+        %       rerp_profile = RerpProfile.getDefaultRerpProfile(EEG); 
         function rerp_profile = getDefaultProfile(EEG)
             import rerp_dependencies.*
             
@@ -430,13 +442,24 @@ classdef RerpProfile < matlab.mixin.Copyable
             end
         end
         
-        %Get path to toolbox
+        %Get path to rERP toolbox
+        %   Usage: 
+        %       path=RerpProfile.rerp_path;
         function path = rerp_path
             rerp_path_components=regexp(strtrim(mfilename('fullpath')),'[\/\\]','split');
             path = [filesep fullfile(rerp_path_components{1:(end-1)})];
         end
         
         %Load a profile from disk
+        %   Usage:
+        %       rerp_profile = RerpProfile.loadRerpProfile;
+        %           Select .rerp_profile file using GUI
+        %
+        %       rerp_profile = RerpProfile.loadRerpProfile('rerp_path', '/data/projects/RSVP');
+        %           Open GUI atarting at that path
+        %       
+        %       rerp_profile = RerpProfile.loadRerpProfile('path', '/data/projects/RSVP/exp_53.rerp_profile');
+        %           Saves rerp_profile to that path
         function rerp_profile = loadRerpProfile(varargin)
             import rerp_dependencies.*
             
@@ -476,7 +499,8 @@ classdef RerpProfile < matlab.mixin.Copyable
     end
 end
 
-%Defines the contract for instantiating RerpProfile.
+%Define the contract for instantiating RerpProfile. You must provide these
+%exact fields in order to instantiate RerpProfile.
 function p = makeParser
 p=inputParser;
 
