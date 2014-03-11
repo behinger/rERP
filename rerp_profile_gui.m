@@ -193,7 +193,11 @@ drawnow;
 %ENTER epoch boundary
     function cllbk_enter_epoch_boundaries(src, eventdata)
         src_props = get(src);
-        s.epoch_boundaries = str2num(src_props.String);
+        if strcmp(src_props.Tag, 'enterCatEpochBoundary')
+            s.category_epoch_boundaries = str2double(src_props.String);
+        elseif strcmp(src_props.Tag, 'enterConEpochBoundary')
+            s.continuous_epoch_boundaries = str2double(src_props.String);
+        end
     end
 
 %ENABLE artifact rejection
@@ -647,12 +651,12 @@ drawnow;
 %SAVE current profile
     function cllbk_save_profile(src, eventdata)
         cp.settings=s;
-        cp.saveRerpProfile('rerp_path', fullfile(RerpProfile.rerp_path,'profile'));
+        cp.saveRerpProfile('rerp_path', fullfile(RerpProfile.rerp_path, 'profiles'));
     end
 
 %LOAD previously saved profile
     function cllbk_load_profile(src, eventdata)
-        cp = RerpProfile.loadRerpProfile('rerp_path', fullfile(RerpProfile.rerp_path,'profile'));
+        cp = RerpProfile.loadRerpProfile('rerp_path', fullfile(RerpProfile.rerp_path,'profiles'));
         s = cp.settings;
         close(gui_handle);
         make_gui;
@@ -917,9 +921,9 @@ drawnow;
                 { 'Style', 'pushbutton', 'string', inc_excl_message, 'horizontalalignment', 'left','tag', 'switchIncludeExcludeButton','callback',@cllbk_switch_include_exclude,'tooltipstring','choose whether to include or exclude certain ICs or channels'},...
                 ...%Channel selection, Epoch/HED settings
                 { 'Style', 'text', 'string', 'Category epoch boundaries (sec)', 'horizontalalignment', 'left','fontweight', 'bold', 'tag','catepoch','tooltipstring','determines number of parameters and position for categorical variables'},...
-                { 'Style', 'edit', 'string', num2str(s.category_epoch_boundaries),'tag', 'enterEpochBoundary', 'callback',@cllbk_enter_epoch_boundaries},...
+                { 'Style', 'edit', 'string', num2str(s.category_epoch_boundaries),'tag', 'enterCatEpochBoundary', 'callback',@cllbk_enter_epoch_boundaries},...
                 { 'Style', 'text', 'string', 'Continuous epoch boundaries (sec)', 'horizontalalignment', 'left','fontweight', 'bold' , 'tag','conepoch','tooltipstring','determines number of parameters and position for continuous variables'},...
-                { 'Style', 'edit', 'string', num2str(s.continuous_epoch_boundaries),'tag', 'enterEpochBoundary', 'callback',@cllbk_enter_epoch_boundaries},...
+                { 'Style', 'edit', 'string', num2str(s.continuous_epoch_boundaries),'tag', 'enterConEpochBoundary', 'callback',@cllbk_enter_epoch_boundaries},...
                 ...%Artifact handling
                 { 'Style', 'checkbox', 'string', 'Artifact rejection', 'horizontalalignment', 'left','tag', 'enableArtifactRejection','fontweight', 'bold','value',s.artifact_rejection_enable,'callback', @cllbk_enable_artifact_rejection,'tooltipstring','Automatically ensure that artifact frames are excluded from analysis (recommended)'},...
                 { 'Style', 'text', 'string', mess, 'horizontalalignment', 'right','tag', 'rejectedFramesCounter', 'enable',enableArtifactRejectionStatus },...
