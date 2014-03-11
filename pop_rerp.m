@@ -165,7 +165,7 @@ if exitcode
     dsname= tmp{1}{1};
     
     %Save results
-    rerp_result.saveRerpResult('path', fullfile(RerpProfile.rerp_path, 'results', 'last.rerp_result'));
+    rerp_result.setLastResult;
     if cp.settings.rerp_result_autosave
         resultfilename=[dsname ' ' rerp_result.analysis_name ' ' rerp_result.date_completed '.rerp_result'];
         
