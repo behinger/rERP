@@ -173,6 +173,7 @@ else
     varargout{2}=[];
     varargout{3}=0;
 end
+drawnow; 
 
 
 % --- Executes on selection change in dataset_list.
