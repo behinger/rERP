@@ -933,6 +933,10 @@ classdef RerpResult < matlab.mixin.Copyable
             end
         end
         
+        function setLastResult(obj)
+            obj.saveRerpResult('path', fullfile(RerpProfile.rerp_path, 'results','last.rerp_result'));
+        end
+        
         %Save a profile to disk
         function saveRerpResult(obj, varargin)
             import rerp_dependencies.*
