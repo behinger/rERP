@@ -1,3 +1,31 @@
+% Facilitate calling the lower level rerp function
+%   Usage:
+%       rerp_result = pop_rerp(EEG); 
+%           Create a default profile for EEG in rerp_profile_gui before
+%           executing
+%
+%       rerp_result = pop_rerp(EEG, rerp_profile);
+%           Call rerp with rerp_profile, WITHOUT launching
+%           GUI (for scripts)
+%
+%       rerp_result = pop_rerp(EEG, rerp_profile, 'force_gui', 1);
+%           Call rerp with rerp_profile, but launch GUI
+%
+%   Parameters:
+%       EEG (required)
+%           The EEGLAB structure of a single dataset, with the
+%           relevent data fields populated
+%
+%       rerp_profile
+%           Object of RerpProfile class
+%
+%       rerp_result
+%           Object of RerpResult class
+%   
+%   See also: 
+%       pop_rerp_study, rerp, RerpProfile, rerp_profile_gui, RerpResult, rerp_result_gui
+%           
+function [rerp_result, EEGOUT, com] = pop_rerp(EEG, rerp_profile, varargin)
 % Copyright (C) 2013 Matthew Burns, Swartz Center for Computational
 % Neuroscience.
 %
@@ -26,37 +54,6 @@
 % The views and conclusions contained in the software and documentation are those
 % of the authors and should not be interpreted as representing official policies,
 % either expressed or implied, of the FreeBSD Project.
-
-function [rerp_result, EEGOUT, com] = pop_rerp(EEG, rerp_profile, varargin)
-% POP_RERP() - user interface to rerp function. tooltips are available
-% within the GUI.
-%
-% Usage:
-%   >>  [rerp_result, EEGOUT, com] = pop_rerp( EEG, rerp_profile, varargin);
-%
-% Inputs:
-%   EEG          - input EEG dataset. Must have EEG.icaact populated with NON-EPOCHED data if
-%                   rerp_profile.settings.type_proc == 0. Must have "EEG.data" field filled with NON-EPOCHED
-%                   data.
-%
-%   rerp_profile - RerpProfile object to pass to rerp function. if not
-%                   specified or empty, a default profile will be generated
-%
-%   varargin     - view_only (0): only view the profile, do not execute
-%                   rerp function call
-%                  force_gui (0): force the GUI to come up, even if a
-%                   rerp_profile was specified. Lets us examine a profile
-%                   before calling rerp function.
-%
-% GUI description: read wiki and see tool tips by hovering over labels.
-%
-% Outputs:
-%  EEGOUT        - output dataset
-%
-%  rerp_result   - RerpResult object
-%
-% See also:
-%   rerp, RerpResult, RerpProfile, eegplugin_rerp, EEGLAB
 
 import rerp_dependencies.*
 

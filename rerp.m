@@ -1,3 +1,19 @@
+%Calculate ERP response by multiple regression
+%   Usage:
+%   	rerp_result = rerp(data, rerp_profile);
+%           Run analysis defined in rerp_profile against data 
+%       
+%   Parameters:
+%       data:
+%           CONTINUOUS data from EEG.data or EEG.icaact
+%
+%       rerp_profile:
+%           RerpProfile object
+%
+%   See also:
+%       RerpProfile, RerpResult, pop_rerp, pop_rerp_study
+
+function rerp_result = rerp(data, rerp_profile, varargin)
 % Copyright (C) 2013 Matthew Burns, Swartz Center for Computational
 % Neuroscience.
 %
@@ -26,27 +42,6 @@
 % The views and conclusions contained in the software and documentation are those
 % of the authors and should not be interpreted as representing official policies,
 % either expressed or implied, of the FreeBSD Project.
-
-function rerp_result = rerp(data, rerp_profile, varargin)
-% RERP() - calculate the erp response to events in time series via regression.
-%
-% Usage:
-%   >>  rerp_result = rerp(data, rerp_profile, varargin)
-%
-% Inputs:
-%
-%   data: the time series you wish to regress on (m by n by f: m=length of data, 
-%           n=dimension of single sample (i.e. number of channels), 
-%           f=number of frequencies (1 if not using rersp functionality).
-%
-%   rerp_profile: the RerpProfile object used to specifiy the settings of
-%           the regression. See RerpProfile for more detials.
-%
-% Outputs:
-%   rerp_result: the RerpResult object. see RerpResult for more details. 
-%
-% See also:
-%   pop_rerp, eegplugin_rerp, EEGLAB
 
 import rerp_dependencies.*
 p = rerp_profile;
@@ -147,6 +142,7 @@ artifact_indexes = [false(data_pad(1),1); artifact_indexes; false(data_pad(2),1)
 data = double(data(~artifact_indexes, :));
 predictor = predictor(~artifact_indexes, :);
 
+%Don't worry about these
 arg_parser=inputParser;
 addOptional(arg_parser,'P', []);
 addOptional(arg_parser,'q',[]);

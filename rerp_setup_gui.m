@@ -1,3 +1,10 @@
+%GUI select datasets and profile to be processed by pop_rerp_study
+%A list of profiles
+%   Usage:
+%       [eeg_dataset_paths, rerp_profile, exitcode] = rerp_setup_gui;
+%           Launch
+%
+function varargout = rerp_setup_gui(varargin)
 % Copyright (C) 2013 Matthew Burns, Swartz Center for Computational
 % Neuroscience.
 %
@@ -26,8 +33,7 @@
 % The views and conclusions contained in the software and documentation are those
 % of the authors and should not be interpreted as representing official policies,
 % either expressed or implied, of the FreeBSD Project.
-
-function varargout = rerp_setup_gui(varargin)
+%
 % RERP_SETUP_GUI MATLAB code for rerp_setup_gui.fig
 %      RERP_SETUP_GUI, by itself, creates a new RERP_SETUP_GUI or raises the existing
 %      singleton*.
@@ -82,7 +88,7 @@ function rerp_setup_gui_OpeningFcn(hObject, eventdata, handles, varargin)
 % varargin   command line arguments to rerp_setup_gui (see VARARGIN)
 
 p=inputParser;
-addOptional(p,'rerp_profile', @(x) isa(x,'RerpProfile'));
+addOptional(p,'rerp_profile', [], @(x) isa(x,'RerpProfile'));
 addOptional(p,'eeg_dataset_paths', {}, @(x) iscell(x));
 parse(p, varargin{:});
 handles.UserData.eeg_dataset_paths=p.Results.eeg_dataset_paths(:)';
@@ -110,33 +116,29 @@ for i= 1:length(profiledir);
     
 end
 
-%If no paths were passed, load one before continuing
-if isempty(handles.UserData.eeg_dataset_paths)
-    try 
-        start_path=evalin('base', 'oldp');
-    catch
-        start_path=[];
-    end
-            
-    [FileName,PathName] = uigetfile('*.set', 'Select datasets:', start_path ,'MultiSelect','on');
-
-    if ~iscell(FileName)
-        FileName={FileName};
-    end
-
-    if FileName{1}
-        new_dataset_paths=cellfun(@(x) fullfile(PathName, x), FileName, 'UniformOutput', false);
-        handles.UserData.eeg_dataset_paths=unique([handles.UserData.eeg_dataset_paths(:)' new_dataset_paths(:)']);
-    end
-end
+% %If no paths were passed, load one before continuing
+% if isempty(handles.UserData.eeg_dataset_paths)
+%     try
+%         start_path=evalin('base', 'oldp');
+%     catch
+%         start_path=[];
+%     end
+%
+%     [FileName,PathName] = uigetfile('*.set', 'Select datasets:', start_path ,'MultiSelect','on');
+%
+%     if ~iscell(FileName)
+%         FileName={FileName};
+%     end
+%
+%     if FileName{1}
+%         new_dataset_paths=cellfun(@(x) fullfile(PathName, x), FileName, 'UniformOutput', false);
+%         handles.UserData.eeg_dataset_paths=unique([handles.UserData.eeg_dataset_paths(:)' new_dataset_paths(:)']);
+%     end
+% end
 
 %If we have dataset paths, list them, otherwise, return,
 if ~isempty(handles.UserData.eeg_dataset_paths)
     set(handles.dataset_list,'String', handles.UserData.eeg_dataset_paths, 'Value', 1:length(handles.UserData.eeg_dataset_paths));
-
-else
-    close(hObject); 
-    return; 
 end
 
 if ~isempty(handles.UserData.profiles)
@@ -173,7 +175,7 @@ else
     varargout{2}=[];
     varargout{3}=0;
 end
-drawnow; 
+drawnow;
 
 
 % --- Executes on selection change in dataset_list.
@@ -254,17 +256,25 @@ function add_profiles_Callback(hObject, eventdata, handles)
 % hObject    handle to add_profiles (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-[FileName,PathName] = uigetfile('*.rerp_profile', 'Select profiles:',...
+[FileName,PathName] = uigetfile('*.rerp_profile;*.rerp_result', 'Select profiles:',...
     fullfile(RerpProfile.rerp_path,'profiles'),'MultiSelect','on');
 
-if ~iscell(FileName)
-    FileName={FileName};
-end
+FileName=cellstr(FileName);
+profile_parts=regexp(FileName,'.*\.rerp_profile');
+result_parts=regexp(FileName,'.*\.rerp_result');
 
 new_profiles=struct([]);
-for i=1:length(FileName)
-    new_profiles(i).profile=RerpProfile.loadRerpProfile('path',fullfile(PathName, FileName{i}));
-    new_profiles(i).name=FileName{i};
+if FileName{1}
+    for i=1:length(FileName)
+        if profile_parts{i}
+            new_profiles(i).profile=RerpProfile.loadRerpProfile('path',fullfile(PathName, FileName{i}));
+            new_profiles(i).name=FileName{i};
+        elseif result_parts{i}
+            rerp_result = RerpResult.loadRerpResult('path', fullfile(PathName, FileName{i}));
+            new_profiles(i).profile = rerp_result.rerp_profile;
+            new_profiles(i).name=FileName{i};
+        end
+    end
 end
 
 handles.UserData.profiles = [handles.UserData.profiles new_profiles];
@@ -301,19 +311,19 @@ end
 [FileName,PathName] = uigetfile('*.set', 'Select datasets:',start_path,'MultiSelect','on');
 
 if ~iscell(FileName)
-    FileName={FileName}; 
+    FileName={FileName};
 end
 
 if FileName{1}
     new_dataset_paths=cellfun(@(x) fullfile(PathName, x), FileName, 'UniformOutput', false);
     handles.UserData.eeg_dataset_paths=unique([handles.UserData.eeg_dataset_paths(:)' new_dataset_paths(:)']);
-
+    
     if ~isempty(handles.UserData.eeg_dataset_paths)
         set(handles.dataset_list,'String', handles.UserData.eeg_dataset_paths, 'Value', 1:length(handles.UserData.eeg_dataset_paths));
     end
     
     guidata(handles.output, handles);
-
+    
 end
 
 % --- Executes on button press in clear_datasets.
@@ -325,7 +335,7 @@ handles.UserData.eeg_dataset_paths={};
 contents = get(handles.dataset_list,'String');
 
 if ~isempty(contents)
-    keep_idx = setdiff(1:length(contents), get(handles.dataset_list,'Value')); 
+    keep_idx = setdiff(1:length(contents), get(handles.dataset_list,'Value'));
     set(handles.dataset_list, 'String', contents(keep_idx));
     set(handles.dataset_list, 'Value', 1);
 else
@@ -333,7 +343,7 @@ else
 end
 
 if ~isempty(handles.UserData.eeg_dataset_paths)
-    set(handles.generate_default,'Visible','off'); 
+    set(handles.generate_default,'Visible','off');
 end
 
 dataset_list_Callback(handles.dataset_list, eventdata, handles);
@@ -352,7 +362,7 @@ function clear_profiles_Callback(hObject, eventdata, handles)
 % hObject    handle to clear_profiles (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles.UserData.profiles=struct([]); 
+handles.UserData.profiles=struct([]);
 set(handles.profiles_list, 'String', {},'Value',1);
 profiles_list_Callback(handles.profiles_list, eventdata, handles);
 
@@ -365,15 +375,15 @@ contents=cellstr(get(handles.dataset_list, 'String'));
 paths=contents(get(handles.dataset_list, 'Value'));
 pathparts=regexp(paths{1},'(.*)[\\\/](.*\.set)','tokens');
 if ~isempty(paths)
-    this_dataset=pop_loadset('filename',pathparts{1}{2},'filepath',pathparts{1}{1}, 'loadmode', 'info'); 
+    this_dataset=pop_loadset('filename',pathparts{1}{2},'filepath',pathparts{1}{1}, 'loadmode', 'info');
 else
     return;
 end
 
 new_profile.profile=RerpProfile.getDefaultProfile(this_dataset);
-new_profile.name=strrep(this_dataset.filename,'.set','.rerp_profile'); 
-new_profile.profile.saveRerpProfile('path', fullfile(RerpProfile.rerp_path, 'profiles', new_profile.name)); 
+new_profile.name=strrep(this_dataset.filename,'.set','.rerp_profile');
+new_profile.profile.saveRerpProfile('path', fullfile(RerpProfile.rerp_path, 'profiles', new_profile.name));
 
-handles.UserData.profiles=[handles.UserData.profiles new_profile]; 
+handles.UserData.profiles=[handles.UserData.profiles new_profile];
 set(handles.profiles_list, 'String', {handles.UserData.profiles(:).name});
 profiles_list_Callback(handles.profiles_list, eventdata, handles);

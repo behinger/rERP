@@ -1,3 +1,6 @@
+%Add rERP toolbox functionality to EEGLAB GUI 
+
+function eegplugin_rerp( fig, trystr, catchstr )
 % Copyright (C) 2013 Matthew Burns, Swartz Center for Computational
 % Neuroscience.
 %
@@ -26,9 +29,6 @@
 % The views and conclusions contained in the software and documentation are those
 % of the authors and should not be interpreted as representing official policies,
 % either expressed or implied, of the FreeBSD Project.
-
-function eegplugin_rerp( fig, trystr, catchstr )
-%eegplugin_rerp(): add toolbox GUI functionality to EEGLAB
 
 toolsmenu = findobj(fig, 'tag', 'tools');
 submenu = uimenu( toolsmenu, 'label', 'rERP','separator','on','userdata','startup:on;epoch:off;study:on');

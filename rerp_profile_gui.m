@@ -149,7 +149,7 @@ drawnow;
         if ~any(strcmp('Wavelet Toolbox',toolboxes))
             s.ersp_enable=0;
             set(src, 'Value',0);
-            warning('pop_rerp: time frequncy decmposition for rERSP requires wavelet toolbox');
+            warning('rerp_profile_gui: time frequncy decmposition for rERSP requires wavelet toolbox');
         else
             s.ersp_enable=src_props.Value;
         end
@@ -228,7 +228,7 @@ drawnow;
             RerpProfile.get_artifact_handle(instr);
             s.artifact_function_name = instr;
             cp.settings.artifact_function_name=instr;
-            fprintf('pop_rerp: using artifact function %s\n', s.artifact_function_name);
+            fprintf('rerp_profile_gui: using artifact function %s\n', s.artifact_function_name);
         catch e
             set(src, 'String', s.artifact_function_name);
             disp(e.message);
@@ -278,23 +278,23 @@ drawnow;
                 try
                     if isempty(setdiff(retvar, [0 1]));
                         if length(retvar)==EEG.pnts
-                            fprintf('pop_rerp: artifact variable %s successfully imported from workspace\n', instr);
+                            fprintf('rerp_profile_gui: artifact variable %s successfully imported from workspace\n', instr);
                             cp.variable_artifact_indexes = retvar;
                             cp.artifact_variable_name = instr;
                         else
-                            fprintf('pop_rerp: artifact variable %s not same length as data... should be a binary index vector same length as data\n', instr);
+                            fprintf('rerp_profile_gui: artifact variable %s not same length as data... should be a binary index vector same length as data\n', instr);
                         end
                     else
-                        fprintf('pop_rerp: artifact variable %s not binary index vector\n', instr);
+                        fprintf('rerp_profile_gui: artifact variable %s not binary index vector\n', instr);
                     end
                 catch
-                    fprintf('pop_rerp: unknown error importing artifact variable %s from workspace\n', instr);
+                    fprintf('rerp_profile_gui: unknown error importing artifact variable %s from workspace\n', instr);
                 end
             catch
                 if ~strcmp(instr, cp.artifact_variable_name)
-                    fprintf('pop_rerp: artifact variable %s not found in workspace\n', instr);
+                    fprintf('rerp_profile_gui: artifact variable %s not found in workspace\n', instr);
                 else
-                    fprintf('pop_rerp: using previous artifact variable %s\n', instr);
+                    fprintf('rerp_profile_gui: using previous artifact variable %s\n', instr);
                 end
             end
         end
@@ -413,7 +413,7 @@ drawnow;
 %CHANGE the HED specification
     function cllbk_change_hedspec(src, eventdata)
         [fn,pn] = uigetfile('*.xml','Select the HED specification XML file');
-        fprintf('\npop_rerp: using %s\n',fn);
+        fprintf('\nrerp_profile_gui: using %s\n',fn);
         if fn
             s.hed_spec_path = [pn fn];
         end
@@ -425,7 +425,7 @@ drawnow;
         if ~isempty(current_included_hed_tree)
             current_included_hed_tree.plot;
         else
-            disp('pop_rerp: could not display hierarchy - no hed_tree found');
+            disp('rerp_profile_gui: could not display hierarchy - no hed_tree found');
         end
     end
 
@@ -606,9 +606,9 @@ drawnow;
             new_lambda = str2num(instr);
             s.lambda = new_lambda;
             
-            assert(length(new_lambda)==2, 'pop_rerp: Lambda must have two entries [L1 norm, L2 norm]');
+            assert(length(new_lambda)==2, 'rerp_profile_gui: Lambda must have two entries [L1 norm, L2 norm]');
         catch
-            disp('pop_rerp: Lambda not accepted, must be numeric, expressions allowed');
+            disp('rerp_profile_gui: Lambda not accepted, must be numeric, expressions allowed');
         end
     end
 
@@ -709,7 +709,7 @@ drawnow;
                     hed_manager = hedManager(s.hed_spec_path);
                     current_included_hed_tree = hedTree(cp.include_tag, hed_manager);
                 catch e
-                    disp('pop_rerp: could not load the designated HED specification');
+                    disp('rerp_profile_gui: could not load the designated HED specification');
                     current_included_hed_tree = hedTree(cp.include_tag);
                     rethrow(e);
                 end
@@ -1055,11 +1055,11 @@ drawnow;
             % recall make_gui.
         catch e
             field=regexp(e.message,'.*''(.*)''','tokens');
-            if (~isempty(field))&&view_only
+            if (~isempty(field))
                 s.(field{1}{1})=[];
                 make_gui;
             else
-                disp('pop_rerp: problem with profile, possibly an outdated version');
+                disp('rerp_profile_gui: problem with profile, possibly an outdated version');
                 throw(e);
             end
         end  

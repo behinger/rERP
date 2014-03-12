@@ -1,3 +1,43 @@
+%Run pop_rerp function against study or multiple datasets 
+%   Usage:
+%       rerp_result_study = pop_rerp_study('study', STUDY);
+%           Run pop_rerp against all datasets listed in the EEGLAB STUDY
+%           struct (launches rerp_setup_gui) 
+%
+%       rerp_result_study = pop_rerp_study('eeg', ALLEEG);
+%           Run pop_rerp against all datasets listed in the EEGLAB ALLEEG
+%           struct. ALLEEG can be just a single dataset (launches rerp_setup_gui)
+%    
+%       rerp_result_study = pop_rerp_study('eeg_dataset_paths', {'/data/RSVP/exp_53.set', '/data/RSVP/exp_54.set'});
+%           Run pop_rerp against datasets listed in cell array of 
+%           dataset full paths (launches rerp_setup_gui)
+%
+%       rerp_result_study = pop_rerp_study(..., 'rerp_profile');
+%           Run pop_rerp against datasets listed in cell array of full
+%           dataset paths (NO GUI, just runs the profile against datasets for scripting)
+%
+%       rerp_result_study = pop_rerp_study(..., 'rerp_profile', 'force_gui', 1);
+%           Run pop_rerp against datasets listed in cell array of full
+%           dataset paths, but launch GUI first (rerp_profile is called
+%           'passed-in' in GUI) 
+%
+%   Parameters:
+%       STUDY:
+%           EEGLAB STUDY struct
+%
+%       ALLEEG:
+%           EEGLAB ALLEEG struct
+%
+%       rerp_profile:
+%           Object of RerpProfile class
+%
+%       rerp_result_study:
+%           Object of RerpResultStudy class
+%
+%   See also:
+%       rerp_setup_gui, pop_rerp, rerp, RerpProfile, RerpResultStudy
+
+function [ rerp_result_study ] = pop_rerp_study(varargin)
 % Copyright (C) 2013 Matthew Burns, Swartz Center for Computational
 % Neuroscience.
 %
@@ -26,9 +66,6 @@
 % The views and conclusions contained in the software and documentation are those
 % of the authors and should not be interpreted as representing official policies,
 % either expressed or implied, of the FreeBSD Project.
-
-function [ rerp_result_study ] = pop_rerp_study(varargin)
-%POP_RERP_STUDY Run the rerp function against a study or multiple datasets
 
 p=inputParser;
 addOptional(p,'rerp_profile', []);
