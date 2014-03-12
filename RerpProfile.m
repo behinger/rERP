@@ -1,21 +1,21 @@
 %RERP_PROFILE Define the regression settings used to call to rerp()
-%   Usage: 
-%       rerp_profile = RerpProfile(EEG); 
-%           Create a profile for EEG using default settings from default.rerp_profile 
+%   Usage:
+%       rerp_profile = RerpProfile(EEG);
+%           Create a profile for EEG using default settings from default.rerp_profile
 %           or hard coded defaults if file is not available
-%           
-%       rerp_profile = RerpProfile(EEG, settings); 
-%           Create a profile for EEG using the settings from another profile 
-%           (settings=rerp_profile.settings)  
 %
-%       rerp_profile = RerpProfile(EEG, other_rerp_profile); 
+%       rerp_profile = RerpProfile(EEG, settings);
+%           Create a profile for EEG using the settings from another profile
+%           (settings=rerp_profile.settings)
+%
+%       rerp_profile = RerpProfile(EEG, other_rerp_profile);
 %           Create a profile for EEG based on another RerpProfile object
 %
 %       rerp_profile = RerpProfile(EEG, rerp_result);
 %           Create a profile for EEG based on RerpResult object (extracts
 %           the settings used to get that result)
 %
-%   See also: rerp_profile_gui, pop_rerp, rerp, RerpResult 
+%   See also: rerp_profile_gui, pop_rerp, rerp, RerpResult
 
 classdef RerpProfile < matlab.mixin.Copyable
     % Copyright (C) 2013 Matthew Burns, Swartz Center for Computational
@@ -48,8 +48,8 @@ classdef RerpProfile < matlab.mixin.Copyable
     % either expressed or implied, of the FreeBSD Project.
     
     properties
-        %This struct can be applied to many datasets with the same experimental
-        %event types/ hed tag structure. Can use it to instantiate new RerpProfile objects.
+        %This struct can be applied to many datasets with the same experimental event types/ hed tag structure.
+        %Can use it to instantiate new RerpProfile objects.
         %See RerpProfile.getDefaultRerpProfile method for default settings.
         settings;
         
@@ -218,18 +218,18 @@ classdef RerpProfile < matlab.mixin.Copyable
             end
         end
         
-        %Save a profile to disk
-        %   Usage:
-        %       rerp_profile.saveRerpProfile; 
-        %           opens a gui to choose the path to save profile
-        %       
-        %       rerp_profile.saveRerpProfile('rerp_path', '/data/projects/RSVP');
-        %           opens gui starting at that path
-        %
-        %       rerp_profile.saveRerpProfile('path', '/data/projects/RSVP/exp_53.rerp_profile');
-        %           save this profile to the specific path (will create the
-        %           dir if does not exist)
         function saveRerpProfile(obj, varargin)
+            %Save a profile to disk
+            %   Usage:
+            %       rerp_profile.saveRerpProfile;
+            %           opens a gui to choose the path to save profile
+            %
+            %       rerp_profile.saveRerpProfile('rerp_path', '/data/projects/RSVP');
+            %           opens gui starting at that path
+            %
+            %       rerp_profile.saveRerpProfile('path', '/data/projects/RSVP/exp_53.rerp_profile');
+            %           save this profile to the specific path (will create the
+            %           dir if does not exist)
             import rerp_dependencies.*
             
             p=inputParser;
@@ -282,14 +282,12 @@ classdef RerpProfile < matlab.mixin.Copyable
             end
         end
         
-        %Compute artifact frames using the function specified in 
-        %rerp_profile.settings.artifact_function_name and store the indexes
-        %in the profile
-        %   Usage:
-        %       rerp_profile.compute_artifact_indexes(EEG); 
-        %           computes artifact indexes and saves them in
-        %           rerp_profile.computed_artifact_indexes; 
         function compute_artifact_indexes(obj, EEG)
+            %Compute artifact frames using the function specified in rerp_profile.settings.artifact_function_name and store the indexes in the profile
+            %   Usage:
+            %       rerp_profile.compute_artifact_indexes(EEG);
+            %           computes artifact indexes and saves them in
+            %           rerp_profile.computed_artifact_indexes;
             import rerp_dependencies.*
             
             assert(size(EEG.data,3)==1, 'pop_rerp: must compute artifact indexes on continuous channel data (not time-frequency or epoched)');
@@ -304,24 +302,24 @@ classdef RerpProfile < matlab.mixin.Copyable
             end
         end
         
-        %Set the artifact indexes of the profile directly
-        %   Usage:
-        %       rerp_profile.set_artifact_indexes(artifact_indexes)
-        %           artifact indexes must be a logical vector same length
-        %           as data. 
         function set_artifact_indexes (obj, artifact_indexes)
+            %Set the artifact indexes of the profile directly
+            %   Usage:
+            %       rerp_profile.set_artifact_indexes(artifact_indexes)
+            %           artifact indexes must be a logical vector same length
+            %           as data.
             assert(length(artifact_indexes)==obj.pnts, 'RerpProfile: artifact indexes must be logical vector same length as data');
             obj.variable_artifact_indexes= artifact_indexes;
             obj.artifact_variable_name='passed in';
             obj.settings.artifact_variable_enable=1;
         end
         
-        %Save stripped down profile to be used as a template for new
-        %profiles
-        %   Usage:
-        %       rerp_profile.setDefaultProfile; 
-        %           saves a template version of the profile in profiles/default.rerp_profile 
+        
         function setDefaultProfile(obj)
+            %Save stripped down profile to be used as a template for new profiles
+            %   Usage:
+            %       rerp_profile.setDefaultProfile;
+            %           saves a template version of the profile in profiles/default.rerp_profile
             defpro=copy(obj);
             defpro.settings.exclude_tag=0;
             
@@ -347,23 +345,24 @@ classdef RerpProfile < matlab.mixin.Copyable
             defpro.saveRerpProfile('path',fullfile(RerpProfile.rerp_path, 'profiles','default.rerp_profile'));
         end
         
-        %Save profile as profiles/last.rerp_profile
-        %   Usage:
-        %       rerp_profile.setLastProfile; 
+        
         function setLastProfile(obj)
+            %Save profile as profiles/last.rerp_profile
+            %   Usage:
+            %       rerp_profile.setLastProfile;
             obj.saveRerpProfile('path', fullfile(RerpProfile.rerp_path, 'profiles','last.rerp_profile'));
         end
     end
     
     methods(Static=true)
         
-        %Get the artifact function handle with new string. Function must be in a file.
-        %This will throw an error if the file is not found.
-        %   Usage:
-        %       artifact_function_handle = get_artifact_handle('rerp_reject_samples_robcov');
-        %           gets the function handle from the file
-        %           rerp_reject_samples_robcov.m or returns an error
         function h = get_artifact_handle(instr)
+            %Get the artifact function handle with new string. Function must be in a file.
+            %This will throw an error if the file is not found.
+            %   Usage:
+            %       artifact_function_handle = get_artifact_handle('rerp_reject_samples_robcov');
+            %           gets the function handle from the file
+            %           rerp_reject_samples_robcov.m or returns an error
             h=[];
             if ~isempty(instr)
                 try
@@ -382,11 +381,10 @@ classdef RerpProfile < matlab.mixin.Copyable
             end
         end
         
-        %Get default RerpProfile for single EEG dataset. Same as calling
-        %RerpProfile(EEG). 
-        %   Usage:
-        %       rerp_profile = RerpProfile.getDefaultRerpProfile(EEG); 
         function rerp_profile = getDefaultProfile(EEG)
+            %Get default RerpProfile for single EEG dataset. Same as calling RerpProfile(EEG).
+            %   Usage:
+            %       rerp_profile = RerpProfile.getDefaultRerpProfile(EEG);
             import rerp_dependencies.*
             
             disp('RerpProfile: loading default settings');
@@ -442,25 +440,25 @@ classdef RerpProfile < matlab.mixin.Copyable
             end
         end
         
-        %Get path to rERP toolbox
-        %   Usage: 
-        %       path=RerpProfile.rerp_path;
         function path = rerp_path
+            %Get path to rERP toolbox
+            %   Usage:
+            %       path=RerpProfile.rerp_path;
             rerp_path_components=regexp(strtrim(mfilename('fullpath')),'[\/\\]','split');
             path = [filesep fullfile(rerp_path_components{1:(end-1)})];
         end
         
-        %Load a profile from disk
-        %   Usage:
-        %       rerp_profile = RerpProfile.loadRerpProfile;
-        %           Select .rerp_profile file using GUI
-        %
-        %       rerp_profile = RerpProfile.loadRerpProfile('rerp_path', '/data/projects/RSVP');
-        %           Open GUI atarting at that path
-        %       
-        %       rerp_profile = RerpProfile.loadRerpProfile('path', '/data/projects/RSVP/exp_53.rerp_profile');
-        %           Saves rerp_profile to that path
         function rerp_profile = loadRerpProfile(varargin)
+            %Load a profile from disk
+            %   Usage:
+            %       rerp_profile = RerpProfile.loadRerpProfile;
+            %           Select .rerp_profile file using GUI
+            %
+            %       rerp_profile = RerpProfile.loadRerpProfile('rerp_path', '/data/projects/RSVP');
+            %           Open GUI starting at that path
+            %
+            %       rerp_profile = RerpProfile.loadRerpProfile('path', '/data/projects/RSVP/exp_53.rerp_profile');
+            %           Loads rerp_profile from that path, if present
             import rerp_dependencies.*
             
             p=inputParser;
@@ -499,10 +497,10 @@ classdef RerpProfile < matlab.mixin.Copyable
     end
 end
 
-%Define the contract for instantiating RerpProfile. You must provide these
-%exact fields in order to instantiate RerpProfile.
+
 function p = makeParser
-p=inputParser;
+%Define the contract for instantiating RerpProfile. 
+%You must provide these exact fields in order to instantiate RerpProfile.p=inputParser;
 
 %Validation functions
 validateBinary = @(x) isempty(setdiff(x, [0 1])) && isscalar(x);
