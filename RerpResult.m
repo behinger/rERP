@@ -288,7 +288,7 @@ classdef RerpResult < matlab.mixin.Copyable
             tmin = min(min(vals), 0);
             
             if ~isempty(obj.rerp_plot_spec.significance_level)
-                rsquare_significance = obj.get_total_rsquare_significance(obj.rerp_plot_spec.significance_level);
+                rsquare_significance = obj.get_total_rsquare_significance;
                 rsquare_significance = rsquare_significance(obj.rerp_plot_spec.ts_idx);
             end
             
