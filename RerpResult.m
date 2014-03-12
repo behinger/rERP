@@ -1,158 +1,42 @@
-% Copyright (C) 2013 Matthew Burns, Swartz Center for Computational
-% Neuroscience.
-%
-% User feedback welcome: email rerptoolbox@gmail.com
-%
-% Redistribution and use in source and binary forms, with or without
-% modification, are permitted provided that the following conditions are met:
-%
-% 1. Redistributions of source code must retain the above copyright notice, this
-%    list of conditions and the following disclaimer.
-% 2. Redistributions in binary form must reproduce the above copyright notice,
-%    this list of conditions and the following disclaimer in the documentation
-%    and/or other materials provided with the distribution.
-%
-% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-% ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-% WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-% DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-% ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-% (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-% LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-% ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-% (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-%
-% The views and conclusions contained in the software and documentation are those
-% of the authors and should not be interpreted as representing official policies,
-% either expressed or implied, of the FreeBSD Project.
+%RERP_RESULT class defines results from rerp function and related plotting functions.
+%rerp_result_gui will assist calling the methods in this function
 
 classdef RerpResult < matlab.mixin.Copyable
-    %RERP_RESULT class defines results from rerp function and related plotting functions.
-    % rerp_result_gui will assist calling the methods in this function.
+    % Copyright (C) 2013 Matthew Burns, Swartz Center for Computational
+    % Neuroscience.
     %
-    % Methods:
+    % User feedback welcome: email rerptoolbox@gmail.com
     %
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Redistribution and use in source and binary forms, with or without
+    % modification, are permitted provided that the following conditions are met:
     %
-    %   Inputs (common):
-    %       event_idx: index into tags array returned by
-    %           obj.get_plotting_params. Used to specify which events or hed
-    %           tags are to be plotted.
-    %       ts_idx: the channel or component index of the
-    %           rerp_estimate array. Used to specify which time series to plot.
-    %       h: handle to figure used for plotting (OPTIONAL)
+    % 1. Redistributions of source code must retain the above copyright notice, this
+    %    list of conditions and the following disclaimer.
+    % 2. Redistributions in binary form must reproduce the above copyright notice,
+    %    this list of conditions and the following disclaimer in the documentation
+    %    and/or other materials provided with the distribution.
     %
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+    % ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    % WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    % DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+    % ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+    % (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+    % LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+    % ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    % (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+    % SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     %
-    %   rerp_result = RerpResult(rerp_profile) (CONSTRUCTOR)
-    %       Input:
-    %           rerp_profile: the RerpProfile object used to generate the
-    %           result.
-    %       Output:
-    %           rerp_result: the RerpResult object
-    %
-    %   plotRerpEventTypes(event_idx, ts_idx, h)
-    %       Description: Plots rerp estimates for event types from multiple time series
-    %           on same axis (one plot per event type). ts_idx specifies which time
-    %           series are included, event_idx indicates which event types to
-    %           include
-    %
-    %   plotRerpTimeSeries(event_idx, ts_idx, h)
-    %       Description: Plot rerp estimates for event types on same axis (one plot
-    %           per time series). ts_idx specifies which time
-    %           series are included, event_idx indicates which event types to
-    %           include
-    %
-    %   plotRerpTotalRsquared(ts_idx, significance_level, h)
-    %       Description: Plots the average rsquare for the time series as a whole with significance markings.
-    %           Time series are ranked on average rsquare, with ttest taken
-    %           across xvalidation folds.
-    %       Input:
-    %           significance_level: used for ttest across cross validation
-    %               folds
-    %
-    %   plotRerpEventRsquared(ts_idx, significance_level, event_idx, h)
-    %       Description: Plots the average rsquare taking into account only specific event types,
-    %           with significance markings. Time series are ranked on average rsquare, with ttest taken
-    %           across xvalidation folds.
-    %       Input:
-    %           significance_level: used for ttest across cross validation
-    %               folds
-    %
-    %   plotRerpImage(EEG, locking_idx, delay_idx, ts_idx, window_size_ms, h)
-    %       Description: Plots raw epochs, modeled epochs and the difference (3 plots)
-    %           Sorts epochs based on the delay from the locking event onset to
-    %           delay event onset.
-    %       Input:
-    %           EEG: the EEG struct of the dataset that was analyzed
-    %           locking_idx: index into tags array returned by
-    %               obj.get_plotting_params. Used as the locking event for
-    %               epoch extraction.
-    %           delay_idx: index into tags array returned by
-    %               obj.get_plotting_params. For each locking event, calculates
-    %               the delay to the next delay event and sort eopchs based on
-    %               delay.
-    %           window_size_ms: the epoch length
-    %
-    %   plotRersp(event_idx, ts_idx, h)
-    %       Description: Plots regressed ERSP estimates
-    %
-    %   plotGridSearch(ts_idx, h)
-    %       Description: Plots predictive surfaces and optimal values for all
-    %           grid search zoom levels, if available
-    %
-    %   [tags, estimates, xaxis_ms, epoch_boundaries] = get_plotting_params
-    %       Description: Plots predictive surfaces and optimal values for all
-    %           grid search zoom levels, if available
-    %       Output:
-    %           tags:
-    %           estimates:
-    %           xaxis_ms:
-    %           epoch_boundaries:
-    %
-    %   saveRerpResult(varargin)
-    %       Description: Saves this result to disk; opens GUI if 'path' is not
-    %           specified.
-    %       Input:
-    %           varargin:
-    %               path: when specified, automatically saves to that path
-    %               rerp_path: path where GUI will start looking
-    %
-    % Static methods:
-    %   rerp_result = loadRerpResult(varargin)
-    %       Description: Loads RerpResult from disk (*.rerp_result); opens GUI if 'path' is not
-    %           specified.
-    %       Input:
-    %           varargin:
-    %               path: when specified, automatically loads from that path
-    %               rerp_path: path where GUI will start looking
-    %       Output:
-    %           rerp_result: the RerpResult object
-    %
-    %   result = combineRerpResults(rerp_results)
-    %       Description: Allows us to split the dataset into individual time courses for
-    %           parallel processing, then combine the results back into a single object. rerp_results
-    %           parameter is a cell array of RerpResult objects in increasing channel/IC number order.
-    %       Input:
-    %           rerp_results: a cell array of RerpResult objects
-    %       Output:
-    %           result: the combined RerpResult object
-    %
-    %   xaxis_ms = get_xaxis_ms(epoch_boundaries, sample_rate)
-    %       Description: Get x axis ticks for plotting erp waveform
-    %       Input:
-    %           epoch_boundaries: the boundaries of the window in seconds
-    %           sample_rate
-    %       Output:
-    %           xaxis_ms: time vector in ms.
+    % The views and conclusions contained in the software and documentation are those
+    % of the authors and should not be interpreted as representing official policies,
+    % either expressed or implied, of the FreeBSD Project.
     
     properties
         rerp_profile % Profile used to derive this result
         analysis_name % A title assigned by the rerp function
         
-        date_completed
-        compute_time_seconds;
+        date_completed %Exact date and time analysis was completed
+        compute_time_seconds=0; %How many compute seconds this result took
         
         lambda=[] % The optimal lambda if grid search was used, or the only lambda otherwise
         ersp_flag=0 % 1 if this result was computed from time-frequency decomposed data
@@ -167,45 +51,55 @@ classdef RerpResult < matlab.mixin.Copyable
         event_xval_folds=[] % Cross validation structures for each fold
         
         gridsearch % A complete history of the grid search process, if any
+        
+        rerp_plot_spec %RerpPlotSpec object 
     end
     
     methods
-        
-        % Constructor
         function obj = RerpResult(rerp_profile)
+            import rerp_dependencies.RerpPlotSpec
+            
             obj.rerp_profile = rerp_profile;
+            obj.rerp_plot_spec=RerpPlotSpec; 
         end
         
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % Plotting Functions
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %Plotting
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
-        % Plots rerp estimates for all event types from multiple time series
-        % on same axis (one plot per event type). ts_idx specifies which time
-        % series are included, event_idx indicates which event types to
-        % include
-        function plotRerpEventTypes(obj, event_idx, ts_idx, h, exclude_insignificant, significance_level)
+        function plotRerpEventTypes(obj, h)
+            %Plot rerp estimates for time series on same axis (one plot per event type or hed tag).
+            %Option for only plotting ERP waveforms which correspond to
+            %statistically significant Rsquare at specified p-value threshold.
+            %    Usage:
+            %        rerp_result.plotRerpEventTypes(rerp_plot_spec.event_idx, rerp_plot_spec.ts_idx);
+            %        rerp_result.plotRerpEventTypes(rerp_plot_spec.event_idx, rerp_plot_spec.ts_idx, rerp_plot_spec.exclude_insignificant);
+            %        rerp_result.plotRerpEventTypes(rerp_plot_spec.event_idx, rerp_plot_spec.ts_idx, rerp_plot_spec.exclude_insignificant, rerp_plot_spec.significance_level);
+            %        rerp_result.plotRerpEventTypes(rerp_plot_spec.event_idx, rerp_plot_spec.ts_idx, rerp_plot_spec.exclude_insignificant, rerp_plot_spec.significance_level, h);
+            %    Parameters:
+            %        rerp_plot_spec.exclude_insignificant [true false] - whether to skip plotting statistically insignificant ERP estimates
+            %        rerp_plot_spec.significance_level - p-value threshold for determining significance
             import rerp_dependencies.*
             
             if ~exist('h','var')
                 h=figure;
             end
             
-            if ~exist('exclude_insignificant','var')
-                exclude_insignificant=0;
+            if ~exist('rerp_plot_spec.exclude_insignificant','var')
+                obj.rerp_plot_spec.exclude_insignificant=0;
             end
             
-            if ~exist('significance_level','var')
-                significance_level=.05;
+            if ~exist('rerp_plot_spec.significance_level','var')
+                obj.rerp_plot_spec.significance_level=.05;
             end
             
-            if exclude_insignificant
-                significance_label = [' ( significant @ p < ' num2str(significance_level) ' )'];
+            if obj.rerp_plot_spec.exclude_insignificant
+                significance_label = [' ( significant @ p < ' num2str(obj.rerp_plot_spec.significance_level) ' )'];
             else
                 significance_label = '';
             end
             
-            rsquare_significance = obj.get_event_rsquare_significance(significance_level);
+            rsquare_significance = obj.get_event_rsquare_significance;
             
             hold all;
             assert(~obj.ersp_flag, 'RerpResult: plotRerpEventTypes is invalid, use plotRersp instead');
@@ -215,12 +109,12 @@ classdef RerpResult < matlab.mixin.Copyable
             x_label='time (ms)';
             y_label='amplitude (RMS microvolt)';
             
-            if isempty(event_idx)
-                event_idx = 1:length(tags);
+            if isempty(obj.rerp_plot_spec.event_idx)
+                obj.rerp_plot_spec.event_idx = 1:length(tags);
             end
             
-            if isempty(ts_idx)
-                ts_idx = 1:size(estimates,2);
+            if isempty(obj.rerp_plot_spec.ts_idx)
+                obj.rerp_plot_spec.ts_idx = 1:size(estimates,2);
             end
             
             datasetname = regexp(obj.rerp_profile.eeglab_dataset_name,'.*[\\\/](.*).set','tokens');
@@ -228,16 +122,16 @@ classdef RerpResult < matlab.mixin.Copyable
             
             m=1;
             props=get(findobj(h, 'tag', 'legend'));
-            for i=event_idx
+            for i=obj.rerp_plot_spec.event_idx
                 
-                if exclude_insignificant
-                    ts_idx = ts_idx(rsquare_significance(i, ts_idx)==1);
+                if obj.rerp_plot_spec.exclude_insignificant
+                    obj.rerp_plot_spec.ts_idx = obj.rerp_plot_spec.ts_idx(rsquare_significance(i, obj.rerp_plot_spec.ts_idx)==1);
                 end
                 
-                if ~isempty(ts_idx)
+                if ~isempty(obj.rerp_plot_spec.ts_idx)
                     scrollsubplot(4,1,m,h);
                     hold all;
-                    plot(xaxis_ms{i}', [estimates{i, ts_idx}]);
+                    plot(xaxis_ms{i}', [estimates{i, obj.rerp_plot_spec.ts_idx}]);
                     
                     hcmenu = uicontextmenu;
                     uimenu(hcmenu, 'Label', 'Publish graph', 'Callback', @RerpResult.gui_publish);
@@ -251,10 +145,10 @@ classdef RerpResult < matlab.mixin.Copyable
                     
                     if obj.rerp_profile.settings.type_proc
                         leg = [datasetname{1}{1} ' - ' obj.analysis_name ', Channel: '];
-                        ts_label=obj.rerp_profile.include_chans(ts_idx);
+                        ts_label=obj.rerp_profile.include_chans(obj.rerp_plot_spec.ts_idx);
                     else
                         leg = [datasetname{1}{1} ' - ' obj.analysis_name ', Component: '];
-                        ts_label=obj.rerp_profile.include_comps(ts_idx);
+                        ts_label=obj.rerp_profile.include_comps(obj.rerp_plot_spec.ts_idx);
                     end
                     
                     title([titl significance_label]);
@@ -279,32 +173,31 @@ classdef RerpResult < matlab.mixin.Copyable
             end
         end
         
-        % Plot rerp estimates for all event types on same axis (one plot
-        % per time series). ts_idx specifies which time
-        % series are included, event_idx indicates which event types to
-        % include
-        function plotRerpTimeSeries(obj, event_idx, ts_idx, h, exclude_insignificant, significance_level)
+        function plotRerpTimeSeries(obj, h)
+            %Plot rerp estimates for event types on same axis (one plot per time series).
+            %Option for only plotting ERP waveforms which correspond to
+            %statistically significant Rsquare at specified p-value threshold.
+            %    Usage:
+            %        rerp_result.plotRerpTimeSeries(rerp_plot_spec.event_idx, rerp_plot_spec.ts_idx);
+            %        rerp_result.plotRerpTimeSeries(rerp_plot_spec.event_idx, rerp_plot_spec.ts_idx, rerp_plot_spec.exclude_insignificant);
+            %        rerp_result.plotRerpTimeSeries(rerp_plot_spec.event_idx, rerp_plot_spec.ts_idx, rerp_plot_spec.exclude_insignificant, rerp_plot_spec.significance_level);
+            %        rerp_result.plotRerpTimeSeries(rerp_plot_spec.event_idx, rerp_plot_spec.ts_idx, rerp_plot_spec.exclude_insignificant, rerp_plot_spec.significance_level, h);
+            %    Parameters:
+            %        rerp_plot_spec.exclude_insignificant [true false] - whether to skip plotting statistically insignificant ERP estimates
+            %        rerp_plot_spec.significance_level - p-value threshold for determining significance
             import rerp_dependencies.*
             
             if ~exist('h','var')
                 h=figure;
             end
             
-            if ~exist('exclude_insignificant','var')
-                exclude_insignificant=0;
-            end
-            
-            if ~exist('significance_level','var')
-                significance_level=.05;
-            end
-            
-            if exclude_insignificant
-                significance_label = [' ( significant @ p < ' num2str(significance_level) ' )'];
+            if obj.rerp_plot_spec.exclude_insignificant
+                significance_label = [' ( significant @ p < ' num2str(obj.rerp_plot_spec.significance_level) ' )'];
             else
                 significance_label = '';
             end
             
-            rsquare_significance = obj.get_event_rsquare_significance(significance_level);
+            rsquare_significance = obj.get_event_rsquare_significance;
             assert(~obj.ersp_flag, 'RerpResult: plotRerpTimeSeries is invalid, , use plotRersp instead');
             
             [tags, estimates, xaxis_ms] = obj.get_plotting_params;
@@ -312,12 +205,12 @@ classdef RerpResult < matlab.mixin.Copyable
             x_label='time (ms)';
             y_label='amplitude (RMS microvolt)';
             
-            if isempty(event_idx)
-                event_idx = 1:length(tags);
+            if isempty(obj.rerp_plot_spec.event_idx)
+                obj.rerp_plot_spec.event_idx = 1:length(tags);
             end
             
-            if isempty(ts_idx)
-                ts_idx = 1:size(estimates,2);
+            if isempty(obj.rerp_plot_spec.ts_idx)
+                obj.rerp_plot_spec.ts_idx = 1:size(estimates,2);
             end
             
             datasetname = regexp(obj.rerp_profile.eeglab_dataset_name,'.*[\\\/](.*).set','tokens');
@@ -327,12 +220,12 @@ classdef RerpResult < matlab.mixin.Copyable
             props=get(findobj(h, 'tag', 'legend'));
             
             new_idx=[];
-            for i=ts_idx
+            for i=obj.rerp_plot_spec.ts_idx
                 scrollsubplot(4,1,m,h);
                 
                 n=1;
-                for j=event_idx
-                    if ~exclude_insignificant||rsquare_significance(j, i)
+                for j=obj.rerp_plot_spec.event_idx
+                    if ~obj.rerp_plot_spec.exclude_insignificant||rsquare_significance(j, i)
                         plot(xaxis_ms{j}, estimates{j, i});
                         new_idx(n)=j;
                         hold all;
@@ -340,8 +233,8 @@ classdef RerpResult < matlab.mixin.Copyable
                     end
                 end
                 
-                event_idx=new_idx;
-                if ~isempty(event_idx)
+                obj.rerp_plot_spec.event_idx=new_idx;
+                if ~isempty(obj.rerp_plot_spec.event_idx)
                     hcmenu = uicontextmenu;
                     uimenu(hcmenu, 'Label', 'Publish graph', 'Callback', @RerpResult.gui_publish);
                     set(gca,'uicontextmenu', hcmenu)
@@ -359,8 +252,8 @@ classdef RerpResult < matlab.mixin.Copyable
                     end
                     
                     title([titl significance_label]);
-                    xlim([min(cell2mat(xaxis_ms(event_idx))) max(cell2mat(xaxis_ms(event_idx)))]);
-                    legend_idx = cellfun(@(x) [leg x], tags(event_idx) , 'UniformOutput' ,false);
+                    xlim([min(cell2mat(xaxis_ms(obj.rerp_plot_spec.event_idx))) max(cell2mat(xaxis_ms(obj.rerp_plot_spec.event_idx)))]);
+                    legend_idx = cellfun(@(x) [leg x], tags(obj.rerp_plot_spec.event_idx) , 'UniformOutput' ,false);
                     if isempty(props)
                         a=legend(legend_idx);
                     else
@@ -377,34 +270,36 @@ classdef RerpResult < matlab.mixin.Copyable
             end
         end
         
-        % Plots the average rsquare for the time series as a whole with significance markings.
-        % Time series are ranked on average rsquare, with ttest taken
-        % across xvalidation folds.
-        function plotRerpTotalRsquared(obj, ts_idx, significance_level, h)
+        function plotRerpTotalRsquared(obj, h)
+            %Plot the average rsquare for the time series as a whole with significance markings.
+            %Time series are ranked on average rsquare, with ttest taken across xvalidation folds.
+            %   Usage:
+            %       rerp_result.plotRerpTotalRsquared(rerp_plot_spec.ts_idx, rerp_plot_spec.significance_level);
+            %       rerp_result.plotRerpTotalRsquared(rerp_plot_spec.ts_idx, rerp_plot_spec.significance_level, h);
             import rerp_dependencies.*
             
             if ~exist('h','var')
                 h=figure;
             end
             
-            vals = obj.average_total_rsquare(ts_idx);
+            vals = obj.average_total_rsquare(obj.rerp_plot_spec.ts_idx);
             
             tmax = max(vals);
             tmin = min(min(vals), 0);
             
-            if ~isempty(significance_level)
-                rsquare_significance = obj.get_total_rsquare_significance(significance_level);
-                rsquare_significance = rsquare_significance(ts_idx);
+            if ~isempty(obj.rerp_plot_spec.significance_level)
+                rsquare_significance = obj.get_total_rsquare_significance(obj.rerp_plot_spec.significance_level);
+                rsquare_significance = rsquare_significance(obj.rerp_plot_spec.ts_idx);
             end
             
             datasetname = regexp(obj.rerp_profile.eeglab_dataset_name,'.*[\\\/](.*).set','tokens');
             datasetname = {{regexprep(datasetname{1}{1},'[\_]','\\\_')}};
             
-            p=plot(1:length(ts_idx), vals);
+            p=plot(1:length(obj.rerp_plot_spec.ts_idx), vals);
             line_props = get(p);
             
             set(gca,'xtickmode','manual');
-            set(gca, 'xtick', 1:length(ts_idx));
+            set(gca, 'xtick', 1:length(obj.rerp_plot_spec.ts_idx));
             legend_idx=[datasetname{1}{1} ' - ' obj.analysis_name];
             
             props=get(findobj(h, 'tag', 'legend'));
@@ -413,13 +308,13 @@ classdef RerpResult < matlab.mixin.Copyable
                 props = get(leg);
                 props.UserData.plotHandles = p;
                 props.UserData.lstrings={legend_idx};
-                set(gca, 'xticklabel', ts_idx);
+                set(gca, 'xticklabel', obj.rerp_plot_spec.ts_idx);
             else
                 plotHandles = [props.UserData.plotHandles p];
                 leg = legend(plotHandles, {props.UserData.lstrings{:} legend_idx});
                 props = get(leg);
                 props.UserData.plotHandles = plotHandles;
-                set(gca, 'xticklabel', 1:length(ts_idx));
+                set(gca, 'xticklabel', 1:length(obj.rerp_plot_spec.ts_idx));
             end
             
             set(leg, 'UserData', props.UserData);
@@ -428,7 +323,7 @@ classdef RerpResult < matlab.mixin.Copyable
             set(gca, 'UserData',pr);
             grid on;
             
-            for j=1:length(ts_idx)
+            for j=1:length(obj.rerp_plot_spec.ts_idx)
                 if rsquare_significance(j)
                     hold all;
                     plot(j, vals(j) ,'s', 'LineWidth', 1, 'MarkerEdgeColor',line_props.Color,'MarkerSize', 14);
@@ -447,13 +342,15 @@ classdef RerpResult < matlab.mixin.Copyable
             tmin = min(tmin, a.YLim(1));
             tmax = max(tmax, a.YLim(2));
             
-            axis([0 length(ts_idx) tmin tmax]);
+            axis([0 length(obj.rerp_plot_spec.ts_idx) tmin tmax]);
         end
         
-        % Plots the average rsquare taking into account only specific event types,
-        % with significance markings. Time series are ranked on average rsquare, with ttest taken
-        % across xvalidation folds.
-        function plotRerpEventRsquared(obj, ts_idx, significance_level, event_idx, h)
+        function plotRerpEventRsquared(obj, h)
+            %Plot the average rsquare taking into account only specific event types, with significance markings.
+            %Time series are ranked on average rsquare, with ttest taken across xvalidation folds.
+            %   Usage:
+            %       rerp_result.plotRerpEventRsquared(rerp_plot_spec.ts_idx, rerp_plot_spec.significance_level, rerp_plot_spec.event_idx);
+            %       rerp_result.plotRerpEventRsquared(rerp_plot_spec.ts_idx, rerp_plot_spec.significance_level, rerp_plot_spec.event_idx, h);
             import rerp_dependencies.*
             
             if ~exist('h','var')
@@ -463,22 +360,22 @@ classdef RerpResult < matlab.mixin.Copyable
             hold all;
             tags=obj.get_plotting_params;
             
-            if isempty(event_idx)
-                event_idx = 1:size(obj.average_event_rsquare, 1);
+            if isempty(obj.rerp_plot_spec.event_idx)
+                obj.rerp_plot_spec.event_idx = 1:size(obj.average_event_rsquare, 1);
             end
             
-            if ~isempty(significance_level)
-                rsquare_significance = obj.get_event_rsquare_significance(significance_level);
-                rsquare_significance = rsquare_significance(event_idx, ts_idx);
+            if ~isempty(obj.rerp_plot_spec.significance_level)
+                rsquare_significance = obj.get_event_rsquare_significance;
+                rsquare_significance = rsquare_significance(obj.rerp_plot_spec.event_idx, obj.rerp_plot_spec.ts_idx);
             end
             
             datasetname = regexp(obj.rerp_profile.eeglab_dataset_name,'.*[\\\/](.*).set','tokens');
             datasetname = {{regexprep(datasetname{1}{1},'[\_]','\\\_')}};
             
             m=1;
-            for i=1:length(event_idx)
+            for i=1:length(obj.rerp_plot_spec.event_idx)
                 
-                vals = obj.average_event_rsquare(event_idx(i),ts_idx);
+                vals = obj.average_event_rsquare(obj.rerp_plot_spec.event_idx(i),obj.rerp_plot_spec.ts_idx);
                 this_rsquare_significance = rsquare_significance(i,:);
                 
                 tmax = max(vals);
@@ -487,10 +384,10 @@ classdef RerpResult < matlab.mixin.Copyable
                 hold all;
                 scrollsubplot(3,1,m,h);
                 
-                p=plot(1:length(ts_idx), vals);
+                p=plot(1:length(obj.rerp_plot_spec.ts_idx), vals);
                 line_props = get(p);
                 set(gca,'xtickmode','manual');
-                set(gca, 'xtick', 1:length(ts_idx));
+                set(gca, 'xtick', 1:length(obj.rerp_plot_spec.ts_idx));
                 props=get(findobj(h,'Tag', ['legend_' num2str(i)]));
                 legend_idx=[datasetname{1}{1} ' - ' obj.analysis_name];
                 
@@ -500,14 +397,14 @@ classdef RerpResult < matlab.mixin.Copyable
                     props.UserData.plotHandles = p;
                     props.UserData.lstrings={legend_idx};
                     set(leg,'UserData', props.UserData, 'Tag',['legend_' num2str(i)]);
-                    set(gca, 'xticklabel', ts_idx);
+                    set(gca, 'xticklabel', obj.rerp_plot_spec.ts_idx);
                 else
                     plotHandles = [props.UserData.plotHandles p];
                     leg = legend(plotHandles, {props.UserData.lstrings{:} legend_idx});
                     props = get(leg);
                     props.UserData.plotHandles = plotHandles;
                     set(leg,'UserData', props.UserData);
-                    set(gca, 'xticklabel', 1:length(ts_idx));
+                    set(gca, 'xticklabel', 1:length(obj.rerp_plot_spec.ts_idx));
                 end
                 
                 set(leg,'UserData', props.UserData);
@@ -516,7 +413,7 @@ classdef RerpResult < matlab.mixin.Copyable
                 set(gca, 'UserData',pr);
                 grid on;
                 
-                for j=1:length(ts_idx)
+                for j=1:length(obj.rerp_plot_spec.ts_idx)
                     if this_rsquare_significance(j)
                         hold all;
                         plot(j, vals(j) ,'s', 'LineWidth', 1, 'MarkerEdgeColor',line_props.Color,'MarkerSize', 14);
@@ -529,37 +426,61 @@ classdef RerpResult < matlab.mixin.Copyable
                 
                 xlabel('Time series - decreasing R ^2 order');
                 ylabel('R ^2');
-                title(['Rsquare performance by time series: ' tags{event_idx(i)}]);
+                title(['Rsquare performance by time series: ' tags{obj.rerp_plot_spec.event_idx(i)}]);
                 
                 a = get(gca);
                 tmin = min(tmin, a.YLim(1));
                 tmax = max(tmax, a.YLim(2));
                 
-                axis([0 length(ts_idx) tmin tmax]);
+                axis([0 length(obj.rerp_plot_spec.ts_idx) tmin tmax]);
                 m=m+1;
             end
         end
         
-        % Plots raw epochs, modeled epochs and the difference (3 plots)
-        function plotRerpImage(obj, EEG, locking_idx, delay_idx, ts_idx, window_size_ms, h)
+        function plotRerpImage(obj, h)
+            %Plot raw epochs, modeled epochs and difference (noise) epochs
+            %Sorts epochs based on the time delay to another event type
+            %   Usage:
+            %       rerp_result.plotRerpImage(EEG, rerp_plot_spec.locking_idx, rerp_plot_spec.delay_idx, rerp_plot_spec.ts_idx, rerp_plot_spec.window_size_ms);
+            %       rerp_result.plotRerpImage(EEG, rerp_plot_spec.locking_idx, rerp_plot_spec.delay_idx, rerp_plot_spec.ts_idx, rerp_plot_spec.window_size_ms, h);
+            %
+            %   Parameters:
+            %       EEG - the EEG struct for this RerpResult, with data populated
+            %       rerp_plot_spec.locking_idx - index of event type or hed tag to extract
+            %           epochs
+            %       rerp_plot_spec.delay_idx - index of event type or hed tag to measure delay from locking variable
+            %       rerp_plot_spec.window_size_ms - length of epoch window
             import rerp_dependencies.*
             
             if ~exist('h','var')
                 h=figure;
             end
+                        
+            eeg_parts=regexp(obj.rerp_profile.eeglab_dataset_name, '(.*[\\\/])(.*.set)', 'tokens');
+            
+            try
+                EEG=pop_loadset('filename', eeg_parts{1}{2}, 'filepath', eeg_parts{1}{1});
+            catch
+                uiwait(msgbox('RerpResult: could not find the dataset for this result, please locate','.set not found' ,'warn'));
+                EEG=pop_loadset;
+            end
+            
+            if (~obj.rerp_profile.settings.type_proc) && isempty(EEG.icaact)
+                EEG.icaact=eeg_getica(EEG);
+            end
             
             assert(obj.ersp_flag~=1, 'RerpResult: this profile was run on time-fequency data (rERSP); plotRerpImage is invalid');
             
-            if isempty(ts_idx)
-                ts_idx = 1:size(EEG.data,1);
+            if isempty(obj.rerp_plot_spec.ts_idx)
+                obj.rerp_plot_spec.ts_idx = 1:size(EEG.data,1);
             end
             
             if obj.rerp_profile.settings.type_proc==0
                 assert(~isempty(EEG.icaact)&& size(EEG.icaact,3)==1,'RerpResult: this profile is set for ICA; populate EEG.icaact with continuous ICA activations');
-                data = EEG.icaact(ts_idx,:)';
+                data = EEG.icaact(obj.rerp_plot_spec.ts_idx,:)';
             else
                 assert(~isempty(EEG.data) && size(EEG.data,3)==1,'RerpResult: EEG.data must be populated with continuous data');
-                data = EEG.data(ts_idx,:)';
+                data = EEG.data(obj.rerp_plot_spec.ts_idx,:)';
             end
             
             % Replace artifact indexes with data mean for plotting
@@ -571,28 +492,28 @@ classdef RerpResult < matlab.mixin.Copyable
                 end
             end
             
-            num_samples = ceil(obj.rerp_profile.sample_rate*(window_size_ms/1000));
+            num_samples = ceil(obj.rerp_profile.sample_rate*(obj.rerp_plot_spec.window_size_ms/1000));
             
             disp('RerpResult: generating modeled data');
             [predictor, data_pad] = predictor_gen(obj.rerp_profile);
             data = [zeros(data_pad(1), size(data,2)); data; zeros(data_pad(2), size(data,2)); zeros(num_samples,size(data,2))];
-            modeled_data = [predictor*obj.rerp_estimate(:,ts_idx); zeros(num_samples,size(data,2))];
+            modeled_data = [predictor*obj.rerp_estimate(:,obj.rerp_plot_spec.ts_idx); zeros(num_samples,size(data,2))];
             noise = data-modeled_data;
             
             [tags, estimates, xaxis_ms, epoch_boundaries] = obj.get_plotting_params;
-            locking_tag = tags{locking_idx};
-            locking_estimate = estimates(locking_idx, ts_idx);
-            sorting_tag = tags{delay_idx};
+            locking_tag = tags{obj.rerp_plot_spec.locking_idx};
+            locking_estimate = estimates(obj.rerp_plot_spec.locking_idx, obj.rerp_plot_spec.ts_idx);
+            sorting_tag = tags{obj.rerp_plot_spec.delay_idx};
             
-            if ~isempty(delay_idx)
-                delay_tag = tags{delay_idx};
-                delay_estimate = estimates(delay_idx, ts_idx);
+            if ~isempty(obj.rerp_plot_spec.delay_idx)
+                delay_tag = tags{obj.rerp_plot_spec.delay_idx};
+                delay_estimate = estimates(obj.rerp_plot_spec.delay_idx, obj.rerp_plot_spec.ts_idx);
             else
                 delay_tag=[];
                 delay_estimate = [];
             end
             
-            this_epoch_boundaries = epoch_boundaries{locking_idx};
+            this_epoch_boundaries = epoch_boundaries{obj.rerp_plot_spec.locking_idx};
             this_xaxis_ms = ((0:(num_samples-1))'/obj.rerp_profile.sample_rate + this_epoch_boundaries(1))*1000;
             
             disp('RerpResult: getting epochs');
@@ -608,8 +529,8 @@ classdef RerpResult < matlab.mixin.Copyable
             end
             
             m=1;
-            for i=1:length(ts_idx)
-                this_ts = ts_idx(i);
+            for i=1:length(obj.rerp_plot_spec.ts_idx)
+                this_ts = obj.rerp_plot_spec.ts_idx(i);
                 
                 if obj.rerp_profile.settings.type_proc
                     ts = 'Channel';
@@ -639,7 +560,7 @@ classdef RerpResult < matlab.mixin.Copyable
                 
                 % Plot the rerp estimates
                 scrollsubplot(4,1,m+3,h);
-                plot(xaxis_ms{locking_idx}', locking_estimate{i}, xaxis_ms{delay_idx}', delay_estimate{i});
+                plot(xaxis_ms{obj.rerp_plot_spec.locking_idx}', locking_estimate{i}, xaxis_ms{obj.rerp_plot_spec.delay_idx}', delay_estimate{i});
                 title('rERP estimates');
                 xlabel('time (ms)');
                 ylabel('epoch number');
@@ -653,8 +574,11 @@ classdef RerpResult < matlab.mixin.Copyable
             
         end
         
-        % Plots regressed ERSP estimates
-        function plotRersp(obj, event_idx, ts_idx, h)
+        function plotRersp(obj, h)
+            %Plot regressed ERSP estimates
+            %   Usage:
+            %       rerp_result.plotRersp(rerp_plot_spec.event_idx, rerp_plot_spec.ts_idx);
+            %       rerp_result.plotRersp(rerp_plot_spec.event_idx, rerp_plot_spec.ts_idx, h);
             import rerp_dependencies.*
             
             assert(obj.ersp_flag==1, 'RerpResult: plotRersp is invalid for this result, use plotRerpEventTypes or plotRerpTimeSeries instead');
@@ -671,7 +595,7 @@ classdef RerpResult < matlab.mixin.Copyable
             [tags, estimates, xaxis_ms] = obj.get_plotting_params;
             
             m=1;
-            for i=ts_idx
+            for i=obj.rerp_plot_spec.ts_idx
                 if obj.rerp_profile.settings.type_proc
                     ts = 'Channel';
                     tsn = num2str(obj.rerp_profile.include_chans(i));
@@ -686,7 +610,7 @@ classdef RerpResult < matlab.mixin.Copyable
                     v = 'Event type';
                 end
                 
-                for j=event_idx
+                for j=obj.rerp_plot_spec.event_idx
                     % Plot the rERSP estimates
                     this_xaxis_ms = xaxis_ms{i,j};
                     this_estimate = estimates{j,i};
@@ -714,8 +638,11 @@ classdef RerpResult < matlab.mixin.Copyable
             
         end
         
-        % Plots a predictive surfaces and optimal values
-        function plotGridSearch(obj, ts_idx, h)
+        function plotGridSearch(obj, h)
+            %Plot predictive surfaces and optimal values from regularization grid search
+            %   Usage:
+            %       rerp_result.plotGridSearch(rerp_plot_spec.ts_idx);
+            %       rerp_result.plotGridSearch(rerp_plot_spec.ts_idx, h);
             import rerp_dependencies.*
             
             if ~exist('h', 'var')
@@ -739,7 +666,7 @@ classdef RerpResult < matlab.mixin.Copyable
                 gr = this_level.grid_results;
                 
                 % Plot surfaces for indicated time series at this level
-                for i=ts_idx
+                for i=obj.rerp_plot_spec.ts_idx
                     this_lambda_range = this_level.lambda_range{i};
                     pred_surf = zeros(1,numel(gr));
                     
@@ -820,14 +747,20 @@ classdef RerpResult < matlab.mixin.Copyable
                 end
             end
         end
+
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %Utility
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % Utility Functions
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        
-        %Returns a representation of the rerp estimate that is convenient
-        %for plotting
         function [tags, estimates, xaxis_ms, epoch_boundaries] = get_plotting_params(obj)
+            %Return a representation of the rerp estimate that is convenient for plotting
+            %   Usage:
+            %       [tags, estimates, xaxis_ms, epoch_boundaries] = rerp_result.get_plotting_params;
+            %           tags: cell array of either hed tags or event types
+            %           estimates: cell array of the ERP waveforms associated
+            %               with each element in tags
+            %           xaxis_ms: x axis for plotting each element in estimates
+            %           epoch_boundaries: the epoch boundaries used for each element in tag
             import rerp_dependencies.*
             
             p=obj.rerp_profile;
@@ -934,11 +867,24 @@ classdef RerpResult < matlab.mixin.Copyable
         end
         
         function setLastResult(obj)
+            %Save as results/last.rerp_result
+            %   Usage:
+            %       rerp_result.setLastResult;
             obj.saveRerpResult('path', fullfile(RerpProfile.rerp_path, 'results','last.rerp_result'));
         end
         
-        %Save a profile to disk
         function saveRerpResult(obj, varargin)
+            %Save a result to disk
+            %   Usage:
+            %       rerp_result.saveRerpResult;
+            %           opens a gui to choose the path to save result
+            %
+            %       rerp_result.saveRerpResult('rerp_path', '/data/projects/RSVP');
+            %           opens gui starting at that path
+            %
+            %       rerp_result.saveRerpResult('path', '/data/projects/RSVP/exp_53.rerp_result');
+            %           save this result to the specific path (will create the
+            %           dir if does not exist)
             import rerp_dependencies.*
             
             p=inputParser;
@@ -946,15 +892,15 @@ classdef RerpResult < matlab.mixin.Copyable
             addOptional(p,'rerp_path', pwd);
             
             parse(p, varargin{:});
-            temp = regexp(obj.rerp_profile.eeglab_dataset_name, '.*[\\\/](.*)\.set', 'tokens');            
-
+            temp = regexp(obj.rerp_profile.eeglab_dataset_name, '.*[\\\/](.*)\.set', 'tokens');
+            
             if ~isempty(temp)
                 fn = temp{1}{1};
             else
                 fn='';
             end
-
-            path = p.Results.path;    
+            
+            path = p.Results.path;
             rerp_path=p.Results.rerp_path;
             if isempty(path)
                 %No path specified, launch GUI
@@ -966,20 +912,20 @@ classdef RerpResult < matlab.mixin.Copyable
                 path = [pathname filename];
                 
             else
-                path2file = regexp(path, '(.*)[\\\/].*$','tokens'); 
+                path2file = regexp(path, '(.*)[\\\/].*$','tokens');
                 path2file = path2file{1}{1};
-
+                
                 if isempty(dir(path2file))
                     mkdir(path2file);
                 end
-
+                
                 filename=1;
             end
             
-            path2file = regexp(path, '(.*)(?:\.rerp_result)','tokens'); 
+            path2file = regexp(path, '(.*)(?:\.rerp_result)','tokens');
             path2file = path2file{1}{1};
             
-            %Save profile to disk
+            %Save result to disk
             if filename
                 try
                     save([path2file '.rerp_result'], 'obj','-mat');
@@ -989,17 +935,35 @@ classdef RerpResult < matlab.mixin.Copyable
                     rethrow(e);
                 end
             end
+        end    
+             
+        function modeled_data = getDataModel(obj)
+            %Synthesize model esitmate of the original continuous data
+            %   Usage: modeled_data = rerp_result.getDataModel;
+            import rerp_dependencies.*
+            if ~isempty(obj.rerp_estimate)
+                predictor = predictor_gen(obj.rerp_profile);
+                modeled_data = predictor*obj.rerp_estimate;
+            else
+                modeled_data=[];
+                disp('RerpResult: no anaysis results present, can not synthesize modeled data');
+            end
         end
     end
     
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Static methods
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
     methods (Static=true)
         
-        %Load a profile from disk
         function rerp_result = loadRerpResult(varargin)
+            %Load a RerpResult from disk
+            %   Usage:
+            %       rerp_result = RerpResult.loadRerpResult;
+            %           Select .rerp_result file using GUI
+            %
+            %       rerp_result = RerpResult.loadRerpResult('rerp_path', '/data/projects/RSVP');
+            %           Open GUI starting at that path
+            %
+            %       rerp_result = RerpResult.loadRerpResult('path', '/data/projects/RSVP/exp_53.rerp_result');
+            %           Load rerp_result from that path, if present
             import rerp_dependencies.*
             
             p=inputParser;
@@ -1017,89 +981,98 @@ classdef RerpResult < matlab.mixin.Copyable
                 filename=1;
             end
             
-            %Read profile from disk
+            %Read result from disk
             if ~filename==0
                 
                 res = load(path, '-mat');
                 label=fieldnames(res);
                 rerp_result = res.(label{1});
                 
-                %Extract the profile if loading from .rerp_result file
+                %Extract the result if loading from .rerp_result file
                 assert(isa(rerp_result,'RerpResult'),'RerpResult: the file does not contain a RerpResult object');
             end
         end
         
-        % Allows us to split the dataset into individual time courses for
-        % regression, then combine those results back into a single object. rerp_results
-        % parameter is a cell array of RerpResult objects in increasing channel/IC number order.
         function result = combineRerpResults(rerp_results)
-            
+            %Parallel process individual time courses for regression, then combine those results back into a single object
+            %rerp_results parameter is a cell array of RerpResult objects, from
+            %the same dataset, in increasing channel/IC number order.
+            %   Usage:
+            %       combined_rerp_result = RerpResult.combineRerpResults(rerp_results);
+            %           Combine a cell array of RerpResult objects into a
+            %           single object (parallelize computation on channels).
             rerp_results=rerp_results(~cellfun('isempty',rerp_results));
-            result =  copy(rerp_results{1});
             
-            m=length(result.lambda)+1;
-            for i=2:length(rerp_results)
-                this_result = rerp_results{i};
-                nchans = size(this_result.rerp_estimate,2);
-                idx = m:(m+nchans-1);
+            result={};
+            if ~isempty(rerp_results)
+                result =  copy(rerp_results{1});
                 
-                if ~isempty(result.rerp_profile)
-                    if result.rerp_profile.settings.type_proc
-                        result.rerp_profile.include_chans(idx) = this_result.rerp_profile.include_chans;
-                    else
-                        result.rerp_profile.include_comps(idx) = this_result.rerp_profile.include_comps;
+                m=length(result.lambda)+1;
+                for i=2:length(rerp_results)
+                    this_result = rerp_results{i};
+                    nchans = size(this_result.rerp_estimate,2);
+                    idx = m:(m+nchans-1);
+                    
+                    if ~isempty(result.rerp_profile)
+                        if result.rerp_profile.settings.type_proc
+                            result.rerp_profile.include_chans(idx) = this_result.rerp_profile.include_chans;
+                        else
+                            result.rerp_profile.include_comps(idx) = this_result.rerp_profile.include_comps;
+                        end
                     end
+                    
+                    result.compute_time_seconds = result.compute_time_seconds + this_result.compute_time_seconds;
+                    
+                    try
+                        result.lambda(idx) = this_result.lambda;
+                    catch
+                    end
+                    
+                    result.rerp_estimate(:, idx) = this_result.rerp_estimate;
+                    
+                    try
+                        result.admm_residual(:, idx) = this_result.admm_residual;
+                    catch
+                    end
+                    
+                    if ~isempty(result.average_total_rsquare);
+                        result.average_total_rsquare(idx) = this_result.average_total_rsquare;
+                    end
+                    
+                    if ~isempty(result.average_event_rsquare);
+                        result.average_event_rsquare(:,idx) = this_result.average_event_rsquare;
+                    end
+                    
+                    for j=1:length(result.total_xval_folds)
+                        result.total_xval_folds(j).noise_variance(idx)=this_result.total_xval_folds(j).noise_variance;
+                        result.total_xval_folds(j).data_variance(idx)=this_result.total_xval_folds(j).data_variance;
+                    end
+                    
+                    for j=1:length(result.event_xval_folds)
+                        result.event_xval_folds(j).noise_variance(:,idx)=this_result.event_xval_folds(j).noise_variance;
+                        result.event_xval_folds(j).data_variance(:,idx)=this_result.event_xval_folds(j).data_variance;
+                    end
+                    
+                    result.gridsearch = RerpResult.mergeGridSearch(result, this_result, idx);
+                    
+                    m=m+nchans;
                 end
-                
-                try
-                    result.lambda(idx) = this_result.lambda;
-                catch
-                end
-                
-                result.rerp_estimate(:, idx) = this_result.rerp_estimate;
-                
-                try
-                    result.admm_residual(:, idx) = this_result.admm_residual;
-                catch
-                end
-                
-                if ~isempty(result.average_total_rsquare);
-                    result.average_total_rsquare(idx) = this_result.average_total_rsquare;
-                end
-                
-                if ~isempty(result.average_event_rsquare);
-                    result.average_event_rsquare(:,idx) = this_result.average_event_rsquare;
-                end
-                
-                for j=1:length(result.total_xval_folds)
-                    result.total_xval_folds(j).noise_variance(idx)=this_result.total_xval_folds(j).noise_variance;
-                    result.total_xval_folds(j).data_variance(idx)=this_result.total_xval_folds(j).data_variance;
-                end
-                
-                for j=1:length(result.event_xval_folds)
-                    result.event_xval_folds(j).noise_variance(:,idx)=this_result.event_xval_folds(j).noise_variance;
-                    result.event_xval_folds(j).data_variance(:,idx)=this_result.event_xval_folds(j).data_variance;
-                end
-                
-                result.gridsearch = RerpResult.mergeGridSearch(result, this_result, idx);
-                
-                m=m+nchans;
             end
         end
         
-        % Get x axis ticks for plotting erp waveform
         function xaxis_ms = get_xaxis_ms(epoch_boundaries, sample_rate)
+            %Get x axis ticks for plotting erp waveform
+            %   Usage: xaxis_ms = RerpResult.get_xaxis_ms([-1 2], 256)
             epoch_length = epoch_boundaries(2)-epoch_boundaries(1);
             ns=sample_rate*epoch_length;
             xaxis_ms=((0:(ns-1))+epoch_boundaries(1)*sample_rate)*1000/sample_rate;
         end
-        
     end
     
     methods (Hidden=true)
-        % Returns time series numbers where rsquare was statistically
-        % different from zero mean at p<significance_level.
-        function rsquare_significance = get_total_rsquare_significance(obj, significance_level)
+        function rsquare_significance = get_total_rsquare_significance(obj)
+            % Returns time series numbers where rsquare was statistically
+            % different from zero mean at p<rerp_plot_spec.significance_level
             data_variance=zeros(length(obj.total_xval_folds), length(obj.total_xval_folds(1).data_variance));
             noise_variance=zeros(length(obj.total_xval_folds), length(obj.total_xval_folds(1).noise_variance));
             for i=1:length(obj.total_xval_folds)
@@ -1108,12 +1081,12 @@ classdef RerpResult < matlab.mixin.Copyable
             end
             
             rsquare = 1 - noise_variance./data_variance;
-            rsquare_significance = squeeze(ttest(rsquare, 0, 'Alpha', significance_level));
+            rsquare_significance = squeeze(ttest(rsquare, 0, 'Alpha', obj.rerp_plot_spec.significance_level));
         end
         
-        % Returns time series numbers where rsquare was statistically
-        % different from zero mean at p<significance_level.
-        function rsquare_significance = get_event_rsquare_significance(obj, significance_level)
+        function rsquare_significance = get_event_rsquare_significance(obj)
+            % Returns time series numbers where rsquare was statistically
+            % different from zero mean at p<rerp_plot_spec.significance_level.
             data_variance=zeros([length(obj.event_xval_folds) size(obj.event_xval_folds(1).data_variance)]);
             noise_variance=zeros([length(obj.event_xval_folds) size(obj.event_xval_folds(1).noise_variance)]);
             
@@ -1123,7 +1096,7 @@ classdef RerpResult < matlab.mixin.Copyable
             end
             
             rsquare = 1 - noise_variance./data_variance;
-            rsquare_significance = squeeze(ttest(rsquare, 0, 'Alpha', significance_level));
+            rsquare_significance = squeeze(ttest(rsquare, 0, 'Alpha', obj.rerp_plot_spec.significance_level));
         end
         
         function delay = get_delay_times(obj, event_nums, delay_var, num_samples)
@@ -1192,9 +1165,8 @@ classdef RerpResult < matlab.mixin.Copyable
             end
         end
         
-        % Extract epochs corresponding to tags or event codes
         function [rerp_epochs, event_nums] = get_rerp_epochs(obj, data, locking_var,  num_samples)
-            
+            % Extract epochs corresponding to tags or event codes
             events = obj.rerp_profile.these_events;
             rerp_epochs = zeros([num_samples, length(events.label), size(data,2)]);
             m=1;
@@ -1250,8 +1222,8 @@ classdef RerpResult < matlab.mixin.Copyable
     end
     
     methods (Static=true, Hidden=true)
-        % Recursively combine grid search results from two rerp_results
         function main_gridsearch = mergeGridSearch(main_result, added_result, idx)
+            % Recursively combine grid search results from two rerp_results
             main_gridsearch=main_result.gridsearch;
             added_gridsearch=added_result.gridsearch;
             
@@ -1269,8 +1241,8 @@ classdef RerpResult < matlab.mixin.Copyable
             end
         end
         
-        % Callback for axes context menu: publishes the figure
         function gui_publish(varargin)
+            % Callback for axes context menu: publishes the figure
             ax=gca;
             h=figure;
             set(h,'color',[1 1 1]);

@@ -83,11 +83,14 @@ function rerp_result_gui_OpeningFcn(hObject, eventdata, handles, varargin)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to rerp_result_gui (see VARARGIN)
+import rerp_dependencies.RerpPlotSpec 
+
 p=inputParser;
 addOptional(p,'results_dir', []);
 parse(p, varargin{:});
 results_dir=p.Results.results_dir; 
 handles.UserData.results=struct([]);
+handles.UserData.rerp_plot_spec=RerpPlotSpec; 
 
 % Get last result and see if it matches the dataset
 rerp_path = regexp(strtrim(mfilename('fullpath')),'(.*)[\\\/].*','tokens');
@@ -104,6 +107,7 @@ names = {these_results(:).name};
 for i=1:length(names)
     this_result = RerpResult.loadRerpResult('path', fullfile(results_dir, names{i}));
     this_result.gridsearch=[]; 
+    this_result.rerp_plot_spec = handles.UserData.rerp_plot_spec; 
     handles.UserData.results(end+1).result=this_result;
     handles.UserData.results(end).name=names{i};
     handles.UserData.results(end).path=fullfile(results_dir, names{i}); 
@@ -115,9 +119,7 @@ try
     set(handles.channelslist,'max', 1e7);
 catch 
 end
-
-handles.UserData.locking_idx=1;
-handles.UserData.sorting_idx=1;
+handles.UserData.sort_idx=0;
 handles.UserData.locksort=0;
 handles.UserData.rerpimage=0;
 handles.UserData.lastplot='';
@@ -144,7 +146,6 @@ close(handles.UserData.plotfig);
 % Get default command line output from handles structure
 varargout{1} = handles.output;
 
-
 % --- Executes on selection change in resultslist.
 function resultslist_Callback(hObject, eventdata, handles)
 % hObject    handle to resultslist (see GCBO)
@@ -166,7 +167,6 @@ handles.UserData.current.name={handles.UserData.results(itemnum).name};
 
 handles = set_options(handles);
 guidata(hObject, handles);
-
 
 % --- Executes during object creation, after setting all properties.
 function resultslist_CreateFcn(hObject, eventdata, handles)
@@ -230,16 +230,13 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-
 % --- Executes on selection change in channelslist.
 function channelslist_Callback(hObject, eventdata, handles)
 % hObject    handle to channelslist (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
 % Hints: contents = cellstr(get(hObject,'String')) returns channelslist contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from channelslist
-
 
 % --- Executes during object creation, after setting all properties.
 function channelslist_CreateFcn(hObject, eventdata, handles)
@@ -253,7 +250,6 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-
 % --- Executes on selection change in tagslist.
 function tagslist_Callback(hObject, eventdata, handles)
 % hObject    handle to tagslist (see GCBO)
@@ -264,9 +260,9 @@ function tagslist_Callback(hObject, eventdata, handles)
 %        contents{get(hObject,'Value')} returns selected item from tagslist
 if handles.UserData.rerpimage
     if handles.UserData.locksort
-        handles.UserData.sorting_idx=get(hObject,'Value');
+        handles.UserData.rerp_plot_spec.delay_idx=get(hObject,'Value');
     else
-        handles.UserData.locking_idx=get(hObject,'Value');
+        handles.UserData.rerp_plot_spec.locking_idx=get(hObject,'Value');
     end
 end
 
@@ -284,7 +280,6 @@ function tagslist_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
 
 % --- Executes on button press in loadresultsbutton.
 function loadresultsbutton_Callback(hObject, eventdata, handles)
@@ -311,6 +306,7 @@ if fn{1}
         this_dir = dir(fullfile(fp,'*.rerp_result'));
         thisfn = fullfile(fp, fn{i});
         this_result = RerpResult.loadRerpResult('path', thisfn);
+        this_result.rerp_plot_spec=handles.UserData.rerp_plot_spec; 
         this_eegpath=this_result.rerp_profile.eeglab_dataset_name;
         eegfn=regexp(this_eegpath, '(.*[\\\/])(.*.set)','tokens');
         eegdir = dir(eegfn{1}{1});
@@ -365,14 +361,13 @@ function plot_Callback(hObject, eventdata, handles)
 contents=cellstr(get(handles.typeplotlist,'String'));
 plottype = contents{get(handles.typeplotlist,'Value')};
 
-ts_idx = handles.UserData.sort_idx(get(handles.channelslist,'Value'));
-event_idx = get(handles.tagslist,'Value');
+handles.UserData.rerp_plot_spec.ts_idx = handles.UserData.sort_idx(get(handles.channelslist,'Value'));
+handles.UserData.rerp_plot_spec.event_idx = get(handles.tagslist,'Value');
 
-
+%Make sure we have a handle to the plot window
 if ~isempty(handles.UserData.plotfig)
     try
-        get(handles.UserData.plotfig);
-        
+        a=get(handles.UserData.plotfig);
     catch
         handles.UserData.plotfig=figure;
     end
@@ -382,39 +377,39 @@ end
 
 set(0,'CurrentFigure', handles.UserData.plotfig);
 set(handles.UserData.plotfig,'color', [1 1 1]);
-significance_level=str2double(get(handles.significancelevel,'String'));
-exclude_insignificant=get(handles.exclude_insignif, 'value'); 
+handles.UserData.rerp_plot_spec.significance_level=str2double(get(handles.significancelevel,'String'));
+handles.UserData.rerp_plot_spec.exclude_insignificant=get(handles.exclude_insignif, 'value'); 
 
 %Combine multiple results into object for study plotting
 rerp_study = RerpResultStudy(handles.UserData.current.result); 
 
 if strcmp(plottype, 'Rerp by event type')||strcmp(plottype,'Rerp by HED tag')
-    rerp_study.plotRerpEventTypes(event_idx, ts_idx, handles.UserData.plotfig, exclude_insignificant, significance_level);
+    rerp_study.plotRerpEventTypes(handles.UserData.plotfig);
 end
 
 if strcmp(plottype, 'Rerp by component')||strcmp(plottype,'Rerp by channel')
-    rerp_study.plotRerpTimeSeries(event_idx, ts_idx, handles.UserData.plotfig,exclude_insignificant, significance_level);
+    rerp_study.plotRerpTimeSeries(handles.UserData.plotfig);
 end
 
 if strcmp(plottype, 'R-Squared total')
-    rerp_study.plotRerpTotalRsquared(ts_idx, significance_level, handles.UserData.plotfig);
+    rerp_study.plotRerpTotalRsquared(handles.UserData.plotfig);
 end
 
 if strcmp(plottype, 'R-Squared by event type')||strcmp(plottype, 'R-Squared by HED tag')
-    rerp_study.plotRerpEventRsquared(ts_idx, significance_level, event_idx, handles.UserData.plotfig);
+    rerp_study.plotRerpEventRsquared(handles.UserData.plotfig);
 end
 
 if strcmp(plottype, 'Rerp image')       
-    window_size_ms = str2double(get(handles.enterwindow,'String'));
-    rerp_study.plotRerpImage(handles.UserData.locking_idx, handles.UserData.sorting_idx, ts_idx, window_size_ms, handles.UserData.plotfig);
+    handles.UserData.rerp_plot_spec.window_size_ms = str2double(get(handles.enterwindow,'String'));
+    rerp_study.plotRerpImage(handles.UserData.plotfig);
 end
 
 if strcmp(plottype, 'Grid search')
-    rerp_study.plotGridSearch(ts_idx, handles.UserData.plotfig);
+    rerp_study.plotGridSearch(handles.UserData.plotfig);
 end
 
 if strcmp(plottype, 'Rersp')
-    rerp_study.plotRersp(event_idx, ts_idx, handles.UserData.plotfig);
+    rerp_study.plotRersp(handles.UserData.plotfig);
 end
 
 handles.UserData.lastplot = plottype;
@@ -474,8 +469,8 @@ end
 %We could have selected many results. This assumes that they are all
 %compatible.
 if isempty(result)
-    set(handles.typeplotlist, 'string', '');
-    set(handles.channelslist, 'string', '');
+    set(handles.typeplotlist, 'string', '','value',1);
+    set(handles.channelslist, 'string', '','value',1);
     return;
 else
     first_result=result{1};
@@ -548,7 +543,6 @@ function displayprofilebutton_Callback(hObject, eventdata, handles)
 pop_rerp({}, handles.UserData.current.result{1}.rerp_profile,'view_only',1);
 
 
-
 function significancelevel_Callback(hObject, eventdata, handles)
 % hObject    handle to significancelevel (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -578,13 +572,12 @@ function lockingindexbutton_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 if strcmp( get(hObject,'String'), 'Locking variable')
     set(hObject,'String', 'Sorting variable');
-    set(handles.tagslist,'Value',handles.UserData.sorting_idx);
+    set(handles.tagslist,'Value', handles.UserData.rerp_plot_spec.delay_idx);
     handles.UserData.locksort=1;
 else
     set(hObject,'String', 'Locking variable');
     handles.UserData.locksort=0;
-    set(handles.tagslist,'Value',handles.UserData.locking_idx);
-    
+    set(handles.tagslist,'Value',handles.UserData.rerp_plot_spec.locking_idx);
 end
 
 % Update handles structure
@@ -633,8 +626,6 @@ else
     error('rerp_result_gui: can not save multiple results simultaneously');
 end
     
-
-
 % --- Executes on button press in exclude_insignif.
 function exclude_insignif_Callback(hObject, eventdata, handles)
 % hObject    handle to exclude_insignif (see GCBO)
