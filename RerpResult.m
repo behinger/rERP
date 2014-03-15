@@ -1,36 +1,17 @@
-%RERP_RESULT class defines results from rerp function and related plotting functions.
-%rerp_result_gui will assist calling the methods in this function
-
+%Contains all results from rerp function, and methods to plot the results.
+%   Usage:
+%       rerp_result_gui(rerp_results);
+%           Opens result plotting GUI (recommended)
+%
+%   Parameters:
+%       rerp_results:
+%           Vector of RerpResult objects
+%
+%   See doc RerpResult for extensive information on methods and properties.
+%
+%   Also see:
+%       pop_rerp, rerp, RerpProfile, RerpResultStudy, rerp_result_gui
 classdef RerpResult < matlab.mixin.Copyable
-    % Copyright (C) 2013 Matthew Burns, Swartz Center for Computational
-    % Neuroscience.
-    %
-    % User feedback welcome: email rerptoolbox@gmail.com
-    %
-    % Redistribution and use in source and binary forms, with or without
-    % modification, are permitted provided that the following conditions are met:
-    %
-    % 1. Redistributions of source code must retain the above copyright notice, this
-    %    list of conditions and the following disclaimer.
-    % 2. Redistributions in binary form must reproduce the above copyright notice,
-    %    this list of conditions and the following disclaimer in the documentation
-    %    and/or other materials provided with the distribution.
-    %
-    % THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-    % ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-    % WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-    % DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-    % ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-    % (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-    % LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-    % ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-    % (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-    % SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-    %
-    % The views and conclusions contained in the software and documentation are those
-    % of the authors and should not be interpreted as representing official policies,
-    % either expressed or implied, of the FreeBSD Project.
-    
     properties
         rerp_profile % Profile used to derive this result
         analysis_name % A title assigned by the rerp function
@@ -52,7 +33,8 @@ classdef RerpResult < matlab.mixin.Copyable
         
         gridsearch % A complete history of the grid search process, if any
         
-        rerp_plot_spec %RerpPlotSpec object 
+        rerp_plot_spec %RerpPlotSpec object
+        name %Name of file this result was pulled from
     end
     
     methods
@@ -60,7 +42,7 @@ classdef RerpResult < matlab.mixin.Copyable
             import rerp_dependencies.RerpPlotSpec
             
             obj.rerp_profile = rerp_profile;
-            obj.rerp_plot_spec=RerpPlotSpec; 
+            obj.rerp_plot_spec=RerpPlotSpec;
         end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -455,7 +437,7 @@ classdef RerpResult < matlab.mixin.Copyable
             if ~exist('h','var')
                 h=figure;
             end
-                        
+            
             eeg_parts=regexp(obj.rerp_profile.eeglab_dataset_name, '(.*[\\\/])(.*.set)', 'tokens');
             
             try
@@ -747,7 +729,59 @@ classdef RerpResult < matlab.mixin.Copyable
                 end
             end
         end
+        
+        function setPlotTimeSeries(obj, time_series_nums)
+            %Set RerpResult to plot specific channels or components
+            %   Usage:
+            %       rerp_result.setPlotTimeSeries([17 2]);
+            if ischar(time_series_nums)
+                time_series_nums = str2double(time_series_nums);
+            end
+            
+            if obj.rerp_profile.settings.type_proc
+                [~, idx] = intersect(obj.rerp_profile.include_chans, time_series_nums);
+                [~, not_idx] = setdiff(time_series_nums, obj.rerp_profile.include_chans);
+                if ~isempty(not_idx)
+                    disp('RerpResult: the following channel numbers were not found:');
+                    disp(time_series_nums(not_idx));
+                end
+            else
+                [~, idx] = intersect(obj.rerp_profile.include_comps, time_series_nums);
+                [~, not_idx] = setdiff(time_series_nums, obj.rerp_profile.include_comps);
+                if ~isempty(not_idx)
+                    disp('RerpResult: the following component numbers were not found:');
+                    disp(time_series_nums(not_idx));
+                end
+            end
+            
+            obj.rerp_plot_spec.ts_idx = idx;
+        end
 
+        function setPlotEventTypes(obj, event_types)
+            %Set RerpResult to plot specific event types or HED tags
+            %   Usage:
+            %       rerp_result.setPlotEventTypes({'1' '2' '64'});
+            %       rerp_result.setPlotEventTypes({'stimulus/visual/target' 'stimulus/expected'});
+            if obj.rerp_profile.settings.hed_enable
+                tags = obj.get_plotting_params;
+                [~, idx] = intersect(tags, event_types);
+                [~, not_idx] = setdiff(event_types, tags);
+                if ~isempty(not_idx)
+                    disp('RerpResult: the following HED tags were not found:');
+                    disp(event_types(not_idx));
+                end
+            else
+                [~, idx] = intersect(obj.rerp_profile.include_event_types, event_types);
+                [~, not_idx] = setdiff(event_types, obj.rerp_profile.include_event_types);
+                if ~isempty(not_idx)
+                    disp('RerpResult: the following event types were not found:');
+                    disp(event_types(not_idx));
+                end
+            end
+            
+            obj.rerp_plot_spec.event_idx = idx;
+        end
+        
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %Utility
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -769,8 +803,8 @@ classdef RerpResult < matlab.mixin.Copyable
             continuous_epoch_length = p.settings.continuous_epoch_boundaries(2) - p.settings.continuous_epoch_boundaries(1);
             
             %Number of samples per epoch
-            category_ns = ceil(continuous_epoch_length*p.sample_rate);
-            continuous_ns = ceil(category_epoch_length*p.sample_rate);
+            category_ns = ceil(category_epoch_length*p.sample_rate);
+            continuous_ns = ceil(continuous_epoch_length*p.sample_rate);
             
             if obj.ersp_flag
                 nbins = obj.rerp_profile.settings.nbins;
@@ -848,8 +882,15 @@ classdef RerpResult < matlab.mixin.Copyable
                 end
                 
             else
-                
-                tags = p.include_event_types;
+                tags=cell(size(p.include_event_types));
+                [~, descridx] = intersect(p.event_types, p.include_event_types);
+                for i=1:length(p.include_event_types)
+                    if strcmp(p.event_type_descriptions{descridx(i)},'')||isempty(p.event_type_descriptions{descridx(i)})
+                        tags{i} = p.include_event_types{i};
+                    else
+                        tags{i} = [p.include_event_types{i} '  (' p.event_type_descriptions{descridx(i)} ')'];
+                    end
+                end
                 estimates=cell(length(tags), size(raw_estimate,2));
                 xaxis_ms=cell(size(tags));
                 epoch_boundaries=cell(size(tags));
@@ -935,8 +976,8 @@ classdef RerpResult < matlab.mixin.Copyable
                     rethrow(e);
                 end
             end
-        end    
-             
+        end
+        
         function modeled_data = getDataModel(obj)
             %Synthesize model esitmate of the original continuous data
             %   Usage: modeled_data = rerp_result.getDataModel;
@@ -949,6 +990,7 @@ classdef RerpResult < matlab.mixin.Copyable
                 disp('RerpResult: no anaysis results present, can not synthesize modeled data');
             end
         end
+        
     end
     
     methods (Static=true)
@@ -966,31 +1008,56 @@ classdef RerpResult < matlab.mixin.Copyable
             %           Load rerp_result from that path, if present
             import rerp_dependencies.*
             
+            rerp_result=[];
             p=inputParser;
             addOptional(p,'path',[]);
-            addOptional(p,'rerp_path', pwd);
+            addOptional(p,'rerp_path', fullfile(RerpProfile.rerp_path,'results'));
+            
             parse(p, varargin{:});
-            rerp_result=0;
             
             if isempty(p.Results.path)
                 %No path specified, launch GUI
-                [filename, pathname] = uigetfile({'*.rerp_result'}, 'Load rerp result:', p.Results.rerp_path);
-                path = [pathname filename];
+                [filename, pathname] = uigetfile({'*.rerp_result'}, 'Load rerp result:', p.Results.rerp_path, 'multiselect','on');
+                if iscell(filename)
+                    path = cellfun(@(x) [pathname x], filename, 'UniformOutput', false);
+                elseif filename
+                    path = cellstr(fullfile(pathname, filename));
+                    filename=cellstr(filename);
+                else
+                    return;
+                end
             else
-                path = p.Results.path;
-                filename=1;
+                pathname = p.Results.path;
+                %If path was a directoy, we load all the .rerp_result files
+                %in that directory
+                if isdir(pathname)
+                    profdir=dir(fullfile(pathname, '*.rerp_result'));
+                    filename={profdir(:).name};
+                    path=cellfun(@(x) fullfile(pathname, x), filename, 'uniformoutput', false);
+                else
+                    filename={regexp(pathname, '.*[\\\/](.*\.rerp_result)','match')};
+                    path={pathname};
+                end
             end
             
             %Read result from disk
-            if ~filename==0
-                
-                res = load(path, '-mat');
-                label=fieldnames(res);
-                rerp_result = res.(label{1});
-                
-                %Extract the result if loading from .rerp_result file
-                assert(isa(rerp_result,'RerpResult'),'RerpResult: the file does not contain a RerpResult object');
+            rerp_result=cell(1,length(path));
+            for i=1:length(path)
+                if path{i}
+                    try
+                        res = load(path{i}, '-mat');
+                        rerp_result{i} = res.obj;
+                        rerp_result{i}.name = filename{i};
+                        
+                    catch e
+                        disp(['RerpProfile: could not read the specified result from disk ' path]);
+                        rethrow(e);
+                    end
+                end
             end
+            
+            rerp_result = rerp_result(cell2mat(cellfun(@(x) ~isempty(x), rerp_result, 'UniformOutput', false)));
+            rerp_result = [rerp_result{:}];
         end
         
         function result = combineRerpResults(rerp_results)
@@ -1064,8 +1131,8 @@ classdef RerpResult < matlab.mixin.Copyable
             %Get x axis ticks for plotting erp waveform
             %   Usage: xaxis_ms = RerpResult.get_xaxis_ms([-1 2], 256)
             epoch_length = epoch_boundaries(2)-epoch_boundaries(1);
-            ns=sample_rate*epoch_length;
-            xaxis_ms=((0:(ns-1))+epoch_boundaries(1)*sample_rate)*1000/sample_rate;
+            ns=ceil(sample_rate*epoch_length);
+            xaxis_ms=ceil(((0:(ns-1))+epoch_boundaries(1)*sample_rate)*1000.0/sample_rate);
         end
     end
     

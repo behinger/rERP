@@ -1,32 +1,19 @@
-% Copyright (C) 2013 Matthew Burns, Swartz Center for Computational
-% Neuroscience. 
+%Launch GUI for plotting results of pop_rerp (RerpResult object)
+%   Usage:
+%       rerp_result_gui;
+%           Launch results gui and load all results from the default folder
 %
-% User feedback welcome: email rerptoolbox@gmail.com
+%       rerp_result_gui('results_dir', '/data/resultsfolder');
+%           Launch results gui and load all results from '/data/resultsfolder'
 %
-% Redistribution and use in source and binary forms, with or without
-% modification, are permitted provided that the following conditions are met: 
-% 
-% 1. Redistributions of source code must retain the above copyright notice, this
-%    list of conditions and the following disclaimer. 
-% 2. Redistributions in binary form must reproduce the above copyright notice,
-%    this list of conditions and the following disclaimer in the documentation
-%    and/or other materials provided with the distribution. 
-% 
-% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-% ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-% WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-% DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-% ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-% (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-% LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-% ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-% (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-% 
-% The views and conclusions contained in the software and documentation are those
-% of the authors and should not be interpreted as representing official policies, 
-% either expressed or implied, of the FreeBSD Project.
-
+%       rerp_result_gui('results', results);
+%           Launch results gui and list all results
+%
+%   Parameters:
+%       results_dir:
+%           directory where desired .rerp_result files are saved
+%       results:
+%           Vector of RerpResult objects
 function varargout = rerp_result_gui(varargin)
 % RERP_RESULT_GUI MATLAB gui for displaying and plotting RerpResult objects
 %      RERP_RESULT_GUI, by itself, creates a new RERP_RESULT_GUI or raises the existing
@@ -74,7 +61,7 @@ end
 
 %TODO verify that the list of results are compatible
 function consistent = verify_results_are_consistent(results)
-    consistent=1; 
+consistent=1;
 
 % --- Executes just before rerp_result_gui is made visible.
 function rerp_result_gui_OpeningFcn(hObject, eventdata, handles, varargin)
@@ -83,42 +70,28 @@ function rerp_result_gui_OpeningFcn(hObject, eventdata, handles, varargin)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to rerp_result_gui (see VARARGIN)
-import rerp_dependencies.RerpPlotSpec 
+import rerp_dependencies.RerpPlotSpec
 
 p=inputParser;
-addOptional(p,'results_dir', []);
+addOptional(p,'results_dir', fullfile(RerpProfile.rerp_path, 'results'));
+addOptional(p,'results', []);
 parse(p, varargin{:});
-results_dir=p.Results.results_dir; 
+
 handles.UserData.results=struct([]);
-handles.UserData.rerp_plot_spec=RerpPlotSpec; 
-
-% Get last result and see if it matches the dataset
-rerp_path = regexp(strtrim(mfilename('fullpath')),'(.*)[\\\/].*','tokens');
-rerp_path=rerp_path{1}{1}; 
-handles.UserData.rerp_path=rerp_path;
-
-if isempty(results_dir)
-    results_dir = fullfile(rerp_path, 'results'); 
-end
-
-these_results = dir(fullfile(results_dir, '*.rerp_result'));
-names = {these_results(:).name};
-
-for i=1:length(names)
-    this_result = RerpResult.loadRerpResult('path', fullfile(results_dir, names{i}));
-    this_result.gridsearch=[]; 
-    this_result.rerp_plot_spec = handles.UserData.rerp_plot_spec; 
-    handles.UserData.results(end+1).result=this_result;
-    handles.UserData.results(end).name=names{i};
-    handles.UserData.results(end).path=fullfile(results_dir, names{i}); 
+handles.UserData.rerp_plot_spec=RerpPlotSpec;
+if isempty(p.Results.results)
+    handles.UserData.results = RerpResult.loadRerpResult('path', p.Results.results_dir);
+else
+    handles.UserData.results=p.Results.results;
 end
 
 try
     set(handles.typeplotlist,'max',1,'value',1);
     set(handles.resultslist,'string',{handles.UserData.results(:).name},'max',1);
     set(handles.channelslist,'max', 1e7);
-catch 
+catch
 end
+
 handles.UserData.sort_idx=0;
 handles.UserData.locksort=0;
 handles.UserData.rerpimage=0;
@@ -128,13 +101,9 @@ handles.UserData.plotfig=[];
 % Choose default command line output for rerp_result_gui
 handles.output = hObject;
 
-% Update handles structure
-guidata(hObject, handles);
-
-resultslist_Callback(handles.resultslist,[], handles); 
+resultslist_Callback(handles.resultslist,[], handles);
 % UIWAIT makes rerp_result_gui wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
-
 
 % --- Outputs from this function are returned to the command line.
 function varargout = rerp_result_gui_OutputFcn(hObject, eventdata, handles)
@@ -155,18 +124,15 @@ function resultslist_Callback(hObject, eventdata, handles)
 % Hints: contents = cellstr(get(hObject,'String')) returns resultslist contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from resultslist
 itemnum = get(hObject,'Value');
-
-new_results={handles.UserData.results(itemnum).result};
+new_results=handles.UserData.results(itemnum);
 if ~verify_results_are_consistent(new_results)
-    warning('rerp_profile_gui: some results selected were not compatible'); 
+    warning('rerp_profile_gui: some results selected were not compatible');
 end
 
 handles.UserData.current.result=new_results;
-handles.UserData.current.path={handles.UserData.results(itemnum).path};
-handles.UserData.current.name={handles.UserData.results(itemnum).name};
 
 handles = set_options(handles);
-guidata(hObject, handles);
+guidata(handles.output, handles);
 
 % --- Executes during object creation, after setting all properties.
 function resultslist_CreateFcn(hObject, eventdata, handles)
@@ -191,7 +157,7 @@ function typeplotlist_Callback(hObject, eventdata, handles)
 contents=cellstr(get(hObject,'String'));
 thisplot=contents{get(hObject,'Value')};
 
-% Rerpimage options 
+% Rerpimage options
 if strcmp(thisplot,'Rerp image')
     set(handles.lockingindexbutton, 'Visible','on');
     set(handles.tagslist,'Value',1,'Max',1);
@@ -286,58 +252,10 @@ function loadresultsbutton_Callback(hObject, eventdata, handles)
 % hObject    handle to loadresultsbutton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
-start_path=fullfile(handles.UserData.rerp_path, 'results');
-
-
-[fn,fp] = uigetfile('*.rerp_result','Select rerp results:',start_path,'MultiSelect','on');
-if ~iscell(fn)
-    fn={fn};
-    fp={fp};
-end
-
-if fn{1} 
-    
-    if ~iscell(fn)
-        fn={fn};
-    end
-    
-    for i=1:length(fn)
-        this_dir = dir(fullfile(fp,'*.rerp_result'));
-        thisfn = fullfile(fp, fn{i});
-        this_result = RerpResult.loadRerpResult('path', thisfn);
-        this_result.rerp_plot_spec=handles.UserData.rerp_plot_spec; 
-        this_eegpath=this_result.rerp_profile.eeglab_dataset_name;
-        eegfn=regexp(this_eegpath, '(.*[\\\/])(.*.set)','tokens');
-        eegdir = dir(eegfn{1}{1});
-        
-        handles.UserData.results(end+1).result=this_result;
-        handles.UserData.results(end).name = fn{i};
-        handles.UserData.results(end).path = fullfile(fp{i}, fn{i}); 
-        
-        if ~isempty(eegdir)
-            [~, idx]=intersect({eegdir(:).name}, eegfn{1}{2});
-        else
-            idx=0;
-        end
-        
-        % Check to make sure the .set file is where it should be
-        if any(idx)
-            handles.UserData.datasets{end+1}= this_eegpath;
-            % If not, check the directory we are looking in
-        elseif any(intersect({this_dir(:).name}, eegfn{1}{2}))
-            handles.UserData.datasets{end+1}= fullfile(fp, eegfn{1}{2});
-            % Could not locate the corresponding .set file
-        else
-            handles.UserData.datasets{end+1}= [];
-        end
-        
-        handles = set_options(handles);
-        
-        % Update handles structure
-        guidata(hObject, handles);
-    end
-end
+handles.UserData.results = [handles.UserData.results RerpResult.loadRerpResult];
+handles = set_options(handles);
+% Update handles structure
+guidata(hObject, handles);
 
 % --- Executes on button press in clearfigure.
 function clearfigure_Callback(hObject, eventdata, handles)
@@ -378,10 +296,11 @@ end
 set(0,'CurrentFigure', handles.UserData.plotfig);
 set(handles.UserData.plotfig,'color', [1 1 1]);
 handles.UserData.rerp_plot_spec.significance_level=str2double(get(handles.significancelevel,'String'));
-handles.UserData.rerp_plot_spec.exclude_insignificant=get(handles.exclude_insignif, 'value'); 
+handles.UserData.rerp_plot_spec.exclude_insignificant=get(handles.exclude_insignif, 'value');
 
-%Combine multiple results into object for study plotting
-rerp_study = RerpResultStudy(handles.UserData.current.result); 
+%Combine multiple results into object: for study plotting or single dataset
+%plotting
+rerp_study = RerpResultStudy(handles.UserData.current.result, handles.UserData.rerp_plot_spec);
 
 if strcmp(plottype, 'Rerp by event type')||strcmp(plottype,'Rerp by HED tag')
     rerp_study.plotRerpEventTypes(handles.UserData.plotfig);
@@ -399,7 +318,7 @@ if strcmp(plottype, 'R-Squared by event type')||strcmp(plottype, 'R-Squared by H
     rerp_study.plotRerpEventRsquared(handles.UserData.plotfig);
 end
 
-if strcmp(plottype, 'Rerp image')       
+if strcmp(plottype, 'Rerp image')
     handles.UserData.rerp_plot_spec.window_size_ms = str2double(get(handles.enterwindow,'String'));
     rerp_study.plotRerpImage(handles.UserData.plotfig);
 end
@@ -441,13 +360,13 @@ if ~study
         opts = {'Rersp'};
     else
         opts = {['Rerp ' type], ['Rerp ' typeproc], 'R-Squared total', ['R-Squared ' type], 'Rerp image'};
-
+        
         if ~isempty(first_result.gridsearch)
             opts = {opts{:} 'Grid search'};
         end
     end
     
-%Combine plotting from multiple datasets
+    %Combine plotting from multiple datasets
 else
     if first_result.ersp_flag
         opts = {};
@@ -473,7 +392,7 @@ if isempty(result)
     set(handles.channelslist, 'string', '','value',1);
     return;
 else
-    first_result=result{1};
+    first_result=result(1);
 end
 
 % Setup result options for plotting. Populate channels/components. Populate event types/tags
@@ -509,7 +428,7 @@ ts_str_w_rsq=cell(1,size(rsqstr,1));
 for i=1:length(ts_str_w_rsq)
     ts_str_w_rsq{i} = [time_series_str(i,:) '    (' rsqstr(i,:) ')'];
 end
-cts=get(handles.channelslist,'Value'); 
+cts=get(handles.channelslist,'Value');
 tsstr=ts_str_w_rsq(handles.UserData.sort_idx);
 set(handles.channelslist, 'string', tsstr, 'value', cts(cts<=length(tsstr)));
 
@@ -539,8 +458,7 @@ function displayprofilebutton_Callback(hObject, eventdata, handles)
 % hObject    handle to displayprofilebutton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
-pop_rerp({}, handles.UserData.current.result{1}.rerp_profile,'view_only',1);
+rerp_profile_gui(handles.UserData.current.result(1).rerp_profile)
 
 
 function significancelevel_Callback(hObject, eventdata, handles)
@@ -621,11 +539,11 @@ function saveresultas_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 if length(handles.UserData.current.result)==1
-    handles.UserData.current.result{1}.saveRerpResult;
+    handles.UserData.current.result.saveRerpResult;
 else
     error('rerp_result_gui: can not save multiple results simultaneously');
 end
-    
+
 % --- Executes on button press in exclude_insignif.
 function exclude_insignif_Callback(hObject, eventdata, handles)
 % hObject    handle to exclude_insignif (see GCBO)
