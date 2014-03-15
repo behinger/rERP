@@ -1,32 +1,15 @@
-% Copyright (C) 2013 Matthew Burns, Swartz Center for Computational
-% Neuroscience.
+%Provide GUI access to RerpProfile objects
+%   Usage:
+%       exitcode = rerp_profile_gui(rerp_profile);
+%           After presing OK on the gui, rerp_profile will be altered.
+%           Cancel aborts the changes. 
 %
-% User feedback welcome: email rerptoolbox@gmail.com
-%
-% Redistribution and use in source and binary forms, with or without
-% modification, are permitted provided that the following conditions are met:
-%
-% 1. Redistributions of source code must retain the above copyright notice, this
-%    list of conditions and the following disclaimer.
-% 2. Redistributions in binary form must reproduce the above copyright notice,
-%    this list of conditions and the following disclaimer in the documentation
-%    and/or other materials provided with the distribution.
-%
-% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-% ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-% WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-% DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-% ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-% (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-% LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-% ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-% (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-%
-% The views and conclusions contained in the software and documentation are those
-% of the authors and should not be interpreted as representing official policies,
-% either expressed or implied, of the FreeBSD Project.
-
+%   Parameters: 
+%       exitcode:
+%           Set to 1 if the user pressed OK, 0 otherwise
+%       
+%       rerp_profile: 
+%           The RerpProfile object to modify
 function exitcode = rerp_profile_gui( rerp_profile )
 %RERP_PROFILE_GUI GUI Modifies RerpProfile objects
 assert(isa(rerp_profile,'RerpProfile'),'rerp_profile_gui: can only be called on an RerpProfile object');
@@ -55,7 +38,7 @@ g5 = [10 10 10 10 10];
 geomhoriz    = { [17 22 11]  [17 11 11 11]     [17 11 11 11]  [17 8 17 8]     [17 33 ] [17 15 18 ] [17 15 18 ]   g2 g2 g2   g2 g2   g2 g2 g2 g2 g4 1 1     [15 10 12.5 12.5] [15 10 12.5 12.5] [15 10 12.5 12.5] };
 geomvert = [1 1      1 1       1 1 1      1 5 1    1 1 1 5 1 5 1 1 1       1 1 2 ];
 
-title = 'RerpProfile - Create settings to use with pop_rerp function';
+title = ['RerpProfile: ' cp.name];
 
 
 %Make sure gui handles are scoped to this level, available to nested functions
@@ -302,6 +285,28 @@ drawnow;
         set(src,'string', cp.artifact_variable_name);
         refresh_artifact_counter;
         
+    end
+
+%ENTER event type descriptions
+    function cllbk_description_edit(src, eventdata)
+        if strcmpi(eventdata.Key, 'return')||strcmpi(eventdata.Key, 'enter')
+            [new_descriptions, thisexitcode] = event_descriptions_gui(...
+                'event_descriptions', cp.event_type_descriptions,...
+                'event_types', cp.event_types); 
+
+            if thisexitcode
+                cp.event_type_descriptions = new_descriptions;
+            end
+
+            [cp.include_event_types, include_event_types_idx, exclude_event_types_idx, include_descriptions_event_types, exclude_descriptions_event_types] = get_event_type_split(...
+                cp.event_types, s.exclude_event_types, cp.event_type_descriptions);
+
+            set(ui_includeUniqueevent_typesList, 'string', include_descriptions_event_types,...
+                'value', []);
+
+            set(ui_excludeUniqueevent_typesList, 'string', exclude_descriptions_event_types,...
+                'value', []);
+        end
     end
 
 %INCLUDE selected event_types
@@ -917,8 +922,8 @@ drawnow;
                 ...
                 { 'Style', 'text', 'string', message, 'horizontalalignment', 'left','fontweight', 'bold', 'tag','typeProcLabel'},...
                 { 'Style', 'edit', 'string', num2str(time_series),'tag', 'enterExcludeChans','callback',@cllbk_get_time_series},...
-                { 'Style', 'pushbutton', 'string', ['Switch to ' other_type], 'horizontalalignment', 'left','tag', 'switchTypeButton','callback',@cllbk_switch_type},...
-                { 'Style', 'pushbutton', 'string', inc_excl_message, 'horizontalalignment', 'left','tag', 'switchIncludeExcludeButton','callback',@cllbk_switch_include_exclude,'tooltipstring','choose whether to include or exclude certain ICs or channels'},...
+                { 'Style', 'togglebutton', 'string', ['Switch to ' other_type], 'horizontalalignment', 'left','tag', 'switchTypeButton','callback',@cllbk_switch_type},...
+                { 'Style', 'togglebutton', 'string', inc_excl_message, 'horizontalalignment', 'left','tag', 'switchIncludeExcludeButton','callback',@cllbk_switch_include_exclude,'tooltipstring','choose whether to include or exclude certain ICs or channels'},...
                 ...%Channel selection, Epoch/HED settings
                 { 'Style', 'text', 'string', 'Category epoch boundaries (sec)', 'horizontalalignment', 'left','fontweight', 'bold', 'tag','catepoch','tooltipstring','determines number of parameters and position for categorical variables'},...
                 { 'Style', 'edit', 'string', num2str(s.category_epoch_boundaries),'tag', 'enterCatEpochBoundary', 'callback',@cllbk_enter_epoch_boundaries},...
@@ -937,10 +942,10 @@ drawnow;
                 {},...
                 ...
                 ...%Event event_types
-                { 'Style', 'text', 'string', 'Included event types', 'horizontalalignment', 'left','fontweight', 'bold','tag','includeevttypelabel','tooltipstring','event types included in the regression; removing event types will affect which hed tags are available in the HED section'},...
-                { 'Style', 'text', 'string', 'Excluded event types', 'horizontalalignment', 'left','fontweight', 'bold','tag','excludeevttypelabel','tooltipstring','event types excluded from the regression; removing event types will affect which hed tags are available in the HED section'},...
-                { 'Style', 'listbox', 'string', include_descriptions_event_types, 'Max', 1e7,'tag', 'includeUniqueevent_typesList'},...
-                { 'Style', 'listbox', 'string', exclude_descriptions_event_types, 'Max', 1e7,'tag', 'excludeUniqueevent_typesList'},...
+                { 'Style', 'text', 'string', 'Included event types', 'horizontalalignment', 'left','fontweight', 'bold','tag','includeevttypelabel','tooltipstring','event types included in the regression; removing event types will affect which hed tags are available in the HED section. Press enter or return when selecting event types to edit descriotions.'},...
+                { 'Style', 'text', 'string', 'Excluded event types', 'horizontalalignment', 'left','fontweight', 'bold','tag','excludeevttypelabel','tooltipstring','event types excluded from the regression; removing event types will affect which hed tags are available in the HED section. Press enter or return when selecting event types to edit descriotions.'},...
+                { 'Style', 'listbox', 'string', include_descriptions_event_types, 'Max', 1e7,'tag', 'includeUniqueevent_typesList', 'keypressfcn', @cllbk_description_edit},...
+                { 'Style', 'listbox', 'string', exclude_descriptions_event_types, 'Max', 1e7,'tag', 'excludeUniqueevent_typesList', 'keypressfcn', @cllbk_description_edit},...
                 { 'Style', 'pushbutton', 'string', 'Remove >>', 'horizontalalignment', 'left','tag', 'removeevent_typeButton', 'callback',@cllbk_event_type_remove,'tooltipstring','move the included tag to the excluded list'},...
                 { 'Style', 'pushbutton', 'string', '<< Add', 'horizontalalignment', 'left','tag', 'addevent_typeButton', 'callback',@cllbk_event_type_add,'tooltipstring','move the excluded tag to the included list'},...
                 ...%HED tags
