@@ -1,4 +1,6 @@
-% Copyright (C) 2013 Matthew Burns, Nima Bigdely-Shamlo Swartz Center for Computational
+%Detect artifact indexes by thresholding liklihood of samples in sphered space. Requires precomputed ICA.  
+function artifact_indexes = rerp_reject_samples_probability(EEG) 
+% Copyright (C) 2013 Nima Bigdely-Shamlo Swartz Center for Computational
 % Neuroscience.
 %
 % User feedback welcome: email rerptoolbox@gmail.com
@@ -26,12 +28,10 @@
 % The views and conclusions contained in the software and documentation are those
 % of the authors and should not be interpreted as representing official policies,
 % either expressed or implied, of the FreeBSD Project.function isFrameAnArtifact= rerp_reject_samples_probability(EEG, varargin)
-function artifact_indexes = rerp_reject_samples_probability(EEG) 
+
 ARTIFACT_LIKELIHOOD_THRESHOLD=2.1; 
-
-data = double(eeg_getdatact(EEG));
-
 assert(~isempty(EEG.icaweights) && ~isempty(EEG.icaweights), 'rerp_reject_samples_probability: EEG.icaweights and EEG.icasphere must be populated'); 
+data = double(eeg_getdatact(EEG));
 data = real((EEG.icaweights * EEG.icasphere) * data);
 
 logLikelihood = zeros(size(data));

@@ -1,3 +1,19 @@
+%Reject data samples using robust covariance. Can use a lot of memory. 
+%   Usage: 
+%       artifact_indexes = rerp_reject_samples_robcov(EEG);
+%           Compute indexes using default values
+%
+%       artifact_indexes = rerp_reject_samples_robcov(EEG, std_cutoff, margin);
+%
+%   Parameters:
+%       std_cutoff:
+%           Cutoff in standard deviations from (robustly estimated) data
+%           distribution (default: 5)
+%   
+%       margin:
+%           Optional margin in samples around rejected samples that should 
+%           also be rejected (default: 0).                      
+function artifact_indexes = rerp_reject_samples_robcov(EEG, std_cutoff, margin, mu, sig)
 % Copyright (C) 2013 Christian Kothe, Swartz Center for Computational Neuroscience
 % christian@sccn.ucsd.edu
 %
@@ -24,24 +40,8 @@
 % The views and conclusions contained in the software and documentation are those
 % of the authors and should not be interpreted as representing official policies,
 % either expressed or implied, of the FreeBSD Project.
-
-function artifact_indexes = rerp_reject_samples_robcov(EEG, std_cutoff, margin, mu, sig)
 import rerp_dependencies.*
-% Reject data samples using robust covariance.
-%
-% In:
-%    X : the data (#channels x #samples)
-%
-%    Cutoff : Cutoff in standard deviations from (robustly estimated) data distribution
-%             (default: 5)
-%
-%    Margin : Optional margin in samples around rejected samples that should also be
-%             rejected (default: 0).
-%
-% Out:
-%    X: matrix of retained data samples (#channels x #samples)
-%
-%    Retained : mask of retained samples
+
 
 assert(~isempty(EEG.data), 'rerp_reject_samples_robcov: EEG.data must be populated'); 
 raw = EEG.data;

@@ -14,35 +14,6 @@
 %       RerpProfile, RerpResult, pop_rerp, pop_rerp_study
 
 function rerp_result = rerp(data, rerp_profile, varargin)
-% Copyright (C) 2013 Matthew Burns, Swartz Center for Computational
-% Neuroscience.
-%
-% User feedback welcome: email rerptoolbox@gmail.com
-%
-% Redistribution and use in source and binary forms, with or without
-% modification, are permitted provided that the following conditions are met:
-%
-% 1. Redistributions of source code must retain the above copyright notice, this
-%    list of conditions and the following disclaimer.
-% 2. Redistributions in binary form must reproduce the above copyright notice,
-%    this list of conditions and the following disclaimer in the documentation
-%    and/or other materials provided with the distribution.
-%
-% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-% ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-% WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-% DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-% ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-% (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-% LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-% ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-% (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-%
-% The views and conclusions contained in the software and documentation are those
-% of the authors and should not be interpreted as representing official policies,
-% either expressed or implied, of the FreeBSD Project.
-
 import rerp_dependencies.*
 p = rerp_profile;
 s = p.settings;
@@ -266,13 +237,15 @@ else
     rerp_result = rerp_regularized(this_result);
 end
 
-% Get rsquare performace on a per event type basis
-
+%Get rsquare performance on a per event type basis
 cross_validate_event_types(rerp_result); 
+
 rerp_result.compute_time_seconds=toc;
 rerp_result.date_completed=datestr(now,'yyyy-mm-dd-HH:MM:SS');
 rerp_result.ersp_flag=ersp_flag; 
 
+dsname = regexp(rerp_result.rerp_profile.eeglab_dataset_name,'.*[\\\/](.*)\.set', match);
+rerp_result.name=[dsname ' ' rerp_result.analysis_name ' ' rerp_result.date_completed];
 
 disp('rerp: done'); 
 
