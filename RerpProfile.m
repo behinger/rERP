@@ -16,7 +16,6 @@
 %           the settings used to get that result)
 %
 %   See also: rerp_profile_gui, pop_rerp, rerp, RerpResult
-
 classdef RerpProfile < matlab.mixin.Copyable
     properties
         %This struct can be applied to many datasets with the same experimental event types/ hed tag structure.

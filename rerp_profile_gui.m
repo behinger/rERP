@@ -92,7 +92,7 @@ drawnow;
         [type_of_processing, other_type, time_series, message] = get_proc_types;
         
         set(ui_typeProcLabel, 'string', message);
-        set(ui_switchTypeButton, 'string', ['Switch to ' other_type]);
+        set(ui_switchTypeButton, 'string', [upper(type_of_processing(1)) type_of_processing(2:end)]);
         set(ui_enterExcludeChans, 'string', num2str(time_series));
         cllbk_get_time_series(ui_enterExcludeChans);
     end
@@ -103,14 +103,12 @@ drawnow;
         if s.include_exclude
             s.include_exclude=0;
             include_exclude_status='Exclude';
-            inc_excl_message='Include';
             cp.include_comps=1:cp.nbchan;
             cp.include_chans=1:cp.nbchan;
             
         else
             s.include_exclude=1;
             include_exclude_status='Include';
-            inc_excl_message='Exclude';
             cp.include_comps=[];
             cp.include_chans=[];
         end
@@ -118,7 +116,7 @@ drawnow;
         [type_of_processing, other_type, time_series, message] = get_proc_types;
         
         set(ui_typeProcLabel, 'string', message);
-        set(ui_switchIncludeExcludeButton, 'string',inc_excl_message);
+        set(ui_switchIncludeExcludeButton, 'string',include_exclude_status);
         set(ui_enterExcludeChans, 'string', num2str(time_series));
         cllbk_get_time_series(ui_enterExcludeChans);
     end
@@ -890,10 +888,8 @@ drawnow;
             
             if s.include_exclude
                 include_exclude_status='Include';
-                inc_excl_message='Exclude';
             else
                 include_exclude_status='Exclude';
-                inc_excl_message='Include';
             end
             
             if s.ersp_enable
@@ -922,8 +918,8 @@ drawnow;
                 ...
                 { 'Style', 'text', 'string', message, 'horizontalalignment', 'left','fontweight', 'bold', 'tag','typeProcLabel'},...
                 { 'Style', 'edit', 'string', num2str(time_series),'tag', 'enterExcludeChans','callback',@cllbk_get_time_series},...
-                { 'Style', 'togglebutton', 'string', ['Switch to ' other_type], 'horizontalalignment', 'left','tag', 'switchTypeButton','callback',@cllbk_switch_type},...
-                { 'Style', 'togglebutton', 'string', inc_excl_message, 'horizontalalignment', 'left','tag', 'switchIncludeExcludeButton','callback',@cllbk_switch_include_exclude,'tooltipstring','choose whether to include or exclude certain ICs or channels'},...
+                { 'Style', 'togglebutton', 'string', include_exclude_status, 'horizontalalignment', 'left','tag', 'switchIncludeExcludeButton','callback',@cllbk_switch_include_exclude,'tooltipstring','choose whether to include or exclude certain ICs or channels'},...
+                { 'Style', 'togglebutton', 'string', [upper(type_of_processing(1)) type_of_processing(2:end)] , 'horizontalalignment', 'left','tag', 'switchTypeButton','callback',@cllbk_switch_type},...
                 ...%Channel selection, Epoch/HED settings
                 { 'Style', 'text', 'string', 'Category epoch boundaries (sec)', 'horizontalalignment', 'left','fontweight', 'bold', 'tag','catepoch','tooltipstring','determines number of parameters and position for categorical variables'},...
                 { 'Style', 'edit', 'string', num2str(s.category_epoch_boundaries),'tag', 'enterCatEpochBoundary', 'callback',@cllbk_enter_epoch_boundaries},...

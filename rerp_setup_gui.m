@@ -1,9 +1,24 @@
 %GUI select datasets and profile to be processed by pop_rerp_study
-%A list of profiles
 %   Usage:
 %       [eeg_dataset_paths, rerp_profiles, exitcode] = rerp_setup_gui;
-%           Launch
+%           Launch GUI, populate profiles from /profiles directory
 %
+%       [eeg_dataset_paths, rerp_profiles, exitcode] = rerp_setup_gui('eeg_dataset_paths', eeg_dataset_paths,...
+%       'rerp_profiles', rerp_profiles);
+%           Launch GUI, populate with eeg_dataset_paths and rerp_profiles
+%
+%   Parameters:
+%       eeg_dataset_paths:
+%           Cell array of full dataset paths (e.g. {'/data/exp_53.set'})
+%
+%       rerp_profiles:
+%           Array of RerpProfile objects (e.g. [profile1 profile2])
+%
+%       exitcode:
+%           Set to 1 if the user hits Ok, 0 otherwise
+%
+%   See also:
+%       RerpProfile, pop_rerp, pop_rerp_study, RerpResult, RerpResultStudy
 function varargout = rerp_setup_gui(varargin)
 % RERP_SETUP_GUI MATLAB code for rerp_setup_gui.fig
 %      RERP_SETUP_GUI, by itself, creates a new RERP_SETUP_GUI or raises the existing
@@ -301,7 +316,7 @@ if ~isempty(contents)
     set(handles.profiles_list, 'String', contents(keep_idx));
     set(handles.profiles_list, 'Value', keep_idx);
 else
-    set(handles.profiles_list, 'String',{}, 'value',1);
+    set(handles.profiles_list, 'String',{});
 end
 profiles_list_Callback(handles.profiles_list, eventdata, handles);
 

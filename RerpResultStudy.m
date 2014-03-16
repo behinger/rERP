@@ -1,10 +1,25 @@
-%Used for combining multiple RerpResults for plotting and
-%statistics.
+%Used for combining multiple RerpResults for plotting and statistics.
+%All methods of this class currently mirror RerpResult. If called for multiple 
+%results, it will simply plot the first result using RerpResult. In
+%future releases, the methods will be able to handle multiple results. 
 %   Usage:
 %       rerp_result_study = RerpResultStudy(rerp_results);
-%           Initiate the RerpResultStudy with a default RerpPlotSpec instance
+%           Initiate the RerpResultStudy and all results in rerp_results with 
+%           a default RerpPlotSpec instance
 %    
-%       rerp_result_study = RerpResultStudy(rerp_results, rerp_plot_spec);
+%       rerp_result_study = RerpResultStudy(rerp_results, rerp_plot_spec);    
+%           Initiate the RerpResultStudy and all results in rerp_results with 
+%           rerp_plot_spec
+%
+%   Parameters:
+%       rerp_results:
+%           Array of RerpResult objects 
+%
+%       rerp_plot_spec:
+%           RerpPlotSpec object
+%
+%   See also:
+%       RerpResult, rerp_result_gui, pop_rerp
 classdef RerpResultStudy
     properties
         result %Array of RerpResult object

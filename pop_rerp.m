@@ -23,7 +23,7 @@
 %           Object of RerpResult class
 %   
 %   See also: 
-%       pop_rerp_study, rerp, RerpProfile, rerp_profile_gui, RerpResult, rerp_result_gui
+%       rerp_setup_gui, rerp_profile_gui, rerp, pop_rerp_study, RerpProfile, RerpResult, rerp_result_gui
 %           
 function [rerp_result, EEGOUT, com] = pop_rerp(EEG, rerp_profile, varargin)
 import rerp_dependencies.*

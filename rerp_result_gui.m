@@ -14,6 +14,9 @@
 %           directory where desired .rerp_result files are saved
 %       results:
 %           Vector of RerpResult objects
+%
+%   See also:
+%       RerpResult, RerpResultStudy, RerpProfile
 function varargout = rerp_result_gui(varargin)
 % RERP_RESULT_GUI MATLAB gui for displaying and plotting RerpResult objects
 %      RERP_RESULT_GUI, by itself, creates a new RERP_RESULT_GUI or raises the existing

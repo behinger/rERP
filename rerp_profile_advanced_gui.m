@@ -28,13 +28,13 @@ function varargout = rerp_profile_advanced_gui(varargin)
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
-                   'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @rerp_profile_advanced_gui_OpeningFcn, ...
-                   'gui_OutputFcn',  @rerp_profile_advanced_gui_OutputFcn, ...
-                   'gui_LayoutFcn',  [], ...
-                   'gui_Callback',   []);
+    'gui_Singleton',  gui_Singleton, ...
+    'gui_OpeningFcn', @rerp_profile_advanced_gui_OpeningFcn, ...
+    'gui_OutputFcn',  @rerp_profile_advanced_gui_OutputFcn, ...
+    'gui_LayoutFcn',  [], ...
+    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
-   gui_State.gui_Callback = str2func(varargin{1});
+    gui_State.gui_Callback = str2func(varargin{1});
 end
 
 if nargout
@@ -56,28 +56,28 @@ function rerp_profile_advanced_gui_OpeningFcn(hObject, eventdata, handles, varar
 p=inputParser;
 addOptional(p,'rerp_profile', []);
 parse(p, varargin{:});
-handles.UserData.rerp_profile = p.Results.rerp_profile; 
+handles.UserData.rerp_profile = p.Results.rerp_profile;
 handles.Userdata.old_settings=p.Results.rerp_profile.settings;
 set(handles.elastic_net_quick_zoom,'Value',handles.UserData.rerp_profile.settings.elasticnet_quick_zoom);
 
 try
-    lambdastr=num2str(handles.UserData.rerp_profile.settings.first_phase_lambda(:)'); 
-    set(handles.first_phase_lambda, 'String', lambdastr); 
+    lambdastr=num2str(handles.UserData.rerp_profile.settings.first_phase_lambda(:)');
+    set(handles.first_phase_lambda, 'String', lambdastr);
 catch
 end
 
 try
-    set(handles.num_grid_points, 'String', num2str(handles.UserData.rerp_profile.settings.num_grid_points)); 
+    set(handles.num_grid_points, 'String', num2str(handles.UserData.rerp_profile.settings.num_grid_points));
 catch
 end
 
 try
-    set(handles.num_grid_zoom_levels, 'String', num2str(handles.UserData.rerp_profile.settings.num_grid_zoom_levels)); 
+    set(handles.num_grid_zoom_levels, 'String', num2str(handles.UserData.rerp_profile.settings.num_grid_zoom_levels));
 catch
 end
 
 try
-    set(handles.num_xvalidation_folds, 'String', num2str(handles.UserData.rerp_profile.settings.num_xvalidation_folds)); 
+    set(handles.num_xvalidation_folds, 'String', num2str(handles.UserData.rerp_profile.settings.num_xvalidation_folds));
 catch
 end
 
@@ -115,7 +115,7 @@ lambda=str2double (get(hObject, 'String'));
 try
     handles.UserData.rerp_profile.settings.first_phase_lambda = lambda(:);
 catch
-    set(hObject, 'String', num2str(handles.UserData.rerp_profile.settings.first_phase_lambda)); 
+    set(hObject, 'String', num2str(handles.UserData.rerp_profile.settings.first_phase_lambda));
 end
 
 % Update handles structure
@@ -144,10 +144,10 @@ function num_grid_points_Callback(hObject, eventdata, handles)
 %        str2double(get(hObject,'String')) returns contents of num_grid_points as a double
 try
     num_grid_points = str2double (get(hObject, 'String'));
-    assert(length(num_grid_points)==1); 
+    assert(length(num_grid_points)==1);
     handles.UserData.rerp_profile.settings.num_grid_points = num_grid_points;
 catch
-    set(hObject, 'String', num2str(handles.UserData.rerp_profile.settings.num_grid_points)); 
+    set(hObject, 'String', num2str(handles.UserData.rerp_profile.settings.num_grid_points));
 end
 
 % Update handles structure
@@ -175,10 +175,10 @@ function num_grid_zoom_levels_Callback(hObject, eventdata, handles)
 %        str2double(get(hObject,'String')) returns contents of num_grid_zoom_levels as a double
 try
     num_grid_zoom_levels = str2double (get(hObject, 'String'));
-    assert(length(num_grid_zoom_levels)==1); 
+    assert(length(num_grid_zoom_levels)==1);
     handles.UserData.rerp_profile.settings.num_grid_zoom_levels = num_grid_zoom_levels;
 catch
-    set(hObject, 'String', num2str(handles.UserData.rerp_profile.settings.num_grid_zoom_levels)); 
+    set(hObject, 'String', num2str(handles.UserData.rerp_profile.settings.num_grid_zoom_levels));
 end
 % Update handles structure
 guidata(hObject, handles);
@@ -202,8 +202,8 @@ function elastic_net_quick_zoom_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 try
-    handles.UserData.rerp_profile.settings.elasticnet_quick_zoom=get(hObject, 'Value'); 
-catch 
+    handles.UserData.rerp_profile.settings.elasticnet_quick_zoom=get(hObject, 'Value');
+catch
 end
 % Update handles structure
 guidata(hObject, handles);
@@ -224,8 +224,10 @@ function cancel_Callback(hObject, eventdata, handles)
 % hObject    handle to cancel (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles.UserData.rerp_profile.settings=handles.Userdata.old_settings; 
-close(handles.output); 
+if ~isempty(handles.UserData.rerp_profile)
+    handles.UserData.rerp_profile.settings=handles.Userdata.old_settings;
+end
+close(handles.output);
 
 
 
@@ -238,10 +240,10 @@ function num_xvalidation_folds_Callback(hObject, eventdata, handles)
 %        str2double(get(hObject,'String')) returns contents of num_xvalidation_folds as a double
 try
     num_xvalidation_folds = str2double (get(hObject, 'String'));
-    assert(length(num_xvalidation_folds)==1); 
+    assert(length(num_xvalidation_folds)==1);
     handles.UserData.rerp_profile.settings.num_xvalidation_folds = num_xvalidation_folds;
 catch
-    set(hObject, 'String', num2str(handles.UserData.rerp_profile.settings.num_xvalidation_folds)); 
+    set(hObject, 'String', num2str(handles.UserData.rerp_profile.settings.num_xvalidation_folds));
 end
 
 % --- Executes during object creation, after setting all properties.
@@ -265,6 +267,6 @@ function save_grid_search_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of save_grid_search
 try
-    handles.UserData.rerp_profile.settings.save_grid_search=get(hObject, 'Value'); 
-catch 
+    handles.UserData.rerp_profile.settings.save_grid_search=get(hObject, 'Value');
+catch
 end
