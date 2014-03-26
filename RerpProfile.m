@@ -123,7 +123,6 @@ classdef RerpProfile < matlab.mixin.Copyable
                     %Copy over descriptions for common event types
                     [~, idx1, idx2] = intersect(passed_profile.event_types, obj.event_types);
                     obj.event_type_descriptions(idx2) = passed_profile.event_type_descriptions(idx1);
-                    
                 else
                     %No protptype profile was passed, so we include all chans
                     %and comps
@@ -131,6 +130,9 @@ classdef RerpProfile < matlab.mixin.Copyable
                     obj.include_chans=all_ts_idx;
                 end
                 
+                fprintf('RerpProfile: creating initial hierarchy\n');
+                obj.hed_tree = hedTree(obj.these_events.hedTag);
+                    
                 parse(p, theseargs{:});
                 params = p.Parameters;
                 
@@ -149,7 +151,7 @@ classdef RerpProfile < matlab.mixin.Copyable
                 
                 msg = 'RerpProfile: profile not completely specified, missing parameters\n';
                 for i=1:length(missing)
-                    msg = [msg '\t\t' missing{i} '\n'];
+                    msg = [msg '\r\t' missing{i} '\n'];
                 end
                 
                 if ~isempty(missing)
@@ -161,10 +163,7 @@ classdef RerpProfile < matlab.mixin.Copyable
                 obj.sample_rate = EEG.srate;
                 obj.pnts = EEG.pnts;
                 obj.nbchan=EEG.nbchan;
-                
-                fprintf('RerpProfile: creating initial hierarchy\n');
-                obj.hed_tree = hedTree(obj.these_events.hedTag);
-                
+
                 assert(isempty(setdiff(s.penalty_func, s.penalty_options)), 'RerpProfile: settings.penalty_func must be a subset of settings.penalty_options');
                 
                 % If this is a brand new profile, assign all tags to
@@ -174,11 +173,7 @@ classdef RerpProfile < matlab.mixin.Copyable
                 else
                     s.exclude_tag=intersect(s.exclude_tag, obj.hed_tree.uniqueTag);
                 end
-                
-                if isempty(obj.hed_tree.uniqueTag)
-                    s.hed_enable=0;
-                end
-                
+                            
                 fprintf('RerpProfile: parsing hierarchy\n');
                 [obj.include_tag, obj.include_ids, obj.context_group, obj.continuous_var] = parse_hed_tree(obj.hed_tree, s.exclude_tag, s.seperator_tag, s.continuous_tag);
                 
@@ -450,7 +445,7 @@ classdef RerpProfile < matlab.mixin.Copyable
             
             if isempty(p.Results.path)
                 %No path specified, launch GUI
-                [filename, pathname] = uigetfile({'*.rerp_profile';'*.rerp_result'}, 'Load rerp profile:', p.Results.rerp_path, 'multiselect','on');
+                [filename, pathname] = uigetfile('*.rerp_profile;*.rerp_result', 'Load rerp profile:', p.Results.rerp_path, 'multiselect','on');
                 if iscell(filename)
                     path = cellfun(@(x) [pathname x], filename, 'UniformOutput', false);
                 elseif filename
