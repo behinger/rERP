@@ -127,15 +127,17 @@ function resultslist_Callback(hObject, eventdata, handles)
 % Hints: contents = cellstr(get(hObject,'String')) returns resultslist contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from resultslist
 itemnum = get(hObject,'Value');
-new_results=handles.UserData.results(itemnum);
-if ~verify_results_are_consistent(new_results)
-    warning('rerp_profile_gui: some results selected were not compatible');
+if ~isempty(itemnum)
+    new_results=handles.UserData.results(itemnum);
+    if ~verify_results_are_consistent(new_results)
+        warning('rerp_profile_gui: some results selected were not compatible');
+    end
+
+    handles.UserData.current.result=new_results;
+
+    handles = set_options(handles);
+    guidata(handles.output, handles);
 end
-
-handles.UserData.current.result=new_results;
-
-handles = set_options(handles);
-guidata(handles.output, handles);
 
 % --- Executes during object creation, after setting all properties.
 function resultslist_CreateFcn(hObject, eventdata, handles)
@@ -176,7 +178,7 @@ else
 end
 
 % % Rsquare options
-% if strcmp(thisplot, 'R-Squared by event type')||(strcmp(thisplot, 'R-Squared by HED tag')||strcmp(thisplot, 'R-Squared total'))
+% if strcmp(thisplot, 'R2 by event type')||(strcmp(thisplot, 'R2 by HED tag')||strcmp(thisplot, 'R2 total'))
 %     set(handles.significancelevel, 'Visible','on');
 %     set(handles.significancelabel, 'Visible','on');
 % else
@@ -313,11 +315,11 @@ if strcmp(plottype, 'Rerp by component')||strcmp(plottype,'Rerp by channel')
     rerp_study.plotRerpTimeSeries(handles.UserData.plotfig);
 end
 
-if strcmp(plottype, 'R-Squared total')
+if strcmp(plottype, 'R2 total')
     rerp_study.plotRerpTotalRsquared(handles.UserData.plotfig);
 end
 
-if strcmp(plottype, 'R-Squared by event type')||strcmp(plottype, 'R-Squared by HED tag')
+if strcmp(plottype, 'R2 by event type')||strcmp(plottype, 'R2 by HED tag')
     rerp_study.plotRerpEventRsquared(handles.UserData.plotfig);
 end
 
@@ -362,7 +364,7 @@ if ~study
     if first_result.ersp_flag
         opts = {'Rersp'};
     else
-        opts = {['Rerp ' type], ['Rerp ' typeproc], 'R-Squared total', ['R-Squared ' type], 'Rerp image'};
+        opts = {['Rerp ' type], ['Rerp ' typeproc], 'R2 total', ['R2 ' type], 'Rerp image'};
         
         if ~isempty(first_result.gridsearch)
             opts = {opts{:} 'Grid search'};
@@ -374,7 +376,7 @@ else
     if first_result.ersp_flag
         opts = {};
     else
-        opts = {'R-Squared total', ['R-Squared ' type]};
+        opts = {'R2 total', ['R2 ' type]};
     end
 end
 
@@ -404,10 +406,10 @@ set(handles.typeplotlist, 'string', opts, 'value', min(length(opts), get(handles
 
 if first_result.rerp_profile.settings.type_proc
     channels = first_result.rerp_profile.include_chans;
-    set(handles.typeproclabel, 'string', 'Channels (R-Squared)');
+    set(handles.typeproclabel, 'string', 'Channels (R2)');
 else
     channels = first_result.rerp_profile.include_comps;
-    set(handles.typeproclabel, 'string', 'Components (R-Squared)');
+    set(handles.typeproclabel, 'string', 'Components (R2)');
 end
 time_series_str = num2str(unique(channels'));
 assert(length(channels)==size(first_result.rerp_estimate,2), 'pop_plot_rerp_result: problem matching dataset to result');
