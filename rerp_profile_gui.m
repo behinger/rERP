@@ -2,13 +2,13 @@
 %   Usage:
 %       exitcode = rerp_profile_gui(rerp_profile);
 %           After presing OK on the gui, rerp_profile will be altered.
-%           Cancel aborts the changes. 
+%           Cancel aborts the changes.
 %
-%   Parameters: 
+%   Parameters:
 %       exitcode:
 %           Set to 1 if the user pressed OK, 0 otherwise
-%       
-%       rerp_profile: 
+%
+%       rerp_profile:
 %           The RerpProfile object to modify
 function exitcode = rerp_profile_gui( rerp_profile )
 %RERP_PROFILE_GUI GUI Modifies RerpProfile objects
@@ -35,8 +35,8 @@ g3 = [16.67 16.66 16.67];
 g4 = [12.5 12.5 12.5 12.5];
 g5 = [10 10 10 10 10];
 
-geomhoriz    = { [17 22 11]  [17 11 11 11]     [17 11 11 11]  [17 8 17 8]     [17 33 ] [17 15 18 ] [17 15 18 ]   g2 g2 g2   g2 g2   g2 g2 g2 g2 g4 1 1     [15 10 12.5 12.5] [15 10 12.5 12.5] [15 10 12.5 12.5] };
-geomvert = [1 1      1 1       1 1 1      1 5 1    1 1 1 5 1 5 1 1 1       1 1 2 ];
+geomhoriz    = { [17 22 11]  [17 11 11 11]     [17 11 11 11]  [17 8 17 8]     [17 33 ] [17 15 18 ]  g2 g2 g2   g2 g2   g2 g2 g2 g2 g4 1 1     [15 10 12.5 12.5] [15 10 12.5 12.5] [15 10 12.5 12.5] };
+geomvert = [1 1      1 1       1 1         1 5 1    1 1 1 5 1 5 1 1 1       1 1 2 ];
 
 title = ['RerpProfile: ' cp.name];
 
@@ -198,7 +198,7 @@ drawnow;
         set(ui_enterArtifactFunction, 'enable', enableArtifactRejectionStatus);
         set(ui_computeArtifactButton, 'enable', enableArtifactRejectionStatus);
         
-        cllbk_enable_artifact_name(ui_enableArtifactVariable);
+%        cllbk_enable_artifact_name(ui_enableArtifactVariable);
     end
 
 %ENTER artifact function name
@@ -290,18 +290,18 @@ drawnow;
         if strcmpi(eventdata.Key, 'return')||strcmpi(eventdata.Key, 'enter')
             [new_descriptions, thisexitcode] = event_descriptions_gui(...
                 'event_descriptions', cp.event_type_descriptions,...
-                'event_types', cp.event_types); 
-
+                'event_types', cp.event_types);
+            
             if thisexitcode
                 cp.event_type_descriptions = new_descriptions;
             end
-
+            
             [cp.include_event_types, include_event_types_idx, exclude_event_types_idx, include_descriptions_event_types, exclude_descriptions_event_types] = get_event_type_split(...
                 cp.event_types, s.exclude_event_types, cp.event_type_descriptions);
-
+            
             set(ui_includeUniqueevent_typesList, 'string', include_descriptions_event_types,...
                 'value', []);
-
+            
             set(ui_excludeUniqueevent_typesList, 'string', exclude_descriptions_event_types,...
                 'value', []);
         end
@@ -932,11 +932,6 @@ drawnow;
                 { 'Style', 'text', 'string', '    Artifact function', 'horizontalalignment', 'left','tag', 'artifactFunction','enable',enableArtifactRejectionStatus,'tooltipstring','the function used to identify artifact frames; see rerp_reject_samples_robcov for function prototype'},...
                 { 'Style', 'edit', 'string', s.artifact_function_name,'tag', 'enterArtifactFunction', 'enable', enableArtifactRejectionStatus,'callback',@cllbk_enter_artifact_function_name,'tag','enterArtifactFunction'},...
                 { 'Style', 'pushbutton', 'string', 'Force recompute artifact frames', 'horizontalalignment', 'left','tag', 'computeArtifactButton', 'callback', @cllbk_compute_artifact, 'enable',enableArtifactRejectionStatus},...
-                ...
-                { 'Style', 'checkbox', 'string', 'Artifact variable', 'horizontalalignment', 'left','tag', 'enableArtifactVariable','value',s.artifact_variable_enable,'callback', @cllbk_enable_artifact_name, 'enable',enableArtifactRejectionStatus,'tooltipstring','specify a logical artifact variable in the base workspace'},...
-                { 'Style', 'edit', 'string', cp.artifact_variable_name,'tag', 'enterArtifactVariable', 'enable', enableArtifactVariableStatus,'callback',@cllbk_enter_artifact_name},...
-                {},...
-                ...
                 ...%Event event_types
                 { 'Style', 'text', 'string', 'Included event types', 'horizontalalignment', 'left','fontweight', 'bold','tag','includeevttypelabel','tooltipstring','event types included in the regression; removing event types will affect which hed tags are available in the HED section. Press enter or return when selecting event types to edit descriotions.'},...
                 { 'Style', 'text', 'string', 'Excluded event types', 'horizontalalignment', 'left','fontweight', 'bold','tag','excludeevttypelabel','tooltipstring','event types excluded from the regression; removing event types will affect which hed tags are available in the HED section. Press enter or return when selecting event types to edit descriotions.'},...
@@ -1063,7 +1058,7 @@ drawnow;
                 disp('rerp_profile_gui: problem with profile, possibly an outdated version');
                 throw(e);
             end
-        end  
+        end
     end
 
 
@@ -1085,14 +1080,19 @@ drawnow;
         
         %If descriptions were provided, include them in the event type listboxes
         include_descriptions = cell(size(include_event_types_idx));
-        exclude_descriptions = cell(size(exclude_event_types));
+        exclude_descriptions = cell(size(exclude_event_types_idx));
         if ~isempty(event_type_descriptions)
             
             for i=1:length(include_descriptions)
                 include_descriptions{i} = strtrim([event_types{include_event_types_idx(i)} '   ' event_type_descriptions{include_event_types_idx(i)}]);
             end
             
-            for i=1:length(exclude_descriptions)
+            if length(event_type_descriptions) < max(exclude_event_types_idx)
+                num2add=max(exclude_event_types_idx)-length(event_type_descriptions);
+                [event_type_descriptions{end+1:end+num2add}] = deal('');
+            end
+            
+            for i=1:length(exclude_event_types_idx)
                 exclude_descriptions{i} = strtrim([event_types{exclude_event_types_idx(i)} '   ' event_type_descriptions{exclude_event_types_idx(i)}]);
             end
         end
