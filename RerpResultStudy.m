@@ -27,9 +27,9 @@ classdef RerpResultStudy
     end
     
     methods
-        function obj = RerpResultStudy(result, rerp_plot_spec)
+        function obj = RerpResultStudy(rerp_results, rerp_plot_spec)
             import rerp_dependencies.RerpPlotSpec
-            obj.result=result;
+            obj.result=rerp_results(:);
             if ~exist('rerp_plot_spec','var')
                 obj.rerp_plot_spec = RerpPlotSpec; 
             else
