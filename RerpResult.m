@@ -459,13 +459,13 @@ classdef RerpResult < matlab.mixin.Copyable
             
             if obj.rerp_profile.settings.type_proc==0
                 assert(~isempty(EEG.icaact)&& size(EEG.icaact,3)==1,'RerpResult: this profile is set for ICA; populate EEG.icaact with continuous ICA activations');
-                data = EEG.icaact(obj.rerp_plot_spec.ts_idx,:)';
+                data = EEG.icaact(obj.rerp_profile.include_comps(obj.rerp_plot_spec.ts_idx),:)';
             else
                 assert(~isempty(EEG.data) && size(EEG.data,3)==1,'RerpResult: EEG.data must be populated with continuous data');
-                data = EEG.data(obj.rerp_plot_spec.ts_idx,:)';
+                data = EEG.data(obj.rerp_profile.include_chans(obj.rerp_plot_spec.ts_idx),:)';
             end
             
-            % Replace artifact indexes with data mean for plotting
+            % Replace artifact indexes with data median for plotting
             if obj.rerp_profile.settings.artifact_rejection_enable
                 if obj.rerp_profile.settings.artifact_variable_enable
                     data(obj.rerp_profile.variable_artifact_indexes,:)=repmat(median(data), [nnz(obj.rerp_profile.variable_artifact_indexes), 1]);
@@ -475,6 +475,19 @@ classdef RerpResult < matlab.mixin.Copyable
             end
             
             num_samples = ceil(obj.rerp_profile.sample_rate*(obj.rerp_plot_spec.window_size_ms/1000));
+          
+            [tags, estimates, xaxis_ms, epoch_boundaries] = obj.get_plotting_params;
+            locking_tag = tags{obj.rerp_plot_spec.locking_idx};
+            locking_estimate = estimates(obj.rerp_plot_spec.locking_idx, obj.rerp_plot_spec.ts_idx);
+            
+            if ~isempty(obj.rerp_plot_spec.delay_idx)
+                delay_tag = tags{obj.rerp_plot_spec.delay_idx};
+            else
+                delay_tag=[];
+            end
+            
+            this_epoch_boundaries = epoch_boundaries{obj.rerp_plot_spec.locking_idx};
+            this_xaxis_ms = ((0:(num_samples-1))'/obj.rerp_profile.sample_rate + this_epoch_boundaries(1))*1000;
             
             disp('RerpResult: generating modeled data');
             [predictor, data_pad] = predictor_gen(obj.rerp_profile);
@@ -482,26 +495,20 @@ classdef RerpResult < matlab.mixin.Copyable
             modeled_data = [predictor*obj.rerp_estimate(:,obj.rerp_plot_spec.ts_idx); zeros(num_samples,size(data,2))];
             noise = data-modeled_data;
             
-            [tags, estimates, xaxis_ms, epoch_boundaries] = obj.get_plotting_params;
-            locking_tag = tags{obj.rerp_plot_spec.locking_idx};
-            locking_estimate = estimates(obj.rerp_plot_spec.locking_idx, obj.rerp_plot_spec.ts_idx);
-            sorting_tag = tags{obj.rerp_plot_spec.delay_idx};
-            
-            if ~isempty(obj.rerp_plot_spec.delay_idx)
-                delay_tag = tags{obj.rerp_plot_spec.delay_idx};
-                delay_estimate = estimates(obj.rerp_plot_spec.delay_idx, obj.rerp_plot_spec.ts_idx);
-            else
-                delay_tag=[];
-                delay_estimate = [];
-            end
-            
-            this_epoch_boundaries = epoch_boundaries{obj.rerp_plot_spec.locking_idx};
-            this_xaxis_ms = ((0:(num_samples-1))'/obj.rerp_profile.sample_rate + this_epoch_boundaries(1))*1000;
-            
+            idx_start = max(max(ceil(this_epoch_boundaries(1)*obj.rerp_profile.sample_rate)+data_pad(1)), 1);
             disp('RerpResult: getting epochs');
-            [data_epochs, event_nums] = obj.get_rerp_epochs(data, locking_tag, num_samples);
-            [modeled_epochs] = obj.get_rerp_epochs(modeled_data, locking_tag, num_samples);
-            [noise_epochs] = obj.get_rerp_epochs(noise, locking_tag, num_samples);
+            [data_epochs, event_nums] = obj.get_rerp_epochs(data(idx_start:end), locking_tag, num_samples);
+            [modeled_epochs] = obj.get_rerp_epochs(modeled_data(idx_start:end), locking_tag, num_samples);
+            [noise_epochs] = obj.get_rerp_epochs(noise(idx_start:end), locking_tag, num_samples);
+            
+            %Threshold epochs to modeled data to get good color
+            %range. 
+            max_model = max(max(modeled_epochs));
+            min_model = min(min(modeled_epochs)); 
+            data_epochs(data_epochs > max_model) = max_model; 
+            data_epochs(data_epochs < min_model) = min_model; 
+            noise_epochs(noise_epochs > max_model) = max_model; 
+            noise_epochs(noise_epochs < min_model) = min_model; 
             
             if ~isempty(delay_tag)
                 disp('RerpResult: calculating order of trials');
@@ -541,13 +548,13 @@ classdef RerpResult < matlab.mixin.Copyable
                 erpimage(noise_epochs(:,:,i), sorting_var, this_xaxis_ms, ['Difference epochs - ' v ': ' locking_tag ', ' ts ': ' tsn]);
                 
                 % Plot the rerp estimates
-                scrollsubplot(4,1,m+3,h);
-                plot(xaxis_ms{obj.rerp_plot_spec.locking_idx}', locking_estimate{i}, xaxis_ms{obj.rerp_plot_spec.delay_idx}', delay_estimate{i});
+                scrollsubplot(4,1,m+3,h);         
+                plot(xaxis_ms{obj.rerp_plot_spec.locking_idx}', locking_estimate{i});
                 title('rERP estimates');
                 xlabel('time (ms)');
                 ylabel('epoch number');
-                legend([v '(locking): ' locking_tag], [v '(sorting): ' sorting_tag]);
-                
+                legend([v '(locking): ' locking_tag]);
+                xlim([min(this_xaxis_ms) max(this_xaxis_ms)]);
                 hcmenu = uicontextmenu;
                 uimenu(hcmenu, 'Label', 'Publish graph', 'Callback', @RerpResult.gui_publish);
                 set(gca,'uicontextmenu', hcmenu);
@@ -891,6 +898,7 @@ classdef RerpResult < matlab.mixin.Copyable
                         tags{i} = [p.include_event_types{i} '  (' p.event_type_descriptions{descridx(i)} ')'];
                     end
                 end
+                
                 estimates=cell(length(tags), size(raw_estimate,2));
                 xaxis_ms=cell(size(tags));
                 epoch_boundaries=cell(size(tags));
@@ -955,7 +963,6 @@ classdef RerpResult < matlab.mixin.Copyable
             else
                 path2file = regexp(path, '(.*)[\\\/].*$','tokens');
                 path2file = path2file{1}{1};
-                
                 if isempty(dir(path2file))
                     mkdir(path2file);
                 end
@@ -1233,34 +1240,46 @@ classdef RerpResult < matlab.mixin.Copyable
         end
         
         function [rerp_epochs, event_nums] = get_rerp_epochs(obj, data, locking_var,  num_samples)
+            import rerp_dependencies.RerpTagList;
+            
             % Extract epochs corresponding to tags or event codes
             events = obj.rerp_profile.these_events;
             rerp_epochs = zeros([num_samples, length(events.label), size(data,2)]);
             m=1;
             
-            if obj.rerp_profile.settings.hed_enable
-                regexp_str_in_parentheses = '.*\((.*)\).*';
-                regexp_str_out_parentheses = '(.*)(?:\s*\(.*\))?';
+            regexp_str_in_parentheses = '.*\((.*)\).*';
+            context_tag = regexp(locking_var, regexp_str_in_parentheses, 'tokens');
+            locking_tag = RerpTagList.strip_label({locking_var});
+            locking_tag=locking_tag{1};
+            continuoustg = [obj.rerp_profile.continuous_var{:}];
+            
+            %Find out if the tag is a continuous tag
+            if ~isempty(continuoustg)
+                continuoustg = intersect(locking_tag, {continuoustg(:).name}); 
+            end
+            
+            if ~isempty(continuoustg)
+                offset = obj.rerp_profile.settings.continuous_epoch_boundaries(1);
+            else
+                offset = obj.rerp_profile.settings.category_epoch_boundaries(1);
+            end
                 
-                context_tag = regexp(locking_var, regexp_str_in_parentheses, 'tokens');
-                locking_tag = regexp(locking_var, regexp_str_out_parentheses, 'tokens');
-                
+            if obj.rerp_profile.settings.hed_enable              
                 % Get event numbers for locking_var (possibly in a context
-                % group).
-                
+                % group).    
                 if ~isempty(context_tag)
                     for i=1:length(obj.rerp_profile.context_group)
                         this_group = obj.rerp_profile.context_group{i};
                         for j=1:length(this_group.children)
                             this_child = this_group.children{i};
                             if strcmp(context_tag{1}{1}, this_child.tag)
-                                idx = find(strcmp(locking_tag{1}{1}, this_child.included_tag), 1);
+                                idx = find(strcmp(locking_tag, this_child.included_tag), 1);
                                 event_nums = this_child.ids(this_child.included_id{idx});
                             end
                         end
                     end
                 else
-                    tag_idx = strcmp(locking_tag{1}{1}, obj.rerp_profile.hed_tree.uniqueTag);
+                    tag_idx = strcmp(locking_tag, obj.rerp_profile.hed_tree.uniqueTag);
                     event_nums = obj.rerp_profile.hed_tree.originalHedStringId{tag_idx};
                 end
                 
@@ -1274,7 +1293,7 @@ classdef RerpResult < matlab.mixin.Copyable
                 event_nums=zeros(0,1);
                 for i=1:length(events.label)
                     this_event = events.label{i};
-                    if strcmp(locking_var, this_event)
+                    if strcmp(locking_tag, this_event)
                         this_latency=events.latencyInFrame(i);
                         rerp_epochs(:,m,:) = data(this_latency:(this_latency+num_samples-1),:);
                         event_nums(m) = i;
