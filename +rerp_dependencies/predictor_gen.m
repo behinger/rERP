@@ -33,16 +33,16 @@ import rerp_dependencies.*
 p = rerp_profile;
 s = p.settings;
 
-cat_t0 = p.sample_rate*s.category_epoch_boundaries(1);
-con_t0 = p.sample_rate*s.continuous_epoch_boundaries(1);
+cat_t0 = ceil(p.sample_rate*s.category_epoch_boundaries(1));
+con_t0 = ceil(p.sample_rate*s.continuous_epoch_boundaries(1));
 
 %Calculate start and length of epoch (two types of variables, continuous and categorical)
 category_epoch_length = s.category_epoch_boundaries(2) - s.category_epoch_boundaries(1);
 continuous_epoch_length = s.continuous_epoch_boundaries(2) - s.continuous_epoch_boundaries(1);
 
 %Number of samples per epoch
-category_ns = ceil(continuous_epoch_length*p.sample_rate);
-continuous_ns = ceil(category_epoch_length*p.sample_rate);
+category_ns = ceil(category_epoch_length*p.sample_rate);
+continuous_ns = ceil(continuous_epoch_length*p.sample_rate);
             
 indexes = cell(0,0);
 
@@ -50,7 +50,7 @@ if s.hed_enable
     [ncontinvars, ncatvars, ncontextvars] = RerpTagList.cntVarsParams(p);
     parameter_cnt = ncontinvars*continuous_ns + (ncatvars + ncontextvars)*category_ns;
     predictor_pad = max(continuous_ns, category_ns);
-    predictor_shift = min(min(cat_t0, con_t0), 0);
+    predictor_shift = min(min(cat_t0, con_t0),0);
     
     [ii, jj, value] = deal(cell(1, ncontinvars + ncatvars + ncontextvars));
     cell_idx = 1;
@@ -169,7 +169,7 @@ else
     num_event_types = p.num_event_types(sort(include_idx)); 
     parameter_cnt = ns*numvars;
     
-    predictor_shift = min(cat_t0, 0); 
+    predictor_shift = min(cat_t0,0); 
     predictor_pad = ns;
     
     [ii, jj, value] = deal(cell(1,numvars));
@@ -215,14 +215,14 @@ m = m-predictor_shift;
 
 %Return the bounds of the data
 data_pad(1) = -predictor_shift;
-data_pad(2) = predictor_pad;
+data_pad(2) = predictor_pad  + max(max(cat_t0,con_t0),0);
 
 try
-    predictor=sparse(m, n, v, p.pnts + predictor_pad-predictor_shift, parameter_cnt);
+    predictor=sparse(m, n, v, p.pnts + sum(data_pad), parameter_cnt);
     
 catch  e
     fprintf('Max m index = %d, max n index = %d\n',max(m), max(n));
-    fprintf('Dimension = %d x %d\n', p.pnts+predictor_pad, parameter_cnt);
+    fprintf('Dimension = %d x %d\n', p.pnts + sum(data_pad), parameter_cnt);
     rethrow(e)
 end
 
