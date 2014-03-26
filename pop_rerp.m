@@ -34,6 +34,7 @@ if nargin < 1
     help pop_rerp;
     return;
 end;
+
 p=inputParser;
 addOptional(p,'force_gui', 0);
 parse(p, varargin{:});
@@ -64,7 +65,7 @@ if nargin > 1
     tmp=regexp(rerp_profile.eeglab_dataset_name , '.*[\\\/](.*\.set)', 'tokens'); 
     fn=tmp{1}{1};
     if ~strcmp(fn, EEG.filename)
-        cp=RerpProfile(rerp_profile);
+        cp=RerpProfile(EEG, rerp_profile);
     end
     
 else
