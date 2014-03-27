@@ -77,7 +77,7 @@ import rerp_dependencies.RerpPlotSpec
 
 p=inputParser;
 addOptional(p,'results_dir', fullfile(RerpProfile.rerp_path, 'results'));
-addOptional(p,'results', []);
+addOptional(p,'results', [], @(x) isa(x, 'RerpResult'));
 parse(p, varargin{:});
 
 handles.UserData.results=struct([]);
