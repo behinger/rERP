@@ -74,18 +74,13 @@ function rerp_setup_gui_OpeningFcn(hObject, eventdata, handles, varargin)
 % varargin   command line arguments to rerp_setup_gui (see VARARGIN)
 
 p=inputParser;
-addOptional(p,'rerp_profiles', {}, @(x) iscell(x));
+addOptional(p,'rerp_profiles', [], @(x) isa(x, 'RerpProfile'));
 addOptional(p,'eeg_dataset_paths', {}, @(x) iscell(x));
 parse(p, varargin{:});
 handles.UserData.eeg_dataset_paths=p.Results.eeg_dataset_paths(:)';
 handles.UserData.profiles=struct([]);
 handles.UserData.exitcode=0;
-
-%If profiles were passed in
-for i=1:length(p.Results.rerp_profiles)
-        handles.UserData.profiles(i) = p.Results.rerp_profile;
-        handles.UserData.profiles(i).name = ['profile ' num2str(i)];
-end
+handles.UserData.profiles = p.Results.rerp_profiles; 
 
 %Get profiles from disk
 path=fullfile(RerpProfile.rerp_path, 'profiles');
