@@ -40,7 +40,7 @@
 function [ rerp_result_study ] = pop_rerp_study(varargin)
 
 p=inputParser;
-addOptional(p,'rerp_profiles', {}, @(x) iscell(x));
+addOptional(p,'rerp_profiles', [], @(x) isa(x, 'RerpProfile'));
 addOptional(p,'eeg_dataset_paths', {}, @(x) iscell(x));
 addOptional(p,'eeg', struct([]), @(x) isstruct(x));
 addOptional(p,'study', struct([]), @(x) isstruct(x));
@@ -51,6 +51,7 @@ rerp_profiles=p.Results.rerp_profiles;
 EEG=p.Results.eeg;
 STUDY=p.Results.study;
 exitcode=1;
+rerp_result_study=[]; 
 
 % Get the dataset paths from STUDY or EEG structs if dataset_paths was not
 % specified. 
