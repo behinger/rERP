@@ -62,7 +62,7 @@ all_profiles = RerpProfile.loadRerpProfile('path', path2profiles);
 %Run the profiles against the datasets they were derived from. This computes channels/comps in parallel, if 
 %you run matlabpool with more than 2 workers, or inside a batch job with many workers. 
 for i=1:length(ALLEEG)
-    all_results(i) = pop_rerp(ALLEEG(i), all_profiles(i)); 
+    all_results(i) = pop_rerp(ALLEEG(i), all_profiles(i));  
 end 
 
 rerp_result_study = RerpResultStudy(all_results); 

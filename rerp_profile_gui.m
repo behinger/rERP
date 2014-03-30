@@ -16,7 +16,7 @@ assert(isa(rerp_profile,'RerpProfile'),'rerp_profile_gui: can only be called on 
 
 exitcode=0;
 view_only=0;
-cp= rerp_profile;
+cp = rerp_profile;
 s = cp.settings;
 current_included_hed_tree={};
 processing_types = {'components' 'channels'};
