@@ -56,7 +56,7 @@ end
 
 if ~exist('mu','var') || isempty(mu)
     disp('rerp_reject_samples_robcov: computing robust mean'); 
-    mu = median(raw,2); 
+    mu = median(raw, 2); 
 end
 
 if ~exist('sig','var') || isempty(sig)

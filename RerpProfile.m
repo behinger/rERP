@@ -494,7 +494,6 @@ classdef RerpProfile < matlab.mixin.Copyable
     end
 end
 
-
 function p = makeParser
 %Define the contract for instantiating RerpProfile.
 %You must provide these exact fields in order to instantiate RerpProfile.p=inputParser;

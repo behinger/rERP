@@ -74,7 +74,7 @@ function rerp_setup_gui_OpeningFcn(hObject, eventdata, handles, varargin)
 % varargin   command line arguments to rerp_setup_gui (see VARARGIN)
 
 p=inputParser;
-addOptional(p,'rerp_profiles', [], @(x) isa(x, 'RerpProfile'));
+addOptional(p,'rerp_profiles', []);
 addOptional(p,'eeg_dataset_paths', {}, @(x) iscell(x));
 parse(p, varargin{:});
 handles.UserData.eeg_dataset_paths=p.Results.eeg_dataset_paths(:)';

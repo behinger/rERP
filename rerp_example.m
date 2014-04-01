@@ -41,19 +41,21 @@ rerp_result_gui;
 %rerp_result_gui('results', rerp_result);
 
 %% Create a profile for each dataset from template, compute artifact indexes for all datasets and save for future use 
-%It might be useful to save all the profiles and the .study file in a
-%single directory. 
 
 path2profiles=fullfile(RerpProfile.rerp_path, 'profiles', 'example'); 
-template_profile = RerpProfile(EEG);
+template_profile = RerpProfile(EEG(1));
 rerp_profile_gui(template_profile);
 
-all_profiles=[]; 
+all_profiles={}; 
 parfor i=1:length(ALLEEG)
-    all_profiles(i) = RerpProfile(ALLEEG(i), template_profile);
-    all_profiles(i).compute_artifact_indexes(EEG); 
-    all_profiles(i).saveRerpProfile('path', fullfile(path2profiles, [this_eeg.setname '.rerp_profile']));  
+    this_eeg=ALLEEG(i);
+    this_eeg = eeg_checkset(this_eeg, 'loaddata'); 
+    this_eeg.icaact = eeg_getica(this_eeg); 
+    all_profiles{i} = RerpProfile(this_eeg, template_profile);
+    all_profiles{i}.compute_artifact_indexes(this_eeg); 
+    all_profiles{i}.saveRerpProfile('path', fullfile(path2profiles, [this_eeg.setname '.rerp_profile']));  
 end
+all_profiles = [all_profiles{:}];
 
 %Get the profiles you just computed in another session. This loads all
 %the profiles in the folder 

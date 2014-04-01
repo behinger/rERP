@@ -35,8 +35,8 @@ g3 = [16.67 16.66 16.67];
 g4 = [12.5 12.5 12.5 12.5];
 g5 = [10 10 10 10 10];
 
-geomhoriz    = { [17 22 11]  [17 11 11 11]     [17 11 11 11]  [17 8 17 8]     [17 33 ] [17 15 18 ]  g2 g2 g2   g2 g2   g2 g2 g2 g2 g4 1 1     [15 10 12.5 12.5] [15 10 12.5 12.5] [15 10 12.5 12.5] };
-geomvert = [1 1      1 1       1 1         1 5 1    1 1 1 5 1 5 1 1 1       1 1 2 ];
+geomhoriz    = { [17 22 11]  [17 11 11 11]     [17 11 11 11]  [17 8 17 8]    [17 16 17] 1      g2 g2 g2   g2 g2   g2 g2 g2 g2 g4 1 1     [15 10 12.5 12.5] [15 10 12.5 12.5] [15 10 12.5 12.5] };
+geomvert = [1 1      1 1       1 1        1 5 1    1 1 1 5 1 5 1 1 1       1 1 2 ];
 
 title = ['RerpProfile: ' cp.name];
 
@@ -175,9 +175,9 @@ drawnow;
     function cllbk_enter_epoch_boundaries(src, eventdata)
         src_props = get(src);
         if strcmp(src_props.Tag, 'enterCatEpochBoundary')
-            s.category_epoch_boundaries = str2double(src_props.String);
+            s.category_epoch_boundaries = str2num(src_props.String);
         elseif strcmp(src_props.Tag, 'enterConEpochBoundary')
-            s.continuous_epoch_boundaries = str2double(src_props.String);
+            s.continuous_epoch_boundaries = str2num(src_props.String);
         end
     end
 
@@ -216,12 +216,12 @@ drawnow;
         end
     end
 
-%COMPUTE artifact frames
-    function cllbk_compute_artifact(src, eventdata)
-        cp.compute_artifact_indexes(EEG);
-        refresh_artifact_counter;
-        drawnow;
-    end
+% %COMPUTE artifact frames
+%     function cllbk_compute_artifact(src, eventdata)
+%         cp.compute_artifact_indexes(EEG);
+%         refresh_artifact_counter;
+%         drawnow;
+%     end
 
 %ENABLE use of artifact variable from workspace
     function cllbk_enable_artifact_name(src, eventdata)
@@ -856,7 +856,7 @@ drawnow;
             
             if s.artifact_variable_enable
                 artifact_src = cp.artifact_variable_name;
-                mess = sprintf('%d artifact frames identified (%s)', nnz(cp.variable_artifact_indexes), artifact_src);
+                mess = sprintf('%d artifact frames (%s)', nnz(cp.variable_artifact_indexes),artifact_src);
                 
                 if s.artifact_rejection_enable
                     enableArtifactVariableStatus='on';
@@ -865,7 +865,7 @@ drawnow;
                 end
             else
                 artifact_src = cp.computed_artifact_indexes_function_name;
-                mess = sprintf('%d artifact frames identified (%s)', nnz(cp.computed_artifact_indexes), artifact_src);
+                mess = sprintf('%d artifact frames (%s)', nnz(cp.computed_artifact_indexes), artifact_src);
                 enableArtifactVariableStatus='off';
             end
             
@@ -926,12 +926,11 @@ drawnow;
                 { 'Style', 'text', 'string', 'Continuous epoch boundaries (sec)', 'horizontalalignment', 'left','fontweight', 'bold' , 'tag','conepoch','tooltipstring','determines number of parameters and position for continuous variables'},...
                 { 'Style', 'edit', 'string', num2str(s.continuous_epoch_boundaries),'tag', 'enterConEpochBoundary', 'callback',@cllbk_enter_epoch_boundaries},...
                 ...%Artifact handling
-                { 'Style', 'checkbox', 'string', 'Artifact rejection', 'horizontalalignment', 'left','tag', 'enableArtifactRejection','fontweight', 'bold','value',s.artifact_rejection_enable,'callback', @cllbk_enable_artifact_rejection,'tooltipstring','Automatically ensure that artifact frames are excluded from analysis (recommended)'},...
-                { 'Style', 'text', 'string', mess, 'horizontalalignment', 'right','tag', 'rejectedFramesCounter', 'enable',enableArtifactRejectionStatus },...
+                { 'Style', 'checkbox', 'string', 'Artifact reject function:', 'horizontalalignment', 'left','tag', 'enableArtifactRejection','fontweight', 'bold','value',s.artifact_rejection_enable,'callback', @cllbk_enable_artifact_rejection,'tooltipstring','Automatically ensure that artifact frames are excluded from analysis (recommended)'},...
+                { 'Style', 'edit', 'string', s.artifact_function_name, 'horizontalalignment', 'left', 'tag', 'enterArtifactFunction', 'enable', enableArtifactRejectionStatus,'callback',@cllbk_enter_artifact_function_name,'tag','enterArtifactFunction'},...
+                { 'Style', 'text', 'string', mess, 'horizontalalignment', 'left','tag', 'rejectedFramesCounter', 'enable',enableArtifactRejectionStatus },...                
                 ...
-                { 'Style', 'text', 'string', '    Artifact function', 'horizontalalignment', 'left','tag', 'artifactFunction','enable',enableArtifactRejectionStatus,'tooltipstring','the function used to identify artifact frames; see rerp_reject_samples_robcov for function prototype'},...
-                { 'Style', 'edit', 'string', s.artifact_function_name,'tag', 'enterArtifactFunction', 'enable', enableArtifactRejectionStatus,'callback',@cllbk_enter_artifact_function_name,'tag','enterArtifactFunction'},...
-                { 'Style', 'pushbutton', 'string', 'Force recompute artifact frames', 'horizontalalignment', 'left','tag', 'computeArtifactButton', 'callback', @cllbk_compute_artifact, 'enable',enableArtifactRejectionStatus},...
+                {},...Spacer
                 ...%Event event_types
                 { 'Style', 'text', 'string', 'Included event types', 'horizontalalignment', 'left','fontweight', 'bold','tag','includeevttypelabel','tooltipstring','event types included in the regression; removing event types will affect which hed tags are available in the HED section. Press enter or return when selecting event types to edit descriotions.'},...
                 { 'Style', 'text', 'string', 'Excluded event types', 'horizontalalignment', 'left','fontweight', 'bold','tag','excludeevttypelabel','tooltipstring','event types excluded from the regression; removing event types will affect which hed tags are available in the HED section. Press enter or return when selecting event types to edit descriotions.'},...
