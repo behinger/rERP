@@ -103,7 +103,7 @@ end
 
 %We don't add a row of ones to predictor: assumes no dc bias in data.
 fprintf('rerp: generating predictor, time=%f\n', toc);
-[predictor, data_pad, parameter_idx_layout] = predictor_gen(p);
+[predictor, data_pad, parameter_idx_layout] = p.predictor;
 
 %Extend data with zeros to match predictor size/alignment
 data = [zeros(data_pad(1), size(data,2)); data; zeros(data_pad(2), size(data,2))];
