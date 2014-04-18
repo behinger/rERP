@@ -982,8 +982,9 @@ classdef RerpResult < matlab.mixin.Copyable
             %   Usage: modeled_data = rerp_result.getDataModel;
             import rerp_dependencies.*
             if ~isempty(obj.rerp_estimate)
-                predictor = predictor_gen(obj.rerp_profile);
+                [predictor, data_pad] = obj.rerp_profile.predictor;
                 modeled_data = predictor*obj.rerp_estimate;
+                modeled_data = modeled_data((data_pad(1)+1):(end-data_pad(2)),:); 
             else
                 modeled_data=[];
                 disp('RerpResult: no anaysis results present, can not synthesize modeled data');
