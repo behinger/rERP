@@ -324,6 +324,29 @@ classdef RerpProfile < matlab.mixin.Copyable
             %       rerp_profile.setLastProfile;
             obj.saveRerpProfile('path', fullfile(RerpProfile.rerp_path, 'profiles','last.rerp_profile'));
         end
+        
+        function [predictor_matrix, data_pad, parameter_idx_layout] = predictor(obj)
+            %Get the predictor matrix for this profile
+            %   Usage:
+            %       [predictor, data_pad, parameter_idx_layout] = rerp_profile.predictor; 
+            %
+            %   Output:
+            %       predictor: Toeplitz matrix describing the occurance of
+            %           events in experiment
+            %           
+            %       data_pad: predictor has been padded with zeros along
+            %           its first dimension. to compare original data with modeled data,
+            %           it is necessary to pad the original data to match
+            %           the predictor. pad original data with data_pad(1)
+            %           zeros at the beginning and data_pad(2) zeros at the
+            %           end. 
+            %
+            %       parameter_idx_layout: cell array of indexes into second
+            %           dimension of predictor. each set of indexes
+            %           corresponds to a distinct event type.
+            import rerp_dependencies.predictor_gen
+            [predictor_matrix, data_pad, parameter_idx_layout] = predictor_gen(obj);
+        end
     end
     
     methods(Static=true)
