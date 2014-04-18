@@ -1,8 +1,8 @@
 %Calculate ERP response by multiple regression
 %   Usage:
 %   	rerp_result = rerp(data, rerp_profile);
-%           Run analysis defined in rerp_profile against data 
-%       
+%           Run analysis defined in rerp_profile against data
+%
 %   Parameters:
 %       data:
 %           CONTINUOUS data from EEG.data or EEG.icaact
@@ -46,26 +46,26 @@ if nbins > 1
     
     if s.type_proc
         for m=1:dim
-            new_time_series(m) = p.include_chans(ceil(m/nbins)); 
+            new_time_series(m) = p.include_chans(ceil(m/nbins));
         end
         p.include_chans=new_time_series;
-        p.include_comps=[]; 
+        p.include_comps=[];
         
     else
         for m=1:dim
-            new_time_series(m) = p.include_comps(ceil(m/nbins)); 
+            new_time_series(m) = p.include_comps(ceil(m/nbins));
         end
         p.include_comps=new_time_series;
-        p.include_chans=[]; 
+        p.include_chans=[];
     end
     
     ersp_flag=1;
     
-else 
-    ersp_flag=0; 
+else
+    ersp_flag=0;
 end
 
-% Assert valid artifact index configuration 
+% Assert valid artifact index configuration
 assert(~(s.artifact_rejection_enable && isempty(p.computed_artifact_indexes) && isempty(p.variable_artifact_indexes)), 'rerp: either disable artifact rejection or provide artifact index variable in rerp_profile.computed_artifact_indexes OR rerp_profile.variable_artifact_indexes (see pop_rerp doc for details');
 
 % Set up artifact indexes based on profile
@@ -78,7 +78,7 @@ if s.artifact_rejection_enable
         else
             disp('rerp: artifact variable not found, using computed indexes');
         end
-    end  
+    end
     
 else
     artifact_indexes=false(datalength,1);
@@ -86,7 +86,7 @@ end
 
 s.first_phase_lambda=s.first_phase_lambda(:);
 if numel(s.first_phase_lambda) < 3
-    disp('rerp: rerp_profile.settings.first_phase_lambda has less than 3 elements, resetting to default'); 
+    disp('rerp: rerp_profile.settings.first_phase_lambda has less than 3 elements, resetting to default');
     s.first_phase_lambda=[-log10(1e8); s.first_phase_lambda; log10(1e8)];
 end
 
@@ -96,7 +96,7 @@ if s.num_xvalidation_folds < 2
 end
 
 %Make sure artifact indexes are valid
-assert(length(artifact_indexes)==datalength, 'rerp: artifact index vector must be same length as data'); 
+assert(length(artifact_indexes)==datalength, 'rerp: artifact index vector must be same length as data');
 if size(artifact_indexes, 2) == rerp_profile.pnts
     artifact_indexes = permute(artifact_indexes,[2 1]);
 end
@@ -118,9 +118,9 @@ arg_parser=inputParser;
 addOptional(arg_parser,'P', []);
 addOptional(arg_parser,'q',[]);
 addOptional(arg_parser,'L', []);
-addOptional(arg_parser,'xval_train_idx', {}); 
+addOptional(arg_parser,'xval_train_idx', {});
 addOptional(arg_parser,'xval_test_idx', {});
-addOptional(arg_parser,'xval_P', {}); 
+addOptional(arg_parser,'xval_P', {});
 addOptional(arg_parser,'xval_q', {});
 addOptional(arg_parser,'xval_L', {});
 parse(arg_parser, varargin{:});
@@ -162,7 +162,7 @@ xval_q=arg_parser.Results.xval_q;
 xval_L=arg_parser.Results.xval_L;
 
 if isempty(xval_train_idx)||isempty(xval_test_idx)||isempty(xval_P)||isempty(xval_q)
-    fprintf('rerp: setting up cross validation predictors, time=%f\n', toc'); 
+    fprintf('rerp: setting up cross validation predictors, time=%f\n', toc');
     setup_xval_predictors;
 end
 
@@ -197,18 +197,18 @@ if s.regularization_enable
                     this_result.analysis_name= 'Elastic net';
                 end
                 
-                %Keep either the full result, or a lightweight copy 
+                %Keep either the full result, or a lightweight copy
                 rerp_result = rerp_grid_search(this_result, 1);
                 if ~s.save_grid_search
                     rerp_result.gridsearch=[];
                 end
-                                                 
+                
             else
                 
                 %Specified Lambda
                 fprintf('rerp: beginning %s single lambda, time=%f\n' ,this_result.analysis_name, toc);
                 
-                if strcmp(s.penalty_func{m},'L1 norm')          
+                if strcmp(s.penalty_func{m},'L1 norm')
                     this_result.lambda=repmat({s.lambda(1)}, 1, dim);
                     this_result.analysis_name = 'L1 norm';
                 end
@@ -227,9 +227,9 @@ if s.regularization_enable
             end
         end
     else
-        error('rerp: regularization is enabled, but a penalty function was not specified'); 
+        error('rerp: regularization is enabled, but a penalty function was not specified');
     end
-        
+    
 else
     this_result = RerpResult(p);
     this_result.analysis_name='Least squares';
@@ -238,16 +238,16 @@ else
 end
 
 %Get rsquare performance on a per event type basis
-cross_validate_event_types(rerp_result); 
+cross_validate_event_types(rerp_result);
 
 rerp_result.compute_time_seconds=toc;
 rerp_result.date_completed=datestr(now,'yyyy-mm-dd-HH:MM:SS');
-rerp_result.ersp_flag=ersp_flag; 
+rerp_result.ersp_flag=ersp_flag;
 
 dsname = regexp(rerp_result.rerp_profile.eeglab_dataset_name,'.*[\\\/](.*)\.set', 'tokens');
 rerp_result.name=[dsname{1}{1} ' ' rerp_result.analysis_name ' ' rerp_result.date_completed];
 
-disp('rerp: done'); 
+disp('rerp: done');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Regression functions
@@ -274,7 +274,7 @@ disp('rerp: done');
                     fprintf('rerp: elastic net quick zoom, starting L2 norm search, time=%f\n',toc);
                     L2_rerp_result = RerpResult({});
                     L2_rerp_result.analysis_name={'L2 norm'};
-                    L2_rerp_result.gridsearch.lambda_range = repmat({rerp_result.gridsearch.lambda_range{1}(:,2)}, 1, dim);                    
+                    L2_rerp_result.gridsearch.lambda_range = repmat({rerp_result.gridsearch.lambda_range{1}(:,2)}, 1, dim);
                     [L2_rerp_result, L2_optimal_params] = rerp_grid_search(L2_rerp_result, level);
                     rerp_result.gridsearch.L2_norm=L2_rerp_result;
                     
@@ -375,7 +375,7 @@ disp('rerp: done');
             end
             
         end
-             
+        
         % Either zoom in another level or return the optimal result found
         % at this level
         if level < s.num_grid_zoom_levels
@@ -399,7 +399,7 @@ disp('rerp: done');
 
 % Do regularized regression for the specified penalty functions (one value
 % of lambda per penalty per channel). Called without fold number
-% externally. 
+% externally.
     function rerp_result = rerp_regularized(rerp_result, fold_num)
         
         assert(iscell(rerp_result.lambda)&&(length(rerp_result.lambda)==size(data,2)),'rerp: invalid lambda, must be cell array same dim as data');
@@ -479,8 +479,9 @@ disp('rerp: done');
         rerp_estimate = zeros(size(q));
         I=speye(size(P));
         P=sparse(P);
+        
         for i=1:size(rerp_estimate,2)
-            rerp_estimate(:,i) = (P+lambda{i}*I)\q(:,i);
+            [rerp_estimate(:,i), ~] = lsqr(P+lambda{i}*I, q(:,i), 1e-6, 40);
         end
     end
 
@@ -512,11 +513,11 @@ disp('rerp: done');
             this_test_data = data(xval_test_idx{i},:);
             
             this_data_model = this_test_predictor*res_copy.rerp_estimate;
-            this_noise = this_test_data - this_data_model;         
+            this_noise = this_test_data - this_data_model;
             
             % Get the statistics of the whole data
             rerp_result.total_xval_folds(i).noise_variance = var(this_noise)';
-            rerp_result.total_xval_folds(i).data_variance = var(this_test_data)'; 
+            rerp_result.total_xval_folds(i).data_variance = var(this_test_data)';
         end
         
         % Calculate rsquare for each channel or IC
@@ -545,15 +546,15 @@ disp('rerp: done');
                 this_test_data = data(xval_test_idx{i},:);
                 
                 %Remove any time index that does not intersect with this
-                %event type. 
-                keep_idx = sum(this_test_predictor,2)~=0; 
+                %event type.
+                keep_idx = sum(this_test_predictor,2)~=0;
                 
                 this_data_model = this_test_predictor(keep_idx,:)*res_copy.rerp_estimate(parameter_idx_layout{j}, :);
-                this_noise = this_test_data(keep_idx,:) - this_data_model;         
-
+                this_noise = this_test_data(keep_idx,:) - this_data_model;
+                
                 % Get the statistics of the whole data
                 rerp_result.event_xval_folds(i).noise_variance(j,:) = var(this_noise);
-                rerp_result.event_xval_folds(i).data_variance(j,:) = var(this_test_data); 
+                rerp_result.event_xval_folds(i).data_variance(j,:) = var(this_test_data);
             end
         end
         
