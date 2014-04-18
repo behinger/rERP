@@ -856,7 +856,7 @@ drawnow;
             
             if s.artifact_variable_enable
                 artifact_src = cp.artifact_variable_name;
-                mess = sprintf('%d artifact frames (%s)', nnz(cp.variable_artifact_indexes),artifact_src);
+                mess = sprintf('%d artifact frames', nnz(cp.variable_artifact_indexes));
                 
                 if s.artifact_rejection_enable
                     enableArtifactVariableStatus='on';
@@ -865,7 +865,7 @@ drawnow;
                 end
             else
                 artifact_src = cp.computed_artifact_indexes_function_name;
-                mess = sprintf('%d artifact frames (%s)', nnz(cp.computed_artifact_indexes), artifact_src);
+                mess = sprintf('%d artifact frames', nnz(cp.computed_artifact_indexes));
                 enableArtifactVariableStatus='off';
             end
             
