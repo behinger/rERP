@@ -67,14 +67,6 @@ classdef RerpResult < matlab.mixin.Copyable
                 h=figure;
             end
             
-            if ~exist('rerp_plot_spec.exclude_insignificant','var')
-                obj.rerp_plot_spec.exclude_insignificant=0;
-            end
-            
-            if ~exist('rerp_plot_spec.significance_level','var')
-                obj.rerp_plot_spec.significance_level=.05;
-            end
-            
             if obj.rerp_plot_spec.exclude_insignificant
                 significance_label = [' ( significant @ p < ' num2str(obj.rerp_plot_spec.significance_level) ' )'];
             else
