@@ -477,13 +477,14 @@ disp('rerp: done');
 %Closed form solution to L2 norm regularization (Ridge)
     function rerp_estimate = rerp_L2_norm(P, q, lambda)
         rerp_estimate = zeros(size(q));
-        I=speye(size(P));
-        P=sparse(P);
+        I=eye(size(P));
         
         for i=1:size(rerp_estimate,2)
-            tic;
-            [rerp_estimate(:,i), ~] = lsqr(P+lambda{i}*I, q(:,i), 1e-6, 100);
-            toc;
+            try
+                rerp_estimate(:,i) = (P+lambda{i}*I)\q(:,i);
+            catch
+                rerp_estimate(:,i) = pinv(P+lambda{i}*I, eps)*q(:,i);
+            end
         end
     end
 
