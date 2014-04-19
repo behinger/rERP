@@ -226,8 +226,6 @@ handles.UserData.profiles = [handles.UserData.profiles new_profiles];
 set(handles.profiles_list, 'String', {handles.UserData.profiles(:).name});
 profiles_list_Callback(handles.profiles_list, eventdata, handles);
 
-% Update handles structure
-guidata(handles.output, handles);
 
 % --- Executes on button press in run.
 function run_Callback(hObject, eventdata, handles)
@@ -309,10 +307,13 @@ contents = get(handles.profiles_list, 'String');
 if ~isempty(contents)
     keep_idx = setdiff(1:length(contents), get(handles.profiles_list,'Value'));
     set(handles.profiles_list, 'String', contents(keep_idx));
-    set(handles.profiles_list, 'Value', keep_idx);
+    set(handles.profiles_list, 'Value', 1:length(keep_idx));
+    handles.UserData.profiles=handles.UserData.profiles(keep_idx);
 else
     set(handles.profiles_list, 'String',{});
+    handles.UserData.profiles=[];
 end
+
 profiles_list_Callback(handles.profiles_list, eventdata, handles);
 
 % --- Executes on button press in make_profile.
