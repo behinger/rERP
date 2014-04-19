@@ -482,7 +482,7 @@ classdef RerpResult < matlab.mixin.Copyable
             this_xaxis_ms = ((0:(num_samples-1))'/obj.rerp_profile.sample_rate + this_epoch_boundaries(1))*1000;
             
             disp('RerpResult: generating modeled data');
-            [predictor, data_pad] = predictor_gen(obj.rerp_profile);
+            [predictor, data_pad] = obj.rerp_profile.predictor;
             data = [zeros(data_pad(1), size(data,2)); data; zeros(data_pad(2), size(data,2)); zeros(num_samples,size(data,2))];
             modeled_data = [predictor*obj.rerp_estimate(:,obj.rerp_plot_spec.ts_idx); zeros(num_samples,size(data,2))];
             noise = data-modeled_data;
@@ -827,8 +827,8 @@ classdef RerpResult < matlab.mixin.Copyable
                     for j=1:length(this_group.children)
                         this_child = this_group.children(j);
                         for k=1:length(this_child.included_tag)
-                            this_included_tag = this_child.included_tag{i};
-                            context_tags{m} = [this_included_tag '(' this_child.tag ')'];
+                            this_included_tag = this_child.included_tag{k};
+                            context_tags{m} = [this_included_tag '    (' this_child.tag ')'];
                             m=m+1;
                         end
                     end
@@ -1244,19 +1244,7 @@ classdef RerpResult < matlab.mixin.Copyable
             context_tag = regexp(locking_var, regexp_str_in_parentheses, 'tokens');
             locking_tag = RerpTagList.strip_label({locking_var});
             locking_tag=locking_tag{1};
-            continuoustg = [obj.rerp_profile.continuous_var{:}];
-            
-            %Find out if the tag is a continuous tag
-            if ~isempty(continuoustg)
-                continuoustg = intersect(locking_tag, {continuoustg(:).name}); 
-            end
-            
-            if ~isempty(continuoustg)
-                offset = obj.rerp_profile.settings.continuous_epoch_boundaries(1);
-            else
-                offset = obj.rerp_profile.settings.category_epoch_boundaries(1);
-            end
-                
+  
             if obj.rerp_profile.settings.hed_enable              
                 % Get event numbers for locking_var (possibly in a context
                 % group).    
@@ -1264,10 +1252,10 @@ classdef RerpResult < matlab.mixin.Copyable
                     for i=1:length(obj.rerp_profile.context_group)
                         this_group = obj.rerp_profile.context_group{i};
                         for j=1:length(this_group.children)
-                            this_child = this_group.children{i};
+                            this_child = this_group.children(i);
                             if strcmp(context_tag{1}{1}, this_child.tag)
                                 idx = find(strcmp(locking_tag, this_child.included_tag), 1);
-                                event_nums = this_child.ids(this_child.included_id{idx});
+                                event_nums = this_child.ids(this_child.included_ids{idx});
                             end
                         end
                     end

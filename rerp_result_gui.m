@@ -82,6 +82,7 @@ parse(p, varargin{:});
 
 handles.UserData.results=struct([]);
 handles.UserData.rerp_plot_spec=RerpPlotSpec;
+
 if isempty(p.Results.results)
     handles.UserData.results = RerpResult.loadRerpResult('path', p.Results.results_dir);
 else
