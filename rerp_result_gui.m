@@ -291,7 +291,7 @@ handles.UserData.rerp_plot_spec.constant_scale = get(handles.constant_scale, 'Va
 
 %Make sure we have a handle to the plot window
 if ~isempty(handles.UserData.plotfig)
-    if get(overplot,'Value')
+    if get(handles.overplot,'Value')
         try
             a=get(handles.UserData.plotfig);
         catch
