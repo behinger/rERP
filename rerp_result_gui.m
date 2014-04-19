@@ -41,7 +41,7 @@ function varargout = rerp_result_gui(varargin)
 
 % Edit the above text to modify the response to help rerp_result_gui
 
-% Last Modified by GUIDE v2.5 19-Apr-2014 09:40:02
+% Last Modified by GUIDE v2.5 19-Apr-2014 10:39:18
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 0;
@@ -291,9 +291,17 @@ handles.UserData.rerp_plot_spec.constant_scale = get(handles.constant_scale, 'Va
 
 %Make sure we have a handle to the plot window
 if ~isempty(handles.UserData.plotfig)
-    try
-        a=get(handles.UserData.plotfig);
-    catch
+    if get(overplot,'Value')
+        try
+            a=get(handles.UserData.plotfig);
+        catch
+            handles.UserData.plotfig=figure;
+        end
+    else
+        try
+            close(handles.UserData.plotfig);
+        catch
+        end
         handles.UserData.plotfig=figure;
     end
 else
@@ -567,3 +575,12 @@ function constant_scale_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of constant_scale
+
+
+% --- Executes on button press in overplot.
+function overplot_Callback(hObject, eventdata, handles)
+% hObject    handle to overplot (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of overplot
