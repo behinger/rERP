@@ -20,6 +20,7 @@ classdef RerpPlotSpec < handle
         locking_idx=1 %For plotRerpImage, specifies the locking variable for epochs
         delay_idx=1 %For plotRerpImage, sorts based on delay from locking variable to delay variable
         window_size_ms=3000 %For plotRerpImage, length of plotting window (epoch length)  
+        constant_scale=0; %Force the y-axis to be the same across all plots
     end
 end
 

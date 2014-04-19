@@ -41,7 +41,7 @@ function varargout = rerp_result_gui(varargin)
 
 % Edit the above text to modify the response to help rerp_result_gui
 
-% Last Modified by GUIDE v2.5 01-Mar-2014 11:40:12
+% Last Modified by GUIDE v2.5 19-Apr-2014 09:40:02
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 0;
@@ -287,6 +287,7 @@ plottype = contents{get(handles.typeplotlist,'Value')};
 
 handles.UserData.rerp_plot_spec.ts_idx = handles.UserData.sort_idx(get(handles.channelslist,'Value'));
 handles.UserData.rerp_plot_spec.event_idx = get(handles.tagslist,'Value');
+handles.UserData.rerp_plot_spec.constant_scale = get(handles.constant_scale, 'Value');
 
 %Make sure we have a handle to the plot window
 if ~isempty(handles.UserData.plotfig)
@@ -557,3 +558,12 @@ function exclude_insignif_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of exclude_insignif
+
+
+% --- Executes on button press in constant_scale.
+function constant_scale_Callback(hObject, eventdata, handles)
+% hObject    handle to constant_scale (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of constant_scale

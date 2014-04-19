@@ -94,7 +94,12 @@ classdef RerpResult < matlab.mixin.Copyable
             datasetname = regexp(obj.rerp_profile.eeglab_dataset_name,'.*[\\\/](.*).set','tokens');
             datasetname = {{regexprep(datasetname{1}{1},'[\_]','\\\_')}};
             
-            m=1;
+            if obj.rerp_plot_spec.constant_scale
+                max_y = 1.1*max(max([estimates{obj.rerp_plot_spec.event_idx, obj.rerp_plot_spec.ts_idx}]));
+                min_y = 1.1*min(min([estimates{obj.rerp_plot_spec.event_idx, obj.rerp_plot_spec.ts_idx}]));
+            end
+            
+            m=1;               
             props=get(findobj(h, 'tag', 'legend'));
             for i=obj.rerp_plot_spec.event_idx
                 
@@ -110,6 +115,10 @@ classdef RerpResult < matlab.mixin.Copyable
                     hcmenu = uicontextmenu;
                     uimenu(hcmenu, 'Label', 'Publish graph', 'Callback', @RerpResult.gui_publish);
                     set(gca,'uicontextmenu', hcmenu);
+                    
+                    if obj.rerp_plot_spec.constant_scale
+                        ylim([min_y, max_y]); 
+                    end
                     
                     if obj.rerp_profile.settings.hed_enable
                         titl = ['Tag:' tags{i}];
@@ -190,9 +199,13 @@ classdef RerpResult < matlab.mixin.Copyable
             datasetname = regexp(obj.rerp_profile.eeglab_dataset_name,'.*[\\\/](.*).set','tokens');
             datasetname = {{regexprep(datasetname{1}{1},'[\_]','\\\_')}};
             
+            if obj.rerp_plot_spec.constant_scale
+                max_y = 1.1*max(max([estimates{obj.rerp_plot_spec.event_idx, obj.rerp_plot_spec.ts_idx}]));
+                min_y = 1.1*min(min([estimates{obj.rerp_plot_spec.event_idx, obj.rerp_plot_spec.ts_idx}]));
+            end
+            
             m=1;
             props=get(findobj(h, 'tag', 'legend'));
-            
             new_idx=[];
             for i=obj.rerp_plot_spec.ts_idx
                 scrollsubplot(4,1,m,h);
@@ -200,11 +213,15 @@ classdef RerpResult < matlab.mixin.Copyable
                 n=1;
                 for j=obj.rerp_plot_spec.event_idx
                     if ~obj.rerp_plot_spec.exclude_insignificant||rsquare_significance(j, i)
-                        plot(xaxis_ms{j}, estimates{j, i});
+                        plot(xaxis_ms{j}, estimates{j, i});                      
                         new_idx(n)=j;
                         hold all;
                         n=n+1;
                     end
+                end
+                
+                if obj.rerp_plot_spec.constant_scale
+                    ylim([min_y, max_y]); 
                 end
                 
                 obj.rerp_plot_spec.event_idx=new_idx;
