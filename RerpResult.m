@@ -340,6 +340,7 @@ classdef RerpResult < matlab.mixin.Copyable
             
             if ~isempty(obj.rerp_plot_spec.significance_level)
                 rsquare_significance = obj.get_event_rsquare_significance;
+                rsquare_significance = rsquare_significance(:); 
                 rsquare_significance = rsquare_significance(obj.rerp_plot_spec.event_idx, obj.rerp_plot_spec.ts_idx);
             end
             
@@ -930,7 +931,7 @@ classdef RerpResult < matlab.mixin.Copyable
             
             p=inputParser;
             addOptional(p,'path',[]);
-            addOptional(p,'rerp_path', pwd);
+            addOptional(p,'rerp_path', fullfile(RerpProfile.rerp_path, 'results'));
             
             parse(p, varargin{:});
             temp = regexp(obj.rerp_profile.eeglab_dataset_name, '.*[\\\/](.*)\.set', 'tokens');
@@ -945,11 +946,7 @@ classdef RerpResult < matlab.mixin.Copyable
             rerp_path=p.Results.rerp_path;
             if isempty(path)
                 %No path specified, launch GUI
-                if isempty(rerp_path)
-                    [filename, pathname] = uiputfile('*.rerp_result', 'Save rerp result as:', fullfile(RerpProfile.rerp_path, fn));
-                else
-                    [filename, pathname] = uiputfile('*.rerp_result', 'Save rerp result as:', fullfile(p.Results.rerp_path, fn));
-                end
+                [filename, pathname] = uiputfile('*.rerp_result', 'Save rerp result as:', fullfile(rerp_path, fn));
                 path = [pathname filename];
                 
             else
