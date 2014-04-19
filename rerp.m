@@ -536,7 +536,7 @@ disp('rerp: done');
         fprintf('rerp: cross validating event types\n');
         block=zeros(length(parameter_idx_layout), size(data,2));
         for i=1:s.num_xvalidation_folds
-            fprintf('rerp: %s fold %d / %d, time=%f\n', rerp_result.analysis_name, i, s.num_xvalidation_folds,toc);
+            fprintf('rerp: %s fold %d / %d, time=%f\n', rerp_result.analysis_name, i, s.num_xvalidation_folds, toc);
             rerp_result.event_xval_folds(i).noise_variance=block;
             rerp_result.event_xval_folds(i).data_variance=block;
             

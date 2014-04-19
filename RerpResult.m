@@ -340,7 +340,6 @@ classdef RerpResult < matlab.mixin.Copyable
             
             if ~isempty(obj.rerp_plot_spec.significance_level)
                 rsquare_significance = obj.get_event_rsquare_significance;
-                rsquare_significance = rsquare_significance(:); 
                 rsquare_significance = rsquare_significance(obj.rerp_plot_spec.event_idx, obj.rerp_plot_spec.ts_idx);
             end
             
@@ -1161,6 +1160,7 @@ classdef RerpResult < matlab.mixin.Copyable
             
             rsquare = 1 - noise_variance./data_variance;
             rsquare_significance = squeeze(ttest(rsquare, 0, 'Alpha', obj.rerp_plot_spec.significance_level));
+            rsquare_significance = reshape(rsquare_significance, size(obj.event_xval_folds(1).data_variance));
         end
         
         function delay = get_delay_times(obj, event_nums, delay_var, num_samples)
