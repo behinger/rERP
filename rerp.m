@@ -481,7 +481,9 @@ disp('rerp: done');
         P=sparse(P);
         
         for i=1:size(rerp_estimate,2)
-            [rerp_estimate(:,i), ~] = lsqr(P+lambda{i}*I, q(:,i), 1e-6, 40);
+            tic;
+            [rerp_estimate(:,i), ~] = lsqr(P+lambda{i}*I, q(:,i), 1e-6, 100);
+            toc;
         end
     end
 
