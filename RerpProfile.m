@@ -123,6 +123,13 @@ classdef RerpProfile < matlab.mixin.Copyable
                     %Copy over descriptions for common event types
                     [~, idx1, idx2] = intersect(passed_profile.event_types, obj.event_types);
                     obj.event_type_descriptions(idx2) = passed_profile.event_type_descriptions(idx1);
+                    
+                    %If passed profile is from same dataset, copy artifact
+                    %indexes and function name
+                    if strcmp(fullfile(EEG.filepath, EEG.filename), passed_profile.eeglab_dataset_name)
+                        obj.computed_artifact_indexes = passed_profile.computed_artifact_indexes;
+                        obj.computed_artifact_indexes_function_name = passed_profile.computed_artifact_indexes_function_name; 
+                    end
                 else
                     %No protptype profile was passed, so we include all chans
                     %and comps
@@ -495,12 +502,13 @@ classdef RerpProfile < matlab.mixin.Copyable
                     try
                         res = load(path{i}, '-mat');
                         rerp_profile{i} = res.obj;
-                        rerp_profile{i}.name = filename{i};
+                        
                         %Extract the profile if loading from .rerp_result file
                         if isa(rerp_profile{i}, 'RerpResult')
                             rerp_profile{i} = rerp_profile{i}.rerp_profile;
                         end
                         
+                        rerp_profile{i}.name = filename{i};
                     catch e
                         disp(['RerpProfile: could not read the specified profile from disk ' path]);
                         rethrow(e);
