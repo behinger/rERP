@@ -132,7 +132,7 @@ classdef RerpProfile < matlab.mixin.Copyable
                 
                 fprintf('RerpProfile: creating initial hierarchy\n');
                 obj.hed_tree = hedTree(obj.these_events.hedTag);
-                    
+                
                 parse(p, theseargs{:});
                 params = p.Parameters;
                 
@@ -163,7 +163,7 @@ classdef RerpProfile < matlab.mixin.Copyable
                 obj.sample_rate = EEG.srate;
                 obj.pnts = EEG.pnts;
                 obj.nbchan=EEG.nbchan;
-
+                
                 assert(isempty(setdiff(s.penalty_func, s.penalty_options)), 'RerpProfile: settings.penalty_func must be a subset of settings.penalty_options');
                 
                 % If this is a brand new profile, assign all tags to
@@ -173,7 +173,7 @@ classdef RerpProfile < matlab.mixin.Copyable
                 else
                     s.exclude_tag=intersect(s.exclude_tag, obj.hed_tree.uniqueTag);
                 end
-                            
+                
                 fprintf('RerpProfile: parsing hierarchy\n');
                 [obj.include_tag, obj.include_ids, obj.context_group, obj.continuous_var] = parse_hed_tree(obj.hed_tree, s.exclude_tag, s.seperator_tag, s.continuous_tag);
                 
@@ -206,7 +206,7 @@ classdef RerpProfile < matlab.mixin.Copyable
             
             p=inputParser;
             addOptional(p,'path',[]);
-            addOptional(p,'rerp_path', pwd);
+            addOptional(p,'rerp_path', fullfile(RerpProfile.rerp_path, 'profiles'));
             
             parse(p, varargin{:});
             path = p.Results.path;
@@ -221,11 +221,8 @@ classdef RerpProfile < matlab.mixin.Copyable
                     fn='';
                 end
                 
-                if isempty(rerp_path)
-                    [filename, pathname] = uiputfile('*.rerp_profile', 'Save rerp profile as:', fullfile(RerpProfile.rerp_path, 'profiles', fn));
-                else
-                    [filename, pathname] = uiputfile('*.rerp_profile', 'Save rerp profile as:', fullfile(rerp_path, fn));
-                end
+                [filename, pathname] = uiputfile('*.rerp_profile', 'Save rerp profile as:', fullfile(rerp_path, fn));
+                
                 path = [pathname filename];
                 
             else
@@ -328,18 +325,18 @@ classdef RerpProfile < matlab.mixin.Copyable
         function [predictor_matrix, data_pad, parameter_idx_layout] = predictor(obj)
             %Get the predictor matrix for this profile
             %   Usage:
-            %       [predictor, data_pad, parameter_idx_layout] = rerp_profile.predictor; 
+            %       [predictor, data_pad, parameter_idx_layout] = rerp_profile.predictor;
             %
             %   Output:
             %       predictor: Toeplitz matrix describing the occurance of
             %           events in experiment
-            %           
+            %
             %       data_pad: predictor has been padded with zeros along
             %           its first dimension. to compare original data with modeled data,
             %           it is necessary to pad the original data to match
             %           the predictor. pad original data with data_pad(1)
             %           zeros at the beginning and data_pad(2) zeros at the
-            %           end. 
+            %           end.
             %
             %       parameter_idx_layout: cell array of indexes into second
             %           dimension of predictor. each set of indexes
