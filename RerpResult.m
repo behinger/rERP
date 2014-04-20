@@ -317,7 +317,7 @@ classdef RerpResult < matlab.mixin.Copyable
             for j=1:length(obj.rerp_plot_spec.ts_idx)
                 if rsquare_significance(j)
                     hold all;
-                    plot(j, vals(j) ,'s', 'LineWidth', 1, 'MarkerEdgeColor',line_props.Color,'MarkerSize', 14);
+                    sig_plot = plot(j, vals(j) ,'s', 'LineWidth', 1, 'MarkerEdgeColor',line_props.Color,'MarkerSize', 14);
                 end
             end
             
@@ -1269,7 +1269,7 @@ classdef RerpResult < matlab.mixin.Copyable
                             this_child = this_group.children(i);
                             if strcmp(context_tag{1}{1}, this_child.tag)
                                 idx = find(strcmp(locking_tag, this_child.included_tag), 1);
-                                event_nums = this_child.ids(this_child.included_ids{idx});
+                                event_nums = this_child.included_ids{idx};
                             end
                         end
                     end
@@ -1279,7 +1279,7 @@ classdef RerpResult < matlab.mixin.Copyable
                 end
                 
                 for i=event_nums(:)'
-                    this_latency = events.latencyInFrame(i);
+                    this_latency = round(events.latencyInFrame(i));
                     rerp_epochs(:,m,:) = data(this_latency:(this_latency+num_samples-1),:);
                     m=m+1;
                 end
