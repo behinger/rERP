@@ -1161,7 +1161,11 @@ classdef RerpResult < matlab.mixin.Copyable
             end
             
             rsquare = 1 - noise_variance./data_variance;
-            rsquare_significance = squeeze(ttest(rsquare, 0, 'Alpha', obj.rerp_plot_spec.significance_level));
+            try
+                rsquare_significance = squeeze(ttest(rsquare, 0, 'Alpha', obj.rerp_plot_spec.significance_level));
+            catch
+                rsquare_significance = squeeze(ttest(rsquare, 0, obj.rerp_plot_spec.significance_level));
+            end
         end
         
         function rsquare_significance = get_event_rsquare_significance(obj)
