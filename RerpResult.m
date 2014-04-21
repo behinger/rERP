@@ -38,11 +38,20 @@ classdef RerpResult < matlab.mixin.Copyable
     end
     
     methods
-        function obj = RerpResult(rerp_profile)
+        function obj = RerpResult(rerp_profile, rerp_plot_spec)
             import rerp_dependencies.RerpPlotSpec
             
+            if nargin < 1
+                help RerpResult
+                return;
+            end
+            
             obj.rerp_profile = rerp_profile;
-            obj.rerp_plot_spec=RerpPlotSpec;
+            if nargin > 1
+                obj.rerp_plot_spec=rerp_plot_spec;
+            else
+                obj.rerp_plot_spec=RerpPlotSpec;
+            end
         end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -99,7 +108,7 @@ classdef RerpResult < matlab.mixin.Copyable
                 min_y = 1.1*min(min([estimates{obj.rerp_plot_spec.event_idx, obj.rerp_plot_spec.ts_idx}]));
             end
             
-            m=1;               
+            m=1;
             props=get(findobj(h, 'tag', 'legend'));
             for i=obj.rerp_plot_spec.event_idx
                 
@@ -117,7 +126,7 @@ classdef RerpResult < matlab.mixin.Copyable
                     set(gca,'uicontextmenu', hcmenu);
                     
                     if obj.rerp_plot_spec.constant_scale
-                        ylim([min_y, max_y]); 
+                        ylim([min_y, max_y]);
                     end
                     
                     if obj.rerp_profile.settings.hed_enable
@@ -213,7 +222,7 @@ classdef RerpResult < matlab.mixin.Copyable
                 n=1;
                 for j=obj.rerp_plot_spec.event_idx
                     if ~obj.rerp_plot_spec.exclude_insignificant||rsquare_significance(j, i)
-                        plot(xaxis_ms{j}, estimates{j, i});                      
+                        plot(xaxis_ms{j}, estimates{j, i});
                         new_idx(n)=j;
                         hold all;
                         n=n+1;
@@ -221,7 +230,7 @@ classdef RerpResult < matlab.mixin.Copyable
                 end
                 
                 if obj.rerp_plot_spec.constant_scale
-                    ylim([min_y, max_y]); 
+                    ylim([min_y, max_y]);
                 end
                 
                 obj.rerp_plot_spec.event_idx=new_idx;
@@ -283,18 +292,24 @@ classdef RerpResult < matlab.mixin.Copyable
                 rsquare_significance = rsquare_significance(obj.rerp_plot_spec.ts_idx);
             end
             
-            datasetname = regexp(obj.rerp_profile.eeglab_dataset_name,'.*[\\\/](.*).set','tokens');
-            datasetname = {{regexprep(datasetname{1}{1},'[\_]','\\\_')}};
-            
+            %Plot average total R2
             p=plot(1:length(obj.rerp_plot_spec.ts_idx), vals);
             line_props = get(p);
-            
             set(gca,'xtickmode','manual');
             set(gca, 'xtick', 1:length(obj.rerp_plot_spec.ts_idx));
-            legend_idx=[datasetname{1}{1} ' - ' obj.analysis_name];
+            
+            %Figure out the legend
+            datasetname = regexp(obj.rerp_profile.eeglab_dataset_name,'.*[\\\/](.*).set','tokens');
+            if ~isempty(datasetname)
+                datasetname = {{regexprep(datasetname{1}{1},'[\_]','\\\_')}};
+                legend_idx=[datasetname{1}{1} ' - ' obj.analysis_name];
+                
+            else
+                legend_idx= obj.analysis_name;
+            end
             
             %We save handles to the plots in the legend so we can
-            %rereference them later when doing overplotting. 
+            %rereference them later when doing overplotting.
             props=get(findobj(h, 'tag', 'legend'));
             if isempty(props)
                 leg = legend(legend_idx);
@@ -312,11 +327,11 @@ classdef RerpResult < matlab.mixin.Copyable
             end
             
             %Plot statistical significance markers
-            sig_plot=[]; 
+            sig_plot=[];
             for j=1:length(obj.rerp_plot_spec.ts_idx)
                 if rsquare_significance(j)
                     hold all;
-                    sig_plot = plot(j, vals(j) ,'s', 'LineWidth', 1, 'MarkerEdgeColor',line_props.Color,'MarkerSize', 10);  
+                    sig_plot = plot(j, vals(j) ,'s', 'LineWidth', 1, 'MarkerEdgeColor',line_props.Color,'MarkerSize', 10);
                 end
             end
             
@@ -332,9 +347,9 @@ classdef RerpResult < matlab.mixin.Copyable
             set(leg, 'UserData', props.UserData);
             pr= get(gca,'UserData');
             
-            %Display the new legend in the figure 
+            %Display the new legend in the figure
             pr.legend=leg;
-            set(gca, 'UserData',pr);            
+            set(gca, 'UserData',pr);
             
             hcmenu = uicontextmenu;
             uimenu(hcmenu, 'Label', 'Publish graph', 'Callback', @RerpResult.gui_publish);
@@ -413,15 +428,15 @@ classdef RerpResult < matlab.mixin.Copyable
                     set(leg,'UserData', props.UserData);
                     set(gca, 'xticklabel', 1:length(obj.rerp_plot_spec.ts_idx));
                 end
-
+                
                 %Plot significance markers
-                sig_plot = []; 
+                sig_plot = [];
                 for j=1:length(obj.rerp_plot_spec.ts_idx)
                     if this_rsquare_significance(j)
                         hold all;
                         sig_plot=plot(j, vals(j) , 's', 'LineWidth', 1, 'MarkerEdgeColor',line_props.Color,'MarkerSize', 10);
                     end
-                end                
+                end
                 
                 %Put significance in legend
                 if ~isempty(sig_plot)
@@ -436,7 +451,7 @@ classdef RerpResult < matlab.mixin.Copyable
                 pr.legend=leg;
                 set(gca, 'UserData',pr);
                 set(gca, 'ygrid', 'on');
-                              
+                
                 hcmenu = uicontextmenu;
                 uimenu(hcmenu, 'Label', 'Publish graph', 'Callback', @RerpResult.gui_publish);
                 set(gca,'uicontextmenu', hcmenu);
@@ -510,7 +525,7 @@ classdef RerpResult < matlab.mixin.Copyable
             end
             
             num_samples = ceil(obj.rerp_profile.sample_rate*(obj.rerp_plot_spec.window_size_ms/1000));
-          
+            
             [tags, estimates, xaxis_ms, epoch_boundaries] = obj.get_plotting_params;
             locking_tag = tags{obj.rerp_plot_spec.locking_idx};
             locking_estimate = estimates(obj.rerp_plot_spec.locking_idx, obj.rerp_plot_spec.ts_idx);
@@ -537,13 +552,13 @@ classdef RerpResult < matlab.mixin.Copyable
             [noise_epochs] = obj.get_rerp_epochs(noise(idx_start:end), locking_tag, num_samples);
             
             %Threshold epochs to modeled data to get good color
-            %range. 
+            %range.
             max_model = max(max(modeled_epochs));
-            min_model = min(min(modeled_epochs)); 
-            data_epochs(data_epochs > max_model) = max_model; 
-            data_epochs(data_epochs < min_model) = min_model; 
-            noise_epochs(noise_epochs > max_model) = max_model; 
-            noise_epochs(noise_epochs < min_model) = min_model; 
+            min_model = min(min(modeled_epochs));
+            data_epochs(data_epochs > max_model) = max_model;
+            data_epochs(data_epochs < min_model) = min_model;
+            noise_epochs(noise_epochs > max_model) = max_model;
+            noise_epochs(noise_epochs < min_model) = min_model;
             
             if ~isempty(delay_tag)
                 disp('RerpResult: calculating order of trials');
@@ -583,7 +598,7 @@ classdef RerpResult < matlab.mixin.Copyable
                 erpimage(noise_epochs(:,:,i), sorting_var, this_xaxis_ms, ['Difference epochs - ' v ': ' locking_tag ', ' ts ': ' tsn]);
                 
                 % Plot the rerp estimates
-                scrollsubplot(4,1,m+3,h);         
+                scrollsubplot(4,1,m+3,h);
                 plot(xaxis_ms{obj.rerp_plot_spec.locking_idx}', locking_estimate{i});
                 title('rERP estimates');
                 xlabel('time (ms)');
@@ -798,7 +813,7 @@ classdef RerpResult < matlab.mixin.Copyable
             
             obj.rerp_plot_spec.ts_idx = idx;
         end
-
+        
         function setPlotEventTypes(obj, event_types)
             %Set RerpResult to plot specific event types or HED tags
             %   Usage:
@@ -1023,13 +1038,32 @@ classdef RerpResult < matlab.mixin.Copyable
             if ~isempty(obj.rerp_estimate)
                 [predictor, data_pad] = obj.rerp_profile.predictor;
                 modeled_data = predictor*obj.rerp_estimate;
-                modeled_data = modeled_data((data_pad(1)+1):(end-data_pad(2)),:); 
+                modeled_data = modeled_data((data_pad(1)+1):(end-data_pad(2)),:);
             else
                 modeled_data=[];
                 disp('RerpResult: no anaysis results present, can not synthesize modeled data');
             end
         end
         
+        function rsq = setSortIdx(obj)
+            for i=1:length(obj)
+                if obj(i).ersp_flag
+                    nbins=obj(i).rerp_profile.settings.nbins;
+                    rsq = max(reshape(first_result.average_total_rsquare, [nbins, length(first_result.average_total_rsquare)/nbins]));
+                else
+                    rsq = obj(i).average_total_rsquare;
+                end
+                
+                %This sets the time series order to be sorted by rsquare,
+                %if that is turned on
+                if obj(i).rerp_plot_spec.sort_by_r2
+                    [~, obj(i).rerp_plot_spec.sort_idx] = sort(rsq, 'descend');
+                else
+                    obj(i).rerp_plot_spec.sort_idx = 1:length(rsq);
+                end
+                    
+            end
+        end
     end
     
     methods (Static=true)
@@ -1087,6 +1121,11 @@ classdef RerpResult < matlab.mixin.Copyable
                         res = load(path{i}, '-mat');
                         rerp_result{i} = res.obj;
                         rerp_result{i}.name = filename{i};
+                        
+                        %Make sure old version results have an RerpResultSpec
+                        if isempty(rerp_result{i}.rerp_plot_spec)
+                            rerp_result{i}.rerp_plot_spec=RerpPlotSpec;
+                        end
                         
                     catch e
                         disp(['RerpProfile: could not read the specified result from disk ' path]);
@@ -1294,10 +1333,10 @@ classdef RerpResult < matlab.mixin.Copyable
             context_tag = regexp(locking_var, regexp_str_in_parentheses, 'tokens');
             locking_tag = RerpTagList.strip_label({locking_var});
             locking_tag=locking_tag{1};
-  
-            if obj.rerp_profile.settings.hed_enable              
+            
+            if obj.rerp_profile.settings.hed_enable
                 % Get event numbers for locking_var (possibly in a context
-                % group).    
+                % group).
                 if ~isempty(context_tag)
                     for i=1:length(obj.rerp_profile.context_group)
                         this_group = obj.rerp_profile.context_group{i};

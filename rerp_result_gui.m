@@ -80,8 +80,7 @@ addOptional(p,'results_dir', fullfile(RerpProfile.rerp_path, 'results'));
 addOptional(p,'results', [], @(x) isa(x, 'RerpResult'));
 parse(p, varargin{:});
 
-handles.UserData.results=struct([]);
-handles.UserData.rerp_plot_spec=RerpPlotSpec;
+handles.UserData.results=[];
 
 if isempty(p.Results.results)
     handles.UserData.results = RerpResult.loadRerpResult('path', p.Results.results_dir);
@@ -93,12 +92,11 @@ set(handles.channelslist,'max', 1e7);
 set(handles.typeplotlist,'max',1,'value',1);
 
 try
-    set(handles.resultslist,'string',{handles.UserData.results(:).name},'max',1, 'value', []); 
+    set(handles.resultslist,'string',{handles.UserData.results(:).name},'max',1e6, 'value', 1); 
 catch
-    set(handles.resultslist,'string',{},'max',1, 'value', []);
+    set(handles.resultslist,'string',{},'max',1e6, 'value', 1);
 end
 
-handles.UserData.sort_idx=0;
 handles.UserData.locksort=0;
 handles.UserData.rerpimage=0;
 handles.UserData.lastplot='';
@@ -106,7 +104,6 @@ handles.UserData.plotfig=[];
 
 % Choose default command line output for rerp_result_gui
 handles.output = hObject;
-
 resultslist_Callback(handles.resultslist,[], handles);
 % UIWAIT makes rerp_result_gui wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
@@ -131,16 +128,22 @@ function resultslist_Callback(hObject, eventdata, handles)
 %        contents{get(hObject,'Value')} returns selected item from resultslist
 itemnum = get(hObject,'Value');
 if ~isempty(itemnum)
-    new_results=handles.UserData.results(itemnum);
-    if ~verify_results_are_consistent(new_results)
-        warning('rerp_profile_gui: some results selected were not compatible');
-    end
+    list_str = cellstr(get(hObject,'String'));
+    if ~isempty(list_str)
+        new_results=handles.UserData.results(itemnum);
 
-    handles.UserData.current.result=new_results;
+        if ~verify_results_are_consistent(new_results)
+            warning('rerp_profile_gui: some results selected were not compatible');
+        end
+
+        handles.UserData.current.result=new_results;
+    end
 
     handles = set_options(handles);
 end
 
+setSortIdx(handles.UserData.results(:)); 
+channelslist_Callback(handles.channelslist, [], handles); 
 guidata(handles.output, handles);
 
 % --- Executes during object creation, after setting all properties.
@@ -181,15 +184,6 @@ else
     handles.UserData.rerpimage=0;
 end
 
-% % Rsquare options
-% if strcmp(thisplot, 'R2 by event type')||(strcmp(thisplot, 'R2 by HED tag')||strcmp(thisplot, 'R2 total'))
-%     set(handles.significancelevel, 'Visible','on');
-%     set(handles.significancelabel, 'Visible','on');
-% else
-%     set(handles.significancelevel, 'Visible','off');
-%     set(handles.significancelabel, 'Visible','off');
-% end
-
 tagslist_Callback(handles.tagslist, eventdata, handles);
 guidata(hObject, handles);
 
@@ -212,6 +206,11 @@ function channelslist_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 % Hints: contents = cellstr(get(hObject,'String')) returns channelslist contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from channelslist
+for i=1:length(handles.UserData.current.result)
+    this_ts_list_idx=get(handles.channelslist,'Value');
+    this_result=handles.UserData.current.result(i);
+    this_result.rerp_plot_spec.ts_idx = this_result.rerp_plot_spec.sort_idx(this_ts_list_idx);
+end
 
 % --- Executes during object creation, after setting all properties.
 function channelslist_CreateFcn(hObject, eventdata, handles)
@@ -233,11 +232,13 @@ function tagslist_Callback(hObject, eventdata, handles)
 
 % Hints: contents = cellstr(get(hObject,'String')) returns tagslist contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from tagslist
+handles.UserData.result(:).rerp_plot_spec.event_idx = deal(get(hObject, 'Value'));
+
 if handles.UserData.rerpimage
     if handles.UserData.locksort
-        handles.UserData.rerp_plot_spec.delay_idx=get(hObject,'Value');
+        handles.UserData.result(:).rerp_plot_spec.delay_idx=deal(get(hObject,'Value'));
     else
-        handles.UserData.rerp_plot_spec.locking_idx=get(hObject,'Value');
+        handles.UserData.result(:).rerp_plot_spec.locking_idx=deal(get(hObject,'Value'));
     end
 end
 
@@ -261,10 +262,14 @@ function loadresultsbutton_Callback(hObject, eventdata, handles)
 % hObject    handle to loadresultsbutton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles.UserData.results = [handles.UserData.results RerpResult.loadRerpResult];
+new_results = RerpResult.loadRerpResult;
+handles.UserData.results = [handles.UserData.results new_results];
 handles = set_options(handles);
-% Update handles structure
-guidata(hObject, handles);
+res_strings = get(handles.resultslist, 'String');
+set(handles.resultslist,'Value',(length(res_strings)-length(new_results)+1):length(res_strings)); 
+
+% Update handles structure, other lists
+resultslist_Callback(handles.resultslist, [], handles);
 
 % --- Executes on button press in clearfigure.
 function clearfigure_Callback(hObject, eventdata, handles)
@@ -287,10 +292,6 @@ function plot_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 contents=cellstr(get(handles.typeplotlist,'String'));
 plottype = contents{get(handles.typeplotlist,'Value')};
-
-handles.UserData.rerp_plot_spec.ts_idx = handles.UserData.sort_idx(get(handles.channelslist,'Value'));
-handles.UserData.rerp_plot_spec.event_idx = get(handles.tagslist,'Value');
-handles.UserData.rerp_plot_spec.constant_scale = get(handles.constant_scale, 'Value');
 
 %Make sure we have a handle to the plot window
 if ~isempty(handles.UserData.plotfig)
@@ -318,7 +319,7 @@ handles.UserData.rerp_plot_spec.exclude_insignificant=get(handles.exclude_insign
 
 %Combine multiple results into object: for study plotting or single dataset
 %plotting
-rerp_study = RerpResultStudy(handles.UserData.current.result, handles.UserData.rerp_plot_spec);
+rerp_study = RerpResultStudy(handles.UserData.current.result);
 
 if strcmp(plottype, 'Rerp by event type')||strcmp(plottype,'Rerp by HED tag')
     rerp_study.plotRerpEventTypes(handles.UserData.plotfig);
@@ -337,7 +338,6 @@ if strcmp(plottype, 'R2 by event type')||strcmp(plottype, 'R2 by HED tag')
 end
 
 if strcmp(plottype, 'Rerp image')
-    handles.UserData.rerp_plot_spec.window_size_ms = str2double(get(handles.enterwindow,'String'));
     rerp_study.plotRerpImage(handles.UserData.plotfig);
 end
 
@@ -354,10 +354,13 @@ handles.UserData.lastplot = plottype;
 % Update handles structure
 guidata(hObject, handles);
 
-function [opts, funcs] = get_all_plotting_opts(first_result, study)
+function opts = get_all_plotting_opts(handles)
 opts=[];
-if isempty(first_result)
+
+if isempty(handles.UserData.current.result)
     return;
+else
+    first_result=handles.UserData.current.result(1); 
 end
 
 if first_result.rerp_profile.settings.type_proc;
@@ -373,7 +376,7 @@ else
 end
 
 %Just one dataset is being plotted
-if ~study
+if length(handles.UserData.current.result)==1
     if first_result.ersp_flag
         opts = {'Rersp'};
     else
@@ -384,7 +387,7 @@ if ~study
         end
     end
     
-    %Combine plotting from multiple datasets
+%Combine plotting from multiple datasets
 else
     if first_result.ersp_flag
         opts = {};
@@ -396,7 +399,10 @@ end
 % Fills in lists based on current result and settings
 function handles = set_options(handles)
 
-set(handles.resultslist,'String', {handles.UserData.results(:).name});
+if ~isempty(handles.UserData.results)
+    set(handles.resultslist,'String', {handles.UserData.results(:).name});
+end
+
 try
     result = handles.UserData.current.result;
 catch
@@ -406,40 +412,34 @@ end
 %We could have selected many results. This assumes that they are all
 %compatible.
 if isempty(result)
-    set(handles.typeplotlist, 'string', '','value',1);
-    set(handles.channelslist, 'string', '','value',1);
+    set(handles.typeplotlist, 'string', {}, 'value',1);
+    set(handles.channelslist, 'string', {}, 'value',1);
     return;
 else
     first_result=result(1);
 end
 
 % Setup result options for plotting. Populate channels/components. Populate event types/tags
-opts=get_all_plotting_opts(first_result, length(result)>1);
+opts=get_all_plotting_opts(handles);
 set(handles.typeplotlist, 'string', opts, 'value', min(length(opts), get(handles.typeplotlist,'Value')));
 
 if first_result.rerp_profile.settings.type_proc
-    channels = first_result.rerp_profile.include_chans;
     set(handles.typeproclabel, 'string', 'Channels (R2)');
 else
-    channels = first_result.rerp_profile.include_comps;
     set(handles.typeproclabel, 'string', 'Components (R2)');
 end
+
+if first_result.rerp_profile.settings.type_proc
+    channels = first_result.rerp_profile.include_chans;
+else
+    channels = first_result.rerp_profile.include_comps;
+end
+assert(length(channels)==size(first_result.rerp_estimate,2), 'rerp_result_gui: problem matching dataset to result');
+                        
+rsq=first_result.setSortIdx;
+
 time_series_str = num2str(unique(channels'));
-assert(length(channels)==size(first_result.rerp_estimate,2), 'pop_plot_rerp_result: problem matching dataset to result');
-
-if first_result.ersp_flag
-    nbins=first_result.rerp_profile.settings.nbins;
-    rsq = max(reshape(first_result.average_total_rsquare, [nbins, length(first_result.average_total_rsquare)/nbins]));
-else
-    rsq = first_result.average_total_rsquare;
-end
-
-if get(handles.sortbyrsqaurebox, 'Value')
-    [~, handles.UserData.sort_idx]=sort(rsq,'descend');
-else
-    handles.UserData.sort_idx=1:length(time_series_str);
-end
-
+assert(length(channels)==size(first_result.rerp_estimate,2), 'rerp_result_gui: problem matching dataset to result');
 rsqstr = num2str(rsq');
 ts_str_w_rsq=cell(1,size(rsqstr,1));
 
@@ -447,7 +447,13 @@ for i=1:length(ts_str_w_rsq)
     ts_str_w_rsq{i} = [time_series_str(i,:) '    (' rsqstr(i,:) ')'];
 end
 cts=get(handles.channelslist,'Value');
-tsstr=ts_str_w_rsq(handles.UserData.sort_idx);
+
+%Indexes into the first result channels or comps for the list
+if first_result.rerp_plot_spec.sort_by_r2
+    tsstr=ts_str_w_rsq(first_result.rerp_plot_spec.sort_idx); 
+else
+    tsstr=ts_str_w_rsq(1:length(ts_str_w_rsq));
+end
 set(handles.channelslist, 'string', tsstr, 'value', cts(cts<=length(tsstr)));
 
 tags = first_result.get_plotting_params;
@@ -466,10 +472,11 @@ function sortbyrsqaurebox_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+handles.UserData.rerp_plot_spec.sort_by_r2=get(hObject,'Value'); 
+
 % Hint: get(hObject,'Value') returns toggle state of sortbyrsqaurebox
-handles = set_options(handles);
-% Update handles structure
-guidata(hObject, handles);
+resultslist_Callback(handles.resultslist, [], handles)
+
 
 % --- Executes on button press in displayprofilebutton.
 function displayprofilebutton_Callback(hObject, eventdata, handles)
@@ -527,7 +534,9 @@ function enterwindow_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of enterwindow as text
 %        str2double(get(hObject,'String')) returns contents of enterwindow as a double
-
+if ~isempty(handles.UserData.results)
+    handles.UserData.results(:).rerp_plot_spec.window_size_ms = deal(str2double(get(handles.enterwindow,'String')));
+end
 
 % --- Executes during object creation, after setting all properties.
 function enterwindow_CreateFcn(hObject, eventdata, handles)
@@ -569,7 +578,9 @@ function exclude_insignif_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of exclude_insignif
-
+if ~isempty(handles.UserData.results)
+    handles.UserData.results(:).rerp_plot_spec.exclude_insignificant=deal(get(hObject,'Value')); 
+end
 
 % --- Executes on button press in constant_scale.
 function constant_scale_Callback(hObject, eventdata, handles)
@@ -578,7 +589,9 @@ function constant_scale_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of constant_scale
-
+if ~isempty(handles.UserData.results)
+    handles.UserData.results(:).rerp_plot_spec.constant_scale=deal(get(hObject,'Value')); 
+end
 
 % --- Executes on button press in overplot.
 function overplot_Callback(hObject, eventdata, handles)
@@ -587,3 +600,6 @@ function overplot_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of overplot
+if ~isempty(handles.UserData.results)
+    handles.UserData.results(:).rerp_plot_spec.over_plot=deal(get(hObject,'Value')); 
+end 
