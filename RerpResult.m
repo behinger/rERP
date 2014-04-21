@@ -293,6 +293,8 @@ classdef RerpResult < matlab.mixin.Copyable
             set(gca, 'xtick', 1:length(obj.rerp_plot_spec.ts_idx));
             legend_idx=[datasetname{1}{1} ' - ' obj.analysis_name];
             
+            %We save handles to the plots in the legend so we can
+            %rereference them later when doing overplotting. 
             props=get(findobj(h, 'tag', 'legend'));
             if isempty(props)
                 leg = legend(legend_idx);
@@ -300,6 +302,7 @@ classdef RerpResult < matlab.mixin.Copyable
                 props.UserData.plotHandles = p;
                 props.UserData.lstrings={legend_idx};
                 set(gca, 'xticklabel', obj.rerp_plot_spec.ts_idx);
+                
             else
                 plotHandles = [props.UserData.plotHandles p];
                 leg = legend(plotHandles, {props.UserData.lstrings{:} legend_idx});
@@ -308,22 +311,35 @@ classdef RerpResult < matlab.mixin.Copyable
                 set(gca, 'xticklabel', 1:length(obj.rerp_plot_spec.ts_idx));
             end
             
-            set(leg, 'UserData', props.UserData);
-            pr= get(gca,'UserData');
-            pr.legend=leg;
-            set(gca, 'UserData',pr);
-            grid on;
-            
+            %Plot statistical significance markers
+            sig_plot=[]; 
             for j=1:length(obj.rerp_plot_spec.ts_idx)
                 if rsquare_significance(j)
                     hold all;
-                    sig_plot = plot(j, vals(j) ,'s', 'LineWidth', 1, 'MarkerEdgeColor',line_props.Color,'MarkerSize', 14);
+                    sig_plot = plot(j, vals(j) ,'s', 'LineWidth', 1, 'MarkerEdgeColor',line_props.Color,'MarkerSize', 10);  
                 end
             end
+            
+            %Put significance in legend
+            if ~isempty(sig_plot)
+                plotHandles = [props.UserData.plotHandles sig_plot];
+                leg = legend(plotHandles, {props.UserData.lstrings{:} ['significant @ p < ' num2str(obj.rerp_plot_spec.significance_level)]});
+                props = get(leg);
+                props.UserData.plotHandles = plotHandles;
+            end
+            
+            %Restore the information in the handle object
+            set(leg, 'UserData', props.UserData);
+            pr= get(gca,'UserData');
+            
+            %Display the new legend in the figure 
+            pr.legend=leg;
+            set(gca, 'UserData',pr);            
             
             hcmenu = uicontextmenu;
             uimenu(hcmenu, 'Label', 'Publish graph', 'Callback', @RerpResult.gui_publish);
             set(gca,'uicontextmenu', hcmenu);
+            set(gca, 'ygrid', 'on');
             
             xlabel('Time series - decreasing R ^2 order');
             ylabel('R ^2');
@@ -397,20 +413,30 @@ classdef RerpResult < matlab.mixin.Copyable
                     set(leg,'UserData', props.UserData);
                     set(gca, 'xticklabel', 1:length(obj.rerp_plot_spec.ts_idx));
                 end
+
+                %Plot significance markers
+                sig_plot = []; 
+                for j=1:length(obj.rerp_plot_spec.ts_idx)
+                    if this_rsquare_significance(j)
+                        hold all;
+                        sig_plot=plot(j, vals(j) , 's', 'LineWidth', 1, 'MarkerEdgeColor',line_props.Color,'MarkerSize', 10);
+                    end
+                end                
+                
+                %Put significance in legend
+                if ~isempty(sig_plot)
+                    plotHandles = [props.UserData.plotHandles sig_plot];
+                    leg = legend(plotHandles, {props.UserData.lstrings{:} ['significant @ p < ' num2str(obj.rerp_plot_spec.significance_level)]});
+                    props = get(leg);
+                    props.UserData.plotHandles = plotHandles;
+                end
                 
                 set(leg,'UserData', props.UserData);
                 pr= get(gca,'UserData');
                 pr.legend=leg;
                 set(gca, 'UserData',pr);
-                grid on;
-                
-                for j=1:length(obj.rerp_plot_spec.ts_idx)
-                    if this_rsquare_significance(j)
-                        hold all;
-                        plot(j, vals(j) ,'s', 'LineWidth', 1, 'MarkerEdgeColor',line_props.Color,'MarkerSize', 14);
-                    end
-                end
-                
+                set(gca, 'ygrid', 'on');
+                              
                 hcmenu = uicontextmenu;
                 uimenu(hcmenu, 'Label', 'Publish graph', 'Callback', @RerpResult.gui_publish);
                 set(gca,'uicontextmenu', hcmenu);
