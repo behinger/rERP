@@ -111,11 +111,14 @@ function first_phase_lambda_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of first_phase_lambda as text
 %        str2double(get(hObject,'String')) returns contents of first_phase_lambda as a double
 
-lambda=str2double (get(hObject, 'String'));
 try
-    handles.UserData.rerp_profile.settings.first_phase_lambda = lambda(:);
-catch
-    set(hObject, 'String', num2str(handles.UserData.rerp_profile.settings.first_phase_lambda));
+    lambda=str2num(get(hObject, 'String'));
+    assert(~any(lambda < 0), 'rerp_profile_advanced_gui: lambda must be >= 0'); 
+    handles.UserData.rerp_profile.settings.first_phase_lambda = lambda(:)';
+    
+catch e
+    set(hObject, 'String', num2str(handles.UserData.rerp_profile.settings.first_phase_lambda(:)'));
+    throw(e); 
 end
 
 % Update handles structure

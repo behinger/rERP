@@ -198,7 +198,7 @@ drawnow;
         set(ui_enterArtifactFunction, 'enable', enableArtifactRejectionStatus);
         set(ui_computeArtifactButton, 'enable', enableArtifactRejectionStatus);
         
-%        cllbk_enable_artifact_name(ui_enableArtifactVariable);
+        %        cllbk_enable_artifact_name(ui_enableArtifactVariable);
     end
 
 %ENTER artifact function name
@@ -607,12 +607,15 @@ drawnow;
         instr = strtrim(src_props.String);
         try
             new_lambda = str2num(instr);
-            s.lambda = new_lambda;
-            
             assert(length(new_lambda)==2, 'rerp_profile_gui: Lambda must have two entries [L1 norm, L2 norm]');
-        catch
-            disp('rerp_profile_gui: Lambda not accepted, must be numeric, expressions allowed');
+            assert(~any(new_lambda < 0), 'rerp_profile_advanced_gui: lambda must be >= 0');
+        
+        catch e
+            set(src, 'String', num2str(s.lambda)); 
+            throw(e); 
         end
+        
+        s.lambda = new_lambda;
     end
 
 %ENABLE internal cross validation, instead of specifying lambda
@@ -928,7 +931,7 @@ drawnow;
                 ...%Artifact handling
                 { 'Style', 'checkbox', 'string', 'Artifact reject function:', 'horizontalalignment', 'left','tag', 'enableArtifactRejection','fontweight', 'bold','value',s.artifact_rejection_enable,'callback', @cllbk_enable_artifact_rejection,'tooltipstring','Automatically ensure that artifact frames are excluded from analysis (recommended)'},...
                 { 'Style', 'edit', 'string', s.artifact_function_name, 'horizontalalignment', 'left', 'tag', 'enterArtifactFunction', 'enable', enableArtifactRejectionStatus,'callback',@cllbk_enter_artifact_function_name,'tag','enterArtifactFunction'},...
-                { 'Style', 'text', 'string', mess, 'horizontalalignment', 'left','tag', 'rejectedFramesCounter', 'enable',enableArtifactRejectionStatus },...                
+                { 'Style', 'text', 'string', mess, 'horizontalalignment', 'left','tag', 'rejectedFramesCounter', 'enable',enableArtifactRejectionStatus },...
                 ...
                 {},...Spacer
                 ...%Event event_types
