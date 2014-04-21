@@ -474,21 +474,29 @@ disp('rerp: done');
         end
     end
 
-%Closed form solution to L2 norm regularization (Ridge)
+%Closed form solution to L2 norm regularization (ridge)
     function rerp_estimate = rerp_L2_norm(P, q, lambda)
         rerp_estimate = zeros(size(q));
         I=eye(size(P));
         
         for i=1:size(rerp_estimate,2)
-            try
-                rerp_estimate(:,i) = (P+lambda{i}*I)\q(:,i);
-            catch
+            rerp_estimate(:,i) = (P+lambda{i}*I)\q(:,i);
+            
+            if nnz(rerp_estimate(:,i))==0
+                %Could not estimate wih mldivide, try pinv instead
                 rerp_estimate(:,i) = pinv(P+lambda{i}*I, eps)*q(:,i);
+                
+                if nnz(rerp_estimate(:,i))==0
+                    %Failed to estimate the ERP with this lambda, ignore
+                    %that lambda
+                    rerp_estimate(:,i) = NaN(size(rerp_estimate(:,i)));
+                end
             end
+            
         end
     end
 
-% ADMM function (Boyd) for L1 + L2 norm regularization (ElasticNet)
+% ADMM function (Boyd) for L1 + L2 norm regularization (elastic net)
     function [rerp_estimate, admm_residual] = rerp_elastic_net(predictor, data, q, lambda, x, u, L)
         rerp_estimate = zeros(size(predictor,2), size(data, 2));
         admm_residual = zeros(size(predictor,2), size(data, 2));
@@ -500,6 +508,23 @@ disp('rerp: done');
 % Closed form solution to least squares
     function rerp_estimate = rerp_least_squares(P, q)
         rerp_estimate = P\q;
+        
+        pinv_P=[]; 
+        for i=1:size(rerp_estimate,2)
+            if nnz(rerp_estimate(:,i))==0
+                %Could not estimate wih mldivide, try pinv instead
+                if isempty(pinv_P)
+                    pinv_P=pinv(P);
+                end
+                
+                rerp_estimate(:,i) = pinv(P)*q(:,i);
+
+                if nnz(rerp_estimate(:,i))==0
+                    %Failed to estimate the ERP, ignore it
+                    rerp_estimate(:,i) = NaN(size(rerp_estimate(:,i)));
+                end
+            end
+        end
     end
 
 %Cross validate a single rerp for the data as a whole, as well as
@@ -515,12 +540,17 @@ disp('rerp: done');
             this_test_predictor = predictor(xval_test_idx{i},:);
             this_test_data = data(xval_test_idx{i},:);
             
-            this_data_model = this_test_predictor*res_copy.rerp_estimate;
-            this_noise = this_test_data - this_data_model;
+            %Remove any time index that does not intersect with this
+            %section of predictor.
+            keep_idx = sum(this_test_predictor,2)~=0;
+            
+            this_data_model = this_test_predictor(keep_idx,:)*res_copy.rerp_estimate;
+            this_noise = this_test_data(keep_idx,:) - this_data_model;
             
             % Get the statistics of the whole data
             rerp_result.total_xval_folds(i).noise_variance = var(this_noise)';
             rerp_result.total_xval_folds(i).data_variance = var(this_test_data)';
+            rerp_result.total_xval_folds(i).num_samples = length(keep_idx);
         end
         
         % Calculate rsquare for each channel or IC
@@ -550,14 +580,15 @@ disp('rerp: done');
                 
                 %Remove any time index that does not intersect with this
                 %event type.
-                keep_idx = sum(this_test_predictor,2)~=0;
+                keep_idx = sum(this_test_predictor, 2)~=0;
                 
                 this_data_model = this_test_predictor(keep_idx,:)*res_copy.rerp_estimate(parameter_idx_layout{j}, :);
                 this_noise = this_test_data(keep_idx,:) - this_data_model;
                 
-                % Get the statistics of the whole data
+                % Get the statistics for this event type
                 rerp_result.event_xval_folds(i).noise_variance(j,:) = var(this_noise);
                 rerp_result.event_xval_folds(i).data_variance(j,:) = var(this_test_data);
+                rerp_result.event_xval_folds(i).num_samples(j,:) = length(keep_idx);
             end
         end
         
