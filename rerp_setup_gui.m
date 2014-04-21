@@ -81,14 +81,18 @@ handles.UserData.eeg_dataset_paths=p.Results.eeg_dataset_paths(:)';
 handles.UserData.profiles=struct([]);
 handles.UserData.exitcode=0;
 handles.UserData.profiles = p.Results.rerp_profiles; 
+handles.UserData.current_path=[];
+handles.UserData.current_profile=[];
 
 %Get profiles from disk
 path=fullfile(RerpProfile.rerp_path, 'profiles');
 if isdir(path)
     handles.UserData.profiles=RerpProfile.loadRerpProfile('path', path); 
-    isdefault=strcmp({handles.UserData.profiles(:).name}, 'default.rerp_profile'); 
-    %Skip default profile
-    handles.UserData.profiles=handles.UserData.profiles(~isdefault); 
+    if ~isempty(handles.UserData.profiles)
+        isdefault=strcmp({handles.UserData.profiles(:).name}, 'default.rerp_profile'); 
+        %Skip default profile
+        handles.UserData.profiles=handles.UserData.profiles(~isdefault);
+    end
 end
 
 %If we have dataset paths, list them, otherwise, return,

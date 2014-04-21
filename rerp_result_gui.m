@@ -89,11 +89,13 @@ else
     handles.UserData.results=p.Results.results;
 end
 
+set(handles.channelslist,'max', 1e7);
+set(handles.typeplotlist,'max',1,'value',1);
+
 try
-    set(handles.typeplotlist,'max',1,'value',1);
-    set(handles.resultslist,'string',{handles.UserData.results(:).name},'max',1);
-    set(handles.channelslist,'max', 1e7);
+    set(handles.resultslist,'string',{handles.UserData.results(:).name},'max',1, 'value', []); 
 catch
+    set(handles.resultslist,'string',{},'max',1, 'value', []);
 end
 
 handles.UserData.sort_idx=0;
@@ -137,8 +139,9 @@ if ~isempty(itemnum)
     handles.UserData.current.result=new_results;
 
     handles = set_options(handles);
-    guidata(handles.output, handles);
 end
+
+guidata(handles.output, handles);
 
 % --- Executes during object creation, after setting all properties.
 function resultslist_CreateFcn(hObject, eventdata, handles)
