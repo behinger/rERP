@@ -100,7 +100,7 @@ if exitcode
         end
 
         %Need to recompute the artifact indexes
-        if isempty(artifact_indexes) || ~strcmp(s.artifact_function_name, cp.computed_artifact_indexes_function_name)
+        if isempty(artifact_indexes) && ~strcmp(s.artifact_function_name, cp.computed_artifact_indexes_function_name)
             try
                 artifact_function = str2func(s.artifact_function_name);
                 S = functions(artifact_function);

@@ -126,9 +126,13 @@ classdef RerpProfile < matlab.mixin.Copyable
                     
                     %If passed profile is from same dataset, copy artifact
                     %indexes and function name
-                    if strcmp(fullfile(EEG.filepath, EEG.filename), passed_profile.eeglab_dataset_name)
-                        obj.computed_artifact_indexes = passed_profile.computed_artifact_indexes;
-                        obj.computed_artifact_indexes_function_name = passed_profile.computed_artifact_indexes_function_name; 
+                    passed_datasetname = regexp(passed_profile.eeglab_dataset_name, '.*[\\\/](.*\.set)','tokens');
+                    if ~isempty(passed_datasetname)
+                        if strcmp(EEG.filename, passed_datasetname{1}{1})
+                            disp('RerpProfile: copying artifact indexes from template profile'); 
+                            obj.computed_artifact_indexes = passed_profile.computed_artifact_indexes;
+                            obj.computed_artifact_indexes_function_name = passed_profile.computed_artifact_indexes_function_name;
+                        end
                     end
                 else
                     %No protptype profile was passed, so we include all chans

@@ -96,8 +96,10 @@ for i=1:length(eeg_dataset_paths)
         
         %Save us from recomputing artifact indexes for multiple profiles
         this_profile = RerpProfile(EEG, rerp_profiles(j));
-        this_profile.computed_artifact_indexes = artifact;
-        this_profile.computed_artifact_indexes_function_name = artifact_name; 
+        if isempty(this_profile.computed_artifact_indexes)
+            this_profile.computed_artifact_indexes = artifact;
+            this_profile.computed_artifact_indexes_function_name = artifact_name; 
+        end
         
         rerp_results{i,j}=pop_rerp(EEG, this_profile);
         artifact = rerp_results{i,j}.rerp_profile.computed_artifact_indexes; 
