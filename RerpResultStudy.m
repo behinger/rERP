@@ -79,10 +79,13 @@ classdef RerpResultStudy
             end
             num_results = length(obj.result);
             
-            %Result which will be used to combine all others
-            if num_results > 0
+            %Combined plotting from multiple results
+            if num_results > 1   
+                %Result which will be used to combine all others
                 final_result = copy(obj.result(1));
-                
+                final_result.average_total_rsquare = zeros(num_results, length(final_result.rerp_plot_spec.ts_idx));
+                num_folds = final_result.rerp_profile.settings.num_xvalidation_folds; 
+
                 %Go through each result and stack the folds, rearranging the
                 %order of the time-series according to each results
                 %rerp_plot_sec if required.
@@ -90,35 +93,39 @@ classdef RerpResultStudy
                     this_result = obj.result(i);
                     
                     %Rearrange the timeseries if we are sorting by R2
-                    if final_result.rerp_plot_idx.sort_by_r2
-                        this_average_total_rsquare=this_result.average_total_rsquare(this_result.rerp_plot_idx.ts_idx); 
+                    if final_result.rerp_plot_spec.sort_by_r2
+                        this_average_total_rsquare=this_result.average_total_rsquare(this_result.rerp_plot_spec.ts_idx); 
                         
                         for j=1:num_folds
                             this_fold = this_result.total_xval_folds(j);
                             
                             
-                            this_fold.noise_variance=this_fold.noise_variance(this_result.rerp_plot_idx.ts_idx);
-                            this_fold.data_variance=this_fold.data_variance(this_result.rerp_plot_idx.ts_idx);
+                            this_fold.noise_variance=this_fold.noise_variance(this_result.rerp_plot_spec.ts_idx);
+                            this_fold.data_variance=this_fold.data_variance(this_result.rerp_plot_spec.ts_idx);
                             
                             try
-                                this_fold.num_samples=this_fold.num_samples(this_result.rerp_plot_idx.ts_idx);
+                                this_fold.num_samples=this_fold.num_samples(this_result.rerp_plot_spec.ts_idx);
                             catch
                                 this_fold.num_samples=[];
                             end
                             
                             final_result.total_xval_folds(num_folds*(i-1)+j) = this_fold;
-                            
+
                         end
                         final_result.average_total_rsquare(i, :) = this_average_total_rsquare;
                     end
                 end
                 
                 final_result.average_total_rsquare=mean(final_result.average_total_rsquare); 
+                final_result.rerp_plot_spec.ts_idx= 1:length(final_result.average_total_rsquare);
                 final_result.rerp_profile.include_comps= 1:length(final_result.average_total_rsquare);
                 final_result.rerp_profile.include_chans= 1:length(final_result.average_total_rsquare);
-                final_result.rerp_profile.eeglab_dataset_name=[];
+                final_result.rerp_profile.eeglab_dataset_name=sprintf('/%d datasets combined.set', length(obj.result));
                 final_result.plotRerpTotalRsquared(h);
                 
+            elseif num_results==1
+                %Just plotting one result
+                obj.result.plotRerpTotalRsquared(h);
             else
                 %No results are stored in this object
                 return;
@@ -129,19 +136,59 @@ classdef RerpResultStudy
             if nargin == 0
                 h=[];
             end
-            
             num_results = length(obj.result);
-            if num_results > 0
+            
+            %Combined plotting from multiple results
+            if num_results > 1               
+                %Result which will be used to combine all others
                 final_result = copy(obj.result(1));
-            end
-            
-            if num_results > 1
-                for i=2:num_results
+                final_result.average_total_rsquare = zeros(num_results, length(final_result.rerp_plot_spec.ts_idx));
+                num_folds = final_result.rerp_profile.settings.num_xvalidation_folds; 
+
+                %Go through each result and stack the folds, rearranging the
+                %order of the time-series according to each results
+                %rerp_plot_sec if required.
+                for i=1:num_results
+                    this_result = obj.result(i);
                     
+                    %Rearrange the timeseries if we are sorting by R2
+                    if final_result.rerp_plot_spec.sort_by_r2
+                        this_average_total_rsquare=this_result.average_total_rsquare(this_result.rerp_plot_spec.ts_idx); 
+                        
+                        for j=1:num_folds
+                            this_fold = this_result.total_xval_folds(j);
+                            
+                            
+                            this_fold.noise_variance=this_fold.noise_variance(this_result.rerp_plot_spec.ts_idx);
+                            this_fold.data_variance=this_fold.data_variance(this_result.rerp_plot_spec.ts_idx);
+                            
+                            try
+                                this_fold.num_samples=this_fold.num_samples(this_result.rerp_plot_spec.ts_idx);
+                            catch
+                                this_fold.num_samples=[];
+                            end
+                            
+                            final_result.total_xval_folds(num_folds*(i-1)+j) = this_fold;
+
+                        end
+                        final_result.average_total_rsquare(i, :) = this_average_total_rsquare;
+                    end
                 end
+                
+                final_result.average_total_rsquare=mean(final_result.average_total_rsquare); 
+                final_result.rerp_plot_spec.ts_idx= 1:length(final_result.average_total_rsquare);
+                final_result.rerp_profile.include_comps= 1:length(final_result.average_total_rsquare);
+                final_result.rerp_profile.include_chans= 1:length(final_result.average_total_rsquare);
+                final_result.rerp_profile.eeglab_dataset_name=sprintf('/%d datasets combined.set', length(obj.result));
+                final_result.plotRerpEventRsquared(h);
+                
+            elseif num_results==1
+                %Just plotting one result
+                obj.result.plotRerpEventRsquared(h);
+            else
+                %No results are stored in this object
+                return;
             end
-            
-            final_result.plotRerpEventTypes(h);
         end
         
         function plotRerpImage(obj, h)

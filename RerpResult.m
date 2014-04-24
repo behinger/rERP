@@ -101,7 +101,11 @@ classdef RerpResult < matlab.mixin.Copyable
             end
             
             datasetname = regexp(obj.rerp_profile.eeglab_dataset_name,'.*[\\\/](.*).set','tokens');
-            datasetname = {{regexprep(datasetname{1}{1},'[\_]','\\\_')}};
+            if ~isempty(datasetname)
+                datasetname = {{regexprep(datasetname{1}{1},'[\_]','\\\_')}};
+            else 
+                datasetname = {{''}}; 
+            end
             
             if obj.rerp_plot_spec.constant_scale
                 max_y = 1.1*max(max([estimates{obj.rerp_plot_spec.event_idx, obj.rerp_plot_spec.ts_idx}]));
@@ -1425,6 +1429,17 @@ classdef RerpResult < matlab.mixin.Copyable
             
             rerp_publish_gui('hFig', h);
         end
+    end
+    
+    methods (Access = protected)
+       % Override copyElement method:
+      function cpObj = copyElement(obj)
+         % Make a shallow copy of all properties
+         cpObj = copyElement@matlab.mixin.Copyable(obj);
+         % Make a deep copy of the rerp_profile and rerp_plot_spec objects
+         cpObj.rerp_profile = copy(obj.rerp_profile);
+         cpObj.rerp_plot_spec = copy(obj.rerp_plot_spec);
+      end
     end
 end
 

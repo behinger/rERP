@@ -11,7 +11,7 @@
 %
 %   See also:
 %       rerp_result_gui, RerpResult, RerpResultStudy
-classdef RerpPlotSpec < handle
+classdef RerpPlotSpec < matlab.mixin.Copyable
     properties
         sort_idx=1;
         ts_idx=1 %Index of channels/components to plot (not necessarily the actual channel or IC number

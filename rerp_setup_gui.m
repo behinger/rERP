@@ -284,7 +284,7 @@ contents = get(handles.dataset_list, 'String');
 if ~isempty(contents)
     keep_idx = setdiff(1:length(contents), get(handles.dataset_list,'Value'));
     set(handles.dataset_list, 'String', contents(keep_idx));
-    set(handles.dataset_list, 'Value', keep_idx);
+    set(handles.dataset_list, 'Value', 1:length(keep_idx));
 else
     set(handles.dataset_list, 'String',{});
 end

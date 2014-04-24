@@ -26,7 +26,7 @@
 % of the authors and should not be interpreted as representing official policies, 
 % either expressed or implied, of the FreeBSD Project.
 
-classdef event 
+classdef event < matlab.mixin.Copyable
     properties
         boundaryLatencyInFrame = []; 
         latencyInFrame = []; %  1 x N vector containing latencies for N events

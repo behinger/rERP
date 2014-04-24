@@ -25,7 +25,7 @@
 % of the authors and should not be interpreted as representing official policies,
 % either expressed or implied, of the FreeBSD Project.
 
-classdef hedTree
+classdef hedTree < matlab.mixin.Copyable
     % this class represents an input cell array containing HED strings (each HED string is composed
     % of several HED tags) as a jungle (multiple node trees). Each tree shows the hierarchical
     % structure of HEd tags. Number of occurance and indices of the original HED strings that match

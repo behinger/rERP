@@ -232,13 +232,15 @@ function tagslist_Callback(hObject, eventdata, handles)
 
 % Hints: contents = cellstr(get(hObject,'String')) returns tagslist contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from tagslist
-handles.UserData.result(:).rerp_plot_spec.event_idx = deal(get(hObject, 'Value'));
+for i=1:length(handles.UserData.results)
+    handles.UserData.results(i).rerp_plot_spec.event_idx = get(hObject, 'Value');
 
-if handles.UserData.rerpimage
-    if handles.UserData.locksort
-        handles.UserData.result(:).rerp_plot_spec.delay_idx=deal(get(hObject,'Value'));
-    else
-        handles.UserData.result(:).rerp_plot_spec.locking_idx=deal(get(hObject,'Value'));
+    if handles.UserData.rerpimage
+        if handles.UserData.locksort
+            handles.UserData.result(i).rerp_plot_spec.delay_idx=get(hObject,'Value');
+        else
+            handles.UserData.result(i).rerp_plot_spec.locking_idx=get(hObject,'Value');
+        end
     end
 end
 
@@ -314,8 +316,6 @@ end
 
 set(0,'CurrentFigure', handles.UserData.plotfig);
 set(handles.UserData.plotfig,'color', [1 1 1]);
-handles.UserData.rerp_plot_spec.significance_level=str2double(get(handles.significancelevel,'String'));
-handles.UserData.rerp_plot_spec.exclude_insignificant=get(handles.exclude_insignif, 'value');
 
 %Combine multiple results into object: for study plotting or single dataset
 %plotting
@@ -493,6 +493,18 @@ function significancelevel_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of significancelevel as text
 %        str2double(get(hObject,'String')) returns contents of significancelevel as a double
+try
+    newlevel = str2double(get(handles.significancelevel,'String'));
+    if isnumeric(newlevel)&&length(newlevel)==1&&newlevel>=0&&newlevel<=1
+        handles.UserData.rerp_plot_spec.significance_level=newlevel;
+    else
+        error('rerp_result_gui'); 
+    end
+catch
+    set(hObject,'string', num2str(handles.UserData.rerp_plot_spec.significance_level)); 
+    disp('rerp_result_gui: p-value threshold must be between 0 - 1');
+end
+
 
 
 % --- Executes during object creation, after setting all properties.

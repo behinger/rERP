@@ -129,7 +129,7 @@ classdef RerpProfile < matlab.mixin.Copyable
                     passed_datasetname = regexp(passed_profile.eeglab_dataset_name, '.*[\\\/](.*\.set)','tokens');
                     if ~isempty(passed_datasetname)
                         if strcmp(EEG.filename, passed_datasetname{1}{1})
-                            disp('RerpProfile: copying artifact indexes from template profile'); 
+                            disp('RerpProfile: copying artifact indexes from template profile');
                             obj.computed_artifact_indexes = passed_profile.computed_artifact_indexes;
                             obj.computed_artifact_indexes_function_name = passed_profile.computed_artifact_indexes_function_name;
                         end
@@ -522,6 +522,17 @@ classdef RerpProfile < matlab.mixin.Copyable
             
             rerp_profile = rerp_profile(cell2mat(cellfun(@(x) ~isempty(x), rerp_profile, 'UniformOutput', false)));
             rerp_profile = [rerp_profile{:}];
+        end
+    end
+    
+    methods(Access = protected)
+        % Override copyElement method:
+        function cpObj = copyElement(obj)
+            % Make a shallow copy of all properties
+            cpObj = copyElement@matlab.mixin.Copyable(obj);
+            % Make a deep copy of these_events and hed_tree
+            cpObj.these_events = copy(obj.these_events);
+            cpObj.hed_tree = copy(obj.hed_tree);
         end
     end
 end
