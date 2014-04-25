@@ -20,7 +20,7 @@ s = p.settings;
 
 assert(length(s.penalty_func) <= 1, 'rerp: can only calculate one penalty function at a time');
 
-rerp_result=struct;
+rerp_result=RerpResult(p);
 tic;
 
 % Want a tall matrix
@@ -531,9 +531,13 @@ disp('rerp: done');
         %Cross validate a single rerp for the data as a whole, as well as
         %individual variables.
         import rerp_dependencies.meanw;
+        import rerp_dependencies.RerpXvalFold;
         
         fprintf('rerp: cross validating parameters\n');
         for i=1:s.num_xvalidation_folds
+            this_fold=RerpXvalFold;
+            rerp_result.total_xval_folds(i)=this_fold;
+            
             fprintf('rerp: %s fold %d / %d, time=%f\n', rerp_result.analysis_name, i, s.num_xvalidation_folds,toc);
             
             % Create copy so we keep the whole data rerp estimate
@@ -550,15 +554,16 @@ disp('rerp: done');
             this_noise = this_test_data(keep_idx,:) - this_data_model;
             
             % Get the statistics of the whole data
-            rerp_result.total_xval_folds(i).noise_variance = var(this_noise)';
-            rerp_result.total_xval_folds(i).data_variance = var(this_test_data(keep_idx, :))';
-            rerp_result.total_xval_folds(i).num_samples = repmat(size(this_noise, 1), [size(this_noise, 2) 1]);
+            this_fold.noise_variance = var(this_noise)';
+            this_fold.data_variance = var(this_test_data(keep_idx, :))';
+            this_fold.num_samples = repmat(size(this_noise, 1), [size(this_noise, 2) 1]);
         end
         
         % Calculate rsquare for each channel or IC
         noisevar = [rerp_result.total_xval_folds(:).noise_variance];
         datavar= [rerp_result.total_xval_folds(:).data_variance];
         w= [rerp_result.total_xval_folds(:).num_samples];
+        
         rerp_result.average_total_rsquare = 1-meanw(noisevar./datavar, w, 2)';
     end
 
@@ -567,10 +572,14 @@ disp('rerp: done');
         % Do final cross validation of each event type seperately. Called after we
         % have found the optimal lambda
         import rerp_dependencies.meanw;
+        import rerp_dependencies.RerpXvalFold;
 
         fprintf('rerp: cross validating event types\n');
         block=zeros(length(parameter_idx_layout), size(data,2));
         for i=1:s.num_xvalidation_folds
+            this_fold=RerpXvalFold;
+            rerp_result.event_xval_folds(i)=this_fold;
+            
             fprintf('rerp: %s fold %d / %d, time=%f\n', rerp_result.analysis_name, i, s.num_xvalidation_folds, toc);
             rerp_result.event_xval_folds(i).noise_variance=block;
             rerp_result.event_xval_folds(i).data_variance=block;
@@ -591,16 +600,17 @@ disp('rerp: done');
                 this_noise = this_test_data(keep_idx,:) - this_data_model;
                 
                 % Get the statistics for this event type
-                rerp_result.event_xval_folds(i).noise_variance(j,:) = var(this_noise);
-                rerp_result.event_xval_folds(i).data_variance(j,:) = var(this_test_data(keep_idx, :));
-                rerp_result.event_xval_folds(i).num_samples(j,:) = repmat(size(this_noise, 1), [size(this_noise, 2) 1]);
+                this_fold.noise_variance(j,:) = var(this_noise);
+                this_fold.data_variance(j,:) = var(this_test_data(keep_idx, :));
+                this_fold.num_samples(j,:) = repmat(size(this_noise, 1), [1 size(this_noise, 2)]);
             end
         end
         
         % Calculate rsquare for each channel or IC
         noisevar = reshape([rerp_result.event_xval_folds(:).noise_variance],[length(parameter_idx_layout), size(data,2), s.num_xvalidation_folds]);
-        datavar= reshape([rerp_result.event_xval_folds(:).data_variance],[length(parameter_idx_layout),size(data,2), s.num_xvalidation_folds]);
+        datavar= reshape([rerp_result.event_xval_folds(:).data_variance],[length(parameter_idx_layout), size(data,2), s.num_xvalidation_folds]);
         w= reshape([rerp_result.event_xval_folds(:).num_samples],[length(parameter_idx_layout),size(data,2), s.num_xvalidation_folds]);
+
         rerp_result.average_event_rsquare = 1-meanw(noisevar./datavar, w, 3);
     end
 
