@@ -496,7 +496,9 @@ function significancelevel_Callback(hObject, eventdata, handles)
 try
     newlevel = str2double(get(handles.significancelevel,'String'));
     if isnumeric(newlevel)&&length(newlevel)==1&&newlevel>=0&&newlevel<=1
-        handles.UserData.rerp_plot_spec.significance_level=newlevel;
+        for i=1:length(handles.UserData.results)
+            handles.UserData.results(i).rerp_plot_spec.significance_level=newlevel;
+        end
     else
         error('rerp_result_gui'); 
     end
@@ -547,7 +549,9 @@ function enterwindow_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of enterwindow as text
 %        str2double(get(hObject,'String')) returns contents of enterwindow as a double
 if ~isempty(handles.UserData.results)
-    handles.UserData.results(:).rerp_plot_spec.window_size_ms = deal(str2double(get(handles.enterwindow,'String')));
+    for i=1:length(handles.UserData.results)
+        handles.UserData.results(i).rerp_plot_spec.window_size_ms = str2double(get(handles.enterwindow,'String'));
+    end
 end
 
 % --- Executes during object creation, after setting all properties.
@@ -591,7 +595,9 @@ function exclude_insignif_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of exclude_insignif
 if ~isempty(handles.UserData.results)
-    handles.UserData.results(:).rerp_plot_spec.exclude_insignificant=deal(get(hObject,'Value')); 
+    for i=1:length(handles.UserData.results)
+        handles.UserData.results(i).rerp_plot_spec.exclude_insignificant=get(hObject,'Value'); 
+    end
 end
 
 % --- Executes on button press in constant_scale.
@@ -602,7 +608,9 @@ function constant_scale_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of constant_scale
 if ~isempty(handles.UserData.results)
-    handles.UserData.results(:).rerp_plot_spec.constant_scale=deal(get(hObject,'Value')); 
+    for i=1:length(handles.UserData.results)
+        handles.UserData.results(i).rerp_plot_spec.constant_scale=get(hObject,'Value'); 
+    end
 end
 
 % --- Executes on button press in overplot.
@@ -613,5 +621,7 @@ function overplot_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of overplot
 if ~isempty(handles.UserData.results)
-    handles.UserData.results(:).rerp_plot_spec.over_plot=deal(get(hObject,'Value')); 
+    for i=1:length(handles.UserData.results)
+        handles.UserData.results(i).rerp_plot_spec.over_plot=get(hObject,'Value'); 
+    end
 end 

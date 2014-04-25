@@ -28,8 +28,8 @@ classdef RerpResult < matlab.mixin.Copyable
         average_total_rsquare % Rsquare as computed on the entire data with full signal estimate
         average_event_rsquare % Rsquare as computed only on the part of the data affected by the variable, with it's part of the signal estimate
         
-        total_xval_folds=[] % Cross validation structures for each fold
-        event_xval_folds=[] % Cross validation structures for each fold
+        total_xval_folds % Cross validation structures for each fold
+        event_xval_folds % Cross validation structures for each fold
         
         gridsearch % A complete history of the grid search process, if any
         
@@ -40,11 +40,15 @@ classdef RerpResult < matlab.mixin.Copyable
     methods
         function obj = RerpResult(rerp_profile, rerp_plot_spec)
             import rerp_dependencies.RerpPlotSpec
+            import rerp_dependencies.RerpXvalFold
             
             if nargin < 1
                 help RerpResult
                 return;
             end
+            
+            obj.total_xval_folds=RerpXvalFold; 
+            obj.event_xval_folds=RerpXvalFold; 
             
             obj.rerp_profile = rerp_profile;
             if nargin > 1
@@ -117,13 +121,18 @@ classdef RerpResult < matlab.mixin.Copyable
             for i=obj.rerp_plot_spec.event_idx
                 
                 if obj.rerp_plot_spec.exclude_insignificant
-                    obj.rerp_plot_spec.ts_idx = obj.rerp_plot_spec.ts_idx(rsquare_significance(i, obj.rerp_plot_spec.ts_idx)==1);
+                    this_ts_idx = obj.rerp_plot_spec.ts_idx(rsquare_significance(i, obj.rerp_plot_spec.ts_idx)==1);
+                else
+                    this_ts_idx = obj.rerp_plot_spec.ts_idx; 
                 end
                 
                 if ~isempty(obj.rerp_plot_spec.ts_idx)
                     scrollsubplot(4,1,m,h);
                     hold all;
-                    plot(xaxis_ms{i}', [estimates{i, obj.rerp_plot_spec.ts_idx}]);
+                    this_estimate = [estimates{i, this_ts_idx}]; 
+                    if ~isempty(this_estimate)
+                        plot(xaxis_ms{i}', this_estimate);
+                    end
                     
                     hcmenu = uicontextmenu;
                     uimenu(hcmenu, 'Label', 'Publish graph', 'Callback', @RerpResult.gui_publish);
@@ -141,10 +150,10 @@ classdef RerpResult < matlab.mixin.Copyable
                     
                     if obj.rerp_profile.settings.type_proc
                         leg = [datasetname{1}{1} ' - ' obj.analysis_name ', Channel: '];
-                        ts_label=obj.rerp_profile.include_chans(obj.rerp_plot_spec.ts_idx);
+                        ts_label=obj.rerp_profile.include_chans(this_ts_idx);
                     else
                         leg = [datasetname{1}{1} ' - ' obj.analysis_name ', Component: '];
-                        ts_label=obj.rerp_profile.include_comps(obj.rerp_plot_spec.ts_idx);
+                        ts_label=obj.rerp_profile.include_comps(this_ts_idx);
                     end
                     
                     title([titl significance_label]);
@@ -237,7 +246,6 @@ classdef RerpResult < matlab.mixin.Copyable
                     ylim([min_y, max_y]);
                 end
                 
-                obj.rerp_plot_spec.event_idx=new_idx;
                 if ~isempty(obj.rerp_plot_spec.event_idx)
                     hcmenu = uicontextmenu;
                     uimenu(hcmenu, 'Label', 'Publish graph', 'Callback', @RerpResult.gui_publish);
@@ -256,12 +264,12 @@ classdef RerpResult < matlab.mixin.Copyable
                     end
                     
                     title([titl significance_label]);
-                    xlim([min(cell2mat(xaxis_ms(obj.rerp_plot_spec.event_idx))) max(cell2mat(xaxis_ms(obj.rerp_plot_spec.event_idx)))]);
-                    legend_idx = cellfun(@(x) [leg x], tags(obj.rerp_plot_spec.event_idx) , 'UniformOutput' ,false);
+                    xlim([min(cell2mat(xaxis_ms(new_idx))) max(cell2mat(xaxis_ms(new_idx)))]);
+                    legend_idx = cellfun(@(x) [leg x], tags(new_idx) , 'UniformOutput' ,false);
                     if isempty(props)
-                        a=legend(legend_idx);
+                        a=legend(strtrim(legend_idx));
                     else
-                        a=legend({props(m).UserData.lstrings{:} legend_idx{:}});
+                        a=legend({props(m).UserData.lstrings{:} strtrim(legend_idx{:})});
                     end
                     pr= get(gca,'UserData');
                     pr.legend=a;
@@ -297,10 +305,10 @@ classdef RerpResult < matlab.mixin.Copyable
             end
             
             %Plot average total R2
-            p=plot(1:length(obj.rerp_plot_spec.ts_idx), vals);
+            p=plot(0:(length(obj.rerp_plot_spec.ts_idx)-1), vals);
             line_props = get(p);
             set(gca,'xtickmode','manual');
-            set(gca, 'xtick', 1:length(obj.rerp_plot_spec.ts_idx));
+            set(gca, 'xtick', 0:(length(obj.rerp_plot_spec.ts_idx)-1));
             
             %Figure out the legend
             datasetname = regexp(obj.rerp_profile.eeglab_dataset_name,'.*[\\\/](.*).set','tokens');
@@ -316,7 +324,7 @@ classdef RerpResult < matlab.mixin.Copyable
             %rereference them later when doing overplotting.
             props=get(findobj(h, 'tag', 'legend'));
             if isempty(props)
-                leg = legend(legend_idx);
+                leg = legend(strtrim(legend_idx));
                 props = get(leg);
                 props.UserData.plotHandles = p;
                 props.UserData.lstrings={legend_idx};
@@ -324,7 +332,7 @@ classdef RerpResult < matlab.mixin.Copyable
                 
             else
                 plotHandles = [props.UserData.plotHandles p];
-                leg = legend(plotHandles, {props.UserData.lstrings{:} legend_idx});
+                leg = legend(plotHandles, {props.UserData.lstrings{:} strtrim(legend_idx)});
                 props = get(leg);
                 props.UserData.plotHandles = plotHandles;
                 set(gca, 'xticklabel', 1:length(obj.rerp_plot_spec.ts_idx));
@@ -335,7 +343,7 @@ classdef RerpResult < matlab.mixin.Copyable
             for j=1:length(obj.rerp_plot_spec.ts_idx)
                 if rsquare_significance(j)
                     hold all;
-                    sig_plot = plot(j, vals(j) ,'s', 'LineWidth', 1, 'MarkerEdgeColor',line_props.Color,'MarkerSize', 10);
+                    sig_plot = plot(j-1, vals(j) ,'s', 'LineWidth', 1, 'MarkerEdgeColor',line_props.Color,'MarkerSize', 10);
                 end
             end
             
@@ -360,7 +368,13 @@ classdef RerpResult < matlab.mixin.Copyable
             set(gca,'uicontextmenu', hcmenu);
             set(gca, 'ygrid', 'on');
             
-            xlabel('Time series - decreasing R ^2 order');
+            if obj.rerp_profile.settings.type_proc
+                type= 'Channel';
+            else
+                type= 'Component';
+            end
+            
+            xlabel([type ' - decreasing R ^2 order']);
             ylabel('R ^2');
             title('Rsquare performance by time series');
             
@@ -368,7 +382,7 @@ classdef RerpResult < matlab.mixin.Copyable
             tmin = min(tmin, a.YLim(1));
             tmax = max(tmax, a.YLim(2));
             
-            axis([0 length(obj.rerp_plot_spec.ts_idx) tmin tmax]);
+            axis([-1 length(obj.rerp_plot_spec.ts_idx) tmin tmax]);
         end
         
         function plotRerpEventRsquared(obj, h)
@@ -410,10 +424,10 @@ classdef RerpResult < matlab.mixin.Copyable
                 hold all;
                 scrollsubplot(3,1,m,h);
                 
-                p=plot(1:length(obj.rerp_plot_spec.ts_idx), vals);
+                p=plot(0:(length(obj.rerp_plot_spec.ts_idx)-1), vals);
                 line_props = get(p);
                 set(gca,'xtickmode','manual');
-                set(gca, 'xtick', 1:length(obj.rerp_plot_spec.ts_idx));
+                set(gca, 'xtick', 0:(length(obj.rerp_plot_spec.ts_idx)-1));
                 props=get(findobj(h,'Tag', ['legend_' num2str(i)]));
                 legend_idx=[datasetname{1}{1} ' - ' obj.analysis_name];
                 
@@ -438,7 +452,7 @@ classdef RerpResult < matlab.mixin.Copyable
                 for j=1:length(obj.rerp_plot_spec.ts_idx)
                     if this_rsquare_significance(j)
                         hold all;
-                        sig_plot=plot(j, vals(j) , 's', 'LineWidth', 1, 'MarkerEdgeColor',line_props.Color,'MarkerSize', 10);
+                        sig_plot=plot(j-1, vals(j) , 's', 'LineWidth', 1, 'MarkerEdgeColor',line_props.Color,'MarkerSize', 10);
                     end
                 end
                 
@@ -460,7 +474,13 @@ classdef RerpResult < matlab.mixin.Copyable
                 uimenu(hcmenu, 'Label', 'Publish graph', 'Callback', @RerpResult.gui_publish);
                 set(gca,'uicontextmenu', hcmenu);
                 
-                xlabel('Time series - decreasing R ^2 order');
+                if obj.rerp_profile.settings.type_proc
+                    type= 'Channel';
+                else
+                    type= 'Component';
+                end
+
+                xlabel([type ' - decreasing R ^2 order']);
                 ylabel('R ^2');
                 title(['Rsquare performance by time series: ' tags{obj.rerp_plot_spec.event_idx(i)}]);
                 
@@ -468,7 +488,7 @@ classdef RerpResult < matlab.mixin.Copyable
                 tmin = min(tmin, a.YLim(1));
                 tmax = max(tmax, a.YLim(2));
                 
-                axis([0 length(obj.rerp_plot_spec.ts_idx) tmin tmax]);
+                axis([-1 length(obj.rerp_plot_spec.ts_idx) tmin tmax]);
                 m=m+1;
             end
         end
@@ -1222,38 +1242,46 @@ classdef RerpResult < matlab.mixin.Copyable
         function rsquare_significance = get_total_rsquare_significance(obj)
             % Returns time series numbers where rsquare was statistically
             % different from zero mean at p<rerp_plot_spec.significance_level
+            import rerp_dependencies.ttestw
+
             data_variance=zeros(length(obj.total_xval_folds), length(obj.total_xval_folds(1).data_variance));
             noise_variance=zeros(length(obj.total_xval_folds), length(obj.total_xval_folds(1).noise_variance));
+            weight=zeros(length(obj.total_xval_folds), length(obj.total_xval_folds(1).num_samples));
+            
             for i=1:length(obj.total_xval_folds)
                 data_variance(i,:) = obj.total_xval_folds(i).data_variance;
                 noise_variance(i,:) = obj.total_xval_folds(i).noise_variance;
+                weight(i,:) = obj.total_xval_folds(i).num_samples;
             end
             
             rsquare = 1 - noise_variance./data_variance;
-            try
-                rsquare_significance = squeeze(ttest(rsquare, 0, 'Alpha', obj.rerp_plot_spec.significance_level));
-            catch
-                rsquare_significance = squeeze(ttest(rsquare, 0, obj.rerp_plot_spec.significance_level));
+            rsquare_significance=zeros([1,size(rsquare,2)]); 
+            for i=1:size(rsquare,2)
+                rsquare_significance(i) = squeeze(ttestw(rsquare(:,i), 0, weight(:,i), 'Alpha', obj.rerp_plot_spec.significance_level));
             end
         end
         
         function rsquare_significance = get_event_rsquare_significance(obj)
             % Returns time series numbers where rsquare was statistically
             % different from zero mean at p<rerp_plot_spec.significance_level.
+            import rerp_dependencies.ttestw
+            
             data_variance=zeros([length(obj.event_xval_folds) size(obj.event_xval_folds(1).data_variance)]);
             noise_variance=zeros([length(obj.event_xval_folds) size(obj.event_xval_folds(1).noise_variance)]);
-            
+            weight=zeros([length(obj.event_xval_folds) size(obj.event_xval_folds(1).num_samples)]);
+
             for i=1:length(obj.event_xval_folds)
                 data_variance(i,:,:) = obj.event_xval_folds(i).data_variance;
                 noise_variance(i,:,:) = obj.event_xval_folds(i).noise_variance;
+                weight(i,:,:) = obj.event_xval_folds(i).noise_variance;
             end
             
             rsquare = 1 - noise_variance./data_variance;
-            
-            try
-                rsquare_significance = squeeze(ttest(rsquare, 0, 'Alpha', obj.rerp_plot_spec.significance_level));
-            catch
-                rsquare_significance = squeeze(ttest(rsquare, 0, obj.rerp_plot_spec.significance_level));
+            rsquare_significance=zeros([size(rsquare,2), size(rsquare,3)]); 
+            for i=1:size(rsquare,2)
+                for j=1:size(rsquare,3)
+                    rsquare_significance(i, j) = squeeze(ttestw(rsquare(:,i, j), 0, weight(:,i, j), 'Alpha', obj.rerp_plot_spec.significance_level));
+                end
             end
             
             rsquare_significance = reshape(rsquare_significance, size(obj.event_xval_folds(1).data_variance));
@@ -1436,9 +1464,12 @@ classdef RerpResult < matlab.mixin.Copyable
       function cpObj = copyElement(obj)
          % Make a shallow copy of all properties
          cpObj = copyElement@matlab.mixin.Copyable(obj);
-         % Make a deep copy of the rerp_profile and rerp_plot_spec objects
+         
+         % Make a deep copy of these objects
          cpObj.rerp_profile = copy(obj.rerp_profile);
          cpObj.rerp_plot_spec = copy(obj.rerp_plot_spec);
+         cpObj.total_xval_folds = copy(obj.total_xval_folds); 
+         cpObj.event_xval_folds = copy(obj.event_xval_folds); 
       end
     end
 end
