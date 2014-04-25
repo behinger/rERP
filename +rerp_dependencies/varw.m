@@ -1,5 +1,5 @@
-function [ out ] = meanw(x, w, d)
-%MEANW Weighted mean. Ignores NaNs in x
+function [ out ] = varw(x, w, d)
+%VARW Weighted variance. Ignores NaNs in x. 
 
 sz=size(x);
 if nargin < 3
@@ -21,6 +21,7 @@ if isempty(x)
     x=NaN(size(w));
 end
 
-out = sum(x.*w, d)./sum(w, d);
+out = var(x, w, d); 
 end
+
 

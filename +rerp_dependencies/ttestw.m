@@ -1,4 +1,7 @@
 function [h,p,ci,stats] = ttestw(x,m,w, varargin)
+import rerp_dependencies.meanw
+import rerp_dependencies.varw
+
 %TTEST  Weighted one-sample and paired-sample t-test.
 %   H = TTEST(X) performs a t-test of the hypothesis that the data in the
 %   vector X come from a distribution with mean zero, and returns the
@@ -59,7 +62,7 @@ function [h,p,ci,stats] = ttestw(x,m,w, varargin)
 %      [1] E. Kreyszig, "Introductory Mathematical Statistics",
 %      John Wiley, 1970, page 206.
 
-%   Copyright 1993-2012 The MathWorks, Inc.
+%   Copyright 1993-2012 The MathWorks, Inc. and Matthew Burns, 2014
 
 
 if nargin < 2 || isempty(m)
@@ -127,9 +130,15 @@ if any(nans(:))
 else
     samplesize = size(x,dim); % a scalar, => a scalar call to tinv
 end
+
 df = max(samplesize - 1,0);
-xmean = nanmean(x,dim);
-sdpop = nanstd(x,[],dim);
+
+%DIFFERENT FROM TTEST%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Weigted ttest based on weighted mean and weigted variance
+xmean = meanw(x, w, dim);
+sdpop = sqrt(varw(x, w, dim));
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 ser = sdpop ./ sqrt(samplesize);
 tval = (xmean - m) ./ ser;
 if nargout > 3
