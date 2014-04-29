@@ -128,6 +128,8 @@ for k = 1:MAX_ITER
     
 end
 
+%Scaling factor required to undo double shrinkage. 
+x = (1 + lambda2)*x;
 end
 
 function p = objective(A, b, lambda1, lambda2, x, z)
