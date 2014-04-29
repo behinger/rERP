@@ -421,7 +421,7 @@ classdef RerpResult < matlab.mixin.Copyable
             for i=1:length(obj.rerp_plot_spec.event_idx)
                 
                 vals = obj.average_event_rsquare(obj.rerp_plot_spec.event_idx(i), obj.rerp_plot_spec.ts_idx_event_types(i,:));
-                this_rsquare_significance = rsquare_significance(i,obj.rerp_plot_spec.ts_idx_event_types(:,i));
+                this_rsquare_significance = rsquare_significance(i, obj.rerp_plot_spec.ts_idx_event_types(i,:));
                 
                 tmax = max(vals);
                 tmin = min(min(vals), 0);
