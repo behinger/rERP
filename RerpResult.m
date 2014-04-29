@@ -383,6 +383,8 @@ classdef RerpResult < matlab.mixin.Copyable
             tmax = max(tmax, a.YLim(2));
             
             axis([-1 length(obj.rerp_plot_spec.ts_idx) tmin tmax]);
+            line([-1 length(obj.rerp_plot_spec.ts_idx)],[0 0],'linewidth',1,'color',[0 0 0]);
+
         end
         
         function plotRerpEventRsquared(obj, h)
@@ -410,6 +412,10 @@ classdef RerpResult < matlab.mixin.Copyable
             
             datasetname = regexp(obj.rerp_profile.eeglab_dataset_name,'.*[\\\/](.*).set','tokens');
             datasetname = {{regexprep(datasetname{1}{1},'[\_]','\\\_')}};
+            
+            vals=obj.average_event_rsquare(obj.rerp_plot_spec.event_idx, obj.rerp_plot_spec.ts_idx_event_types(:));
+            overall_max = max(max(vals)); 
+            overall_min = min(min(min(vals), 0));
             
             m=1;
             for i=1:length(obj.rerp_plot_spec.event_idx)
@@ -484,11 +490,30 @@ classdef RerpResult < matlab.mixin.Copyable
                 title(['Rsquare performance by time series: ' tags{obj.rerp_plot_spec.event_idx(i)}]);
                 
                 a = get(gca);
+                if obj.rerp_plot_spec.constant_scale
+                    tmin = overall_min - abs(overall_min)*.2;
+                    tmax = overall_max + abs(overall_max)*.2;
+                end
+                
                 tmin = min(tmin, a.YLim(1));
                 tmax = max(tmax, a.YLim(2));
+                axis_min(i)=tmin;
+                axis_max(i)=tmax;
                 
                 axis([-1 size(obj.rerp_plot_spec.ts_idx_event_types,2) tmin tmax]);
+                line([-1 size(obj.rerp_plot_spec.ts_idx_event_types,2)],[0 0],'linewidth',1,'color',[0 0 0]);
                 m=m+1;
+            end
+            
+            if obj.rerp_plot_spec.constant_scale
+                ymin = min(axis_min);
+                ymax = max(axis_max);
+                m=1;
+                for i=1:length(obj.rerp_plot_spec.event_idx)
+                    scrollsubplot(3,1,m,h);
+                    ylim([ymin ymax]);
+                    m=m+1;
+                end
             end
         end
         
