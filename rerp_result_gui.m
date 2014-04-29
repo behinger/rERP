@@ -41,7 +41,7 @@ function varargout = rerp_result_gui(varargin)
 
 % Edit the above text to modify the response to help rerp_result_gui
 
-% Last Modified by GUIDE v2.5 19-Apr-2014 10:39:18
+% Last Modified by GUIDE v2.5 26-Apr-2014 04:35:08
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 0;
@@ -92,7 +92,7 @@ set(handles.channelslist,'max', 1e7);
 set(handles.typeplotlist,'max',1,'value',1);
 
 try
-    set(handles.resultslist,'string',{handles.UserData.results(:).name},'max',1e6, 'value', 1); 
+    set(handles.resultslist,'string',{handles.UserData.results(:).name},'max',1e6, 'value', 1);
 catch
     set(handles.resultslist,'string',{},'max',1e6, 'value', 1);
 end
@@ -131,19 +131,19 @@ if ~isempty(itemnum)
     list_str = cellstr(get(hObject,'String'));
     if ~isempty(list_str)
         new_results=handles.UserData.results(itemnum);
-
+        
         if ~verify_results_are_consistent(new_results)
             warning('rerp_profile_gui: some results selected were not compatible');
         end
-
+        
         handles.UserData.current.result=new_results;
     end
-
+    
     handles = set_options(handles);
 end
 
-setSortIdx(handles.UserData.results(:)); 
-channelslist_Callback(handles.channelslist, [], handles); 
+setSortIdx(handles.UserData.results(:));
+channelslist_Callback(handles.channelslist, [], handles);
 guidata(handles.output, handles);
 
 % --- Executes during object creation, after setting all properties.
@@ -209,6 +209,29 @@ function channelslist_Callback(hObject, eventdata, handles)
 for i=1:length(handles.UserData.current.result)
     this_ts_list_idx=get(handles.channelslist,'Value');
     this_result=handles.UserData.current.result(i);
+    
+    %Only plot number of time series that is available for all currently selected results
+    extend_length = max(this_ts_list_idx)-length(this_result.rerp_plot_spec.sort_idx);
+    
+    dataset_name = regexp(this_result.rerp_profile.eeglab_dataset_name, '.*[\\\/](.*)\.set', 'tokens');
+    
+    if ~isempty(dataset_name)
+        dataset_name=dataset_name{1}{1};
+    else
+        dataset_name='';
+    end
+    
+    if(this_result.rerp_profile.settings.type_proc)
+        type='channels';
+    else
+        type='components';
+    end
+    
+    if extend_length > 0
+        error('rerp_result_gui: dataset %s only has %d %s; select fewer %s for group plotting',...
+            dataset_name, length(this_result.rerp_plot_spec.sort_idx), type, type);
+    end
+    
     this_result.rerp_plot_spec.ts_idx = this_result.rerp_plot_spec.sort_idx(this_ts_list_idx);
 end
 
@@ -234,13 +257,64 @@ function tagslist_Callback(hObject, eventdata, handles)
 %        contents{get(hObject,'Value')} returns selected item from tagslist
 for i=1:length(handles.UserData.results)
     handles.UserData.results(i).rerp_plot_spec.event_idx = get(hObject, 'Value');
-
+    
     if handles.UserData.rerpimage
         if handles.UserData.locksort
             handles.UserData.result(i).rerp_plot_spec.delay_idx=get(hObject,'Value');
         else
             handles.UserData.result(i).rerp_plot_spec.locking_idx=get(hObject,'Value');
         end
+    end
+end
+
+%Make sure if multiple results are selected they all have the same event
+%types
+if length(handles.UserData.current.result > 1)
+    contents = cellstr(get(hObject,'String'));
+    selected = contents(get(hObject,'Value'));
+    
+    tags_list = cell(1,length(handles.UserData.current.result));
+    missing_tags = cell(1,length(handles.UserData.current.result));
+    num_elem = zeros(1,length(handles.UserData.current.result));
+    for i=1:length(handles.UserData.current.result)
+        this_result = handles.UserData.current.result(i);
+        tags_list{i}=handles.UserData.current.result(i).get_plotting_params;
+        
+        %Error if any selected tags are missing from this dataset
+        missing_tags{i}=setdiff(selected, tags_list{i});
+        if ~isempty(missing_tags{i})
+            if ~isempty(this_result.rerp_profile.eeglab_dataset_name)
+                dataset_name = regexp(this_result.rerp_profile.eeglab_dataset_name, '.*[\\\/](.*)\.set','tokens');
+            else
+                dataset_name = {{num2string(i)}};
+            end
+            
+            if this_result.rerp_profile.settings.hed_enable
+                type = 'HED tags';
+            else
+                type = 'event types';
+            end
+            
+            mess = '\nrerp_result_gui: dataset %s is missing the following %s - deselect either the dataset or the %s:';
+            for j=1:length(missing_tags{i})
+                mess = [mess '\n        ' type(1:end-1) ' ' missing_tags{i}{j}];
+            end
+            
+            error(mess, dataset_name{1}{1}, type, type);
+        end
+        
+        num_elem(i)=length(tags_list);
+    end
+    
+    %Make sure event type indexes match up, might be different if datasets have
+    %slightly different tags.
+    for i=1:length(tags_list)
+        this_tags_list=tags_list{i};
+        new_event_idx = zeros(1,length(selected));
+        for j=1:length(selected)
+            new_event_idx(j) = find(strcmp(selected{j}, this_tags_list),1);
+        end
+        handles.UserData.current.result(i).rerp_plot_spec.event_idx=new_event_idx;
     end
 end
 
@@ -268,7 +342,7 @@ new_results = RerpResult.loadRerpResult;
 handles.UserData.results = [handles.UserData.results new_results];
 handles = set_options(handles);
 res_strings = get(handles.resultslist, 'String');
-set(handles.resultslist,'Value',(length(res_strings)-length(new_results)+1):length(res_strings)); 
+set(handles.resultslist,'Value',(length(res_strings)-length(new_results)+1):length(res_strings));
 
 % Update handles structure, other lists
 resultslist_Callback(handles.resultslist, [], handles);
@@ -360,7 +434,7 @@ opts=[];
 if isempty(handles.UserData.current.result)
     return;
 else
-    first_result=handles.UserData.current.result(1); 
+    first_result=handles.UserData.current.result(1);
 end
 
 if first_result.rerp_profile.settings.type_proc;
@@ -387,7 +461,7 @@ if length(handles.UserData.current.result)==1
         end
     end
     
-%Combine plotting from multiple datasets
+    %Combine plotting from multiple datasets
 else
     if first_result.ersp_flag
         opts = {};
@@ -434,8 +508,7 @@ if first_result.rerp_profile.settings.type_proc
 else
     channels = first_result.rerp_profile.include_comps;
 end
-assert(length(channels)==size(first_result.rerp_estimate,2), 'rerp_result_gui: problem matching dataset to result');
-                        
+
 rsq=first_result.setSortIdx;
 
 time_series_str = num2str(unique(channels'));
@@ -450,13 +523,18 @@ cts=get(handles.channelslist,'Value');
 
 %Indexes into the first result channels or comps for the list
 if first_result.rerp_plot_spec.sort_by_r2
-    tsstr=ts_str_w_rsq(first_result.rerp_plot_spec.sort_idx); 
+    tsstr=ts_str_w_rsq(first_result.rerp_plot_spec.sort_idx);
 else
     tsstr=ts_str_w_rsq(1:length(ts_str_w_rsq));
 end
 set(handles.channelslist, 'string', tsstr, 'value', cts(cts<=length(tsstr)));
 
-tags = first_result.get_plotting_params;
+%Set tags to the 
+tags=first_result.get_plotting_params;
+for i=2:length(result)
+    tags=intersect(tags, result(i).get_plotting_params);
+end
+
 ctags = get(handles.tagslist,'value');
 set(handles.tagslist, 'string', tags, 'value', ctags(ctags<=length(tags)));
 
@@ -472,7 +550,7 @@ function sortbyrsqaurebox_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-handles.UserData.rerp_plot_spec.sort_by_r2=get(hObject,'Value'); 
+handles.UserData.rerp_plot_spec.sort_by_r2=get(hObject,'Value');
 
 % Hint: get(hObject,'Value') returns toggle state of sortbyrsqaurebox
 resultslist_Callback(handles.resultslist, [], handles)
@@ -500,10 +578,10 @@ try
             handles.UserData.results(i).rerp_plot_spec.significance_level=newlevel;
         end
     else
-        error('rerp_result_gui'); 
+        error('rerp_result_gui');
     end
 catch
-    set(hObject,'string', num2str(handles.UserData.rerp_plot_spec.significance_level)); 
+    set(hObject,'string', num2str(handles.UserData.rerp_plot_spec.significance_level));
     disp('rerp_result_gui: p-value threshold must be between 0 - 1');
 end
 
@@ -596,7 +674,7 @@ function exclude_insignif_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of exclude_insignif
 if ~isempty(handles.UserData.results)
     for i=1:length(handles.UserData.results)
-        handles.UserData.results(i).rerp_plot_spec.exclude_insignificant=get(hObject,'Value'); 
+        handles.UserData.results(i).rerp_plot_spec.exclude_insignificant=get(hObject,'Value');
     end
 end
 
@@ -609,7 +687,7 @@ function constant_scale_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of constant_scale
 if ~isempty(handles.UserData.results)
     for i=1:length(handles.UserData.results)
-        handles.UserData.results(i).rerp_plot_spec.constant_scale=get(hObject,'Value'); 
+        handles.UserData.results(i).rerp_plot_spec.constant_scale=get(hObject,'Value');
     end
 end
 
@@ -622,6 +700,6 @@ function overplot_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of overplot
 if ~isempty(handles.UserData.results)
     for i=1:length(handles.UserData.results)
-        handles.UserData.results(i).rerp_plot_spec.over_plot=get(hObject,'Value'); 
+        handles.UserData.results(i).rerp_plot_spec.over_plot=get(hObject,'Value');
     end
-end 
+end

@@ -23,7 +23,7 @@ classdef RerpProfile < matlab.mixin.Copyable
         %See RerpProfile.getDefaultRerpProfile method for default settings.
         settings;
         
-        eeglab_dataset_name=[]; % Full path to dataset
+        eeglab_dataset_name=''; % Full path to dataset
         sample_rate=[]; %Smaple rate of dataset
         pnts=[]; %Number of samples in dataset
         nbchan=[];%Number of channels in dataset

@@ -406,7 +406,6 @@ classdef RerpResult < matlab.mixin.Copyable
             
             if ~isempty(obj.rerp_plot_spec.significance_level)
                 rsquare_significance = obj.get_event_rsquare_significance;
-                rsquare_significance = rsquare_significance(obj.rerp_plot_spec.event_idx, obj.rerp_plot_spec.ts_idx);
             end
             
             datasetname = regexp(obj.rerp_profile.eeglab_dataset_name,'.*[\\\/](.*).set','tokens');
@@ -415,8 +414,8 @@ classdef RerpResult < matlab.mixin.Copyable
             m=1;
             for i=1:length(obj.rerp_plot_spec.event_idx)
                 
-                vals = obj.average_event_rsquare(obj.rerp_plot_spec.event_idx(i),obj.rerp_plot_spec.ts_idx);
-                this_rsquare_significance = rsquare_significance(i,:);
+                vals = obj.average_event_rsquare(obj.rerp_plot_spec.event_idx(i), obj.rerp_plot_spec.ts_idx_event_types(i,:));
+                this_rsquare_significance = rsquare_significance(i,obj.rerp_plot_spec.ts_idx_event_types(:,i));
                 
                 tmax = max(vals);
                 tmin = min(min(vals), 0);
@@ -424,10 +423,10 @@ classdef RerpResult < matlab.mixin.Copyable
                 hold all;
                 scrollsubplot(3,1,m,h);
                 
-                p=plot(0:(length(obj.rerp_plot_spec.ts_idx)-1), vals);
+                p=plot(0:(size(obj.rerp_plot_spec.ts_idx_event_types,2)-1), vals);
                 line_props = get(p);
                 set(gca,'xtickmode','manual');
-                set(gca, 'xtick', 0:(length(obj.rerp_plot_spec.ts_idx)-1));
+                set(gca, 'xtick', 0:(size(obj.rerp_plot_spec.ts_idx_event_types,2)-1));
                 props=get(findobj(h,'Tag', ['legend_' num2str(i)]));
                 legend_idx=[datasetname{1}{1} ' - ' obj.analysis_name];
                 
@@ -437,19 +436,19 @@ classdef RerpResult < matlab.mixin.Copyable
                     props.UserData.plotHandles = p;
                     props.UserData.lstrings={legend_idx};
                     set(leg,'UserData', props.UserData, 'Tag',['legend_' num2str(i)]);
-                    set(gca, 'xticklabel', obj.rerp_plot_spec.ts_idx);
+                    set(gca, 'xticklabel', obj.rerp_plot_spec.ts_idx_event_types(i,:));
                 else
                     plotHandles = [props.UserData.plotHandles p];
                     leg = legend(plotHandles, {props.UserData.lstrings{:} legend_idx});
                     props = get(leg);
                     props.UserData.plotHandles = plotHandles;
                     set(leg,'UserData', props.UserData);
-                    set(gca, 'xticklabel', 1:length(obj.rerp_plot_spec.ts_idx));
+                    set(gca, 'xticklabel', 1:length(obj.rerp_plot_spec.ts_idx_event_types(i,:)));
                 end
                 
                 %Plot significance markers
                 sig_plot = [];
-                for j=1:length(obj.rerp_plot_spec.ts_idx)
+                for j=1:length(this_rsquare_significance)
                     if this_rsquare_significance(j)
                         hold all;
                         sig_plot=plot(j-1, vals(j) , 's', 'LineWidth', 1, 'MarkerEdgeColor',line_props.Color,'MarkerSize', 10);
@@ -488,7 +487,7 @@ classdef RerpResult < matlab.mixin.Copyable
                 tmin = min(tmin, a.YLim(1));
                 tmax = max(tmax, a.YLim(2));
                 
-                axis([-1 length(obj.rerp_plot_spec.ts_idx) tmin tmax]);
+                axis([-1 size(obj.rerp_plot_spec.ts_idx_event_types,2) tmin tmax]);
                 m=m+1;
             end
         end
@@ -1269,11 +1268,10 @@ classdef RerpResult < matlab.mixin.Copyable
             data_variance=zeros([length(obj.event_xval_folds) size(obj.event_xval_folds(1).data_variance)]);
             noise_variance=zeros([length(obj.event_xval_folds) size(obj.event_xval_folds(1).noise_variance)]);
             weight=zeros([length(obj.event_xval_folds) size(obj.event_xval_folds(1).num_samples)]);
-
             for i=1:length(obj.event_xval_folds)
                 data_variance(i,:,:) = obj.event_xval_folds(i).data_variance;
                 noise_variance(i,:,:) = obj.event_xval_folds(i).noise_variance;
-                weight(i,:,:) = obj.event_xval_folds(i).noise_variance;
+                weight(i,:,:) = obj.event_xval_folds(i).num_samples;
             end
             
             rsquare = 1 - noise_variance./data_variance;
@@ -1285,6 +1283,7 @@ classdef RerpResult < matlab.mixin.Copyable
             end
             
             rsquare_significance = reshape(rsquare_significance, size(obj.event_xval_folds(1).data_variance));
+            rsquare_significance(isnan(rsquare_significance))=0; 
         end
         
         function delay = get_delay_times(obj, event_nums, delay_var, num_samples)

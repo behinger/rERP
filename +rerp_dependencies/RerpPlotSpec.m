@@ -15,6 +15,7 @@ classdef RerpPlotSpec < matlab.mixin.Copyable
     properties
         sort_idx=1;
         ts_idx=1 %Index of channels/components to plot (not necessarily the actual channel or IC number
+        ts_idx_event_types %Index of channels/components to plot for each seperate event type (plotRerpEventRsquared)
         event_idx=1 %Index of event type or tag to plot
         
         exclude_insignificant=0 %Skip plotting statistically insignificant
