@@ -529,14 +529,28 @@ else
 end
 set(handles.channelslist, 'string', tsstr, 'value', cts(cts<=length(tsstr)));
 
-%Set tags to the 
+%Set tags to the intersection of tag sets across datasets
 tags=first_result.get_plotting_params;
 for i=2:length(result)
     tags=intersect(tags, result(i).get_plotting_params);
 end
 
 ctags = get(handles.tagslist,'value');
-set(handles.tagslist, 'string', tags, 'value', ctags(ctags<=length(tags)));
+contents=cellstr(get(handles.tagslist,'string'));
+old_tags = contents(ctags); 
+
+new_val=[]; 
+for i=1:length(tags)
+    if any(strcmp(tags{i}, old_tags)) 
+        new_val = [new_val i];
+    end
+end
+
+if isempty(new_val)
+    new_val = ctags(ctags<=length(tags));
+end
+
+set(handles.tagslist, 'string', tags, 'value', new_val);
 
 if first_result.rerp_profile.settings.hed_enable
     set(handles.tagslabel, 'string', 'HED tags');
