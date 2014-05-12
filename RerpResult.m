@@ -1486,14 +1486,27 @@ classdef RerpResult < matlab.mixin.Copyable
     methods (Access = protected)
        % Override copyElement method:
       function cpObj = copyElement(obj)
+         import rerp_dependencies.*
+         
          % Make a shallow copy of all properties
          cpObj = copyElement@matlab.mixin.Copyable(obj);
          
          % Make a deep copy of these objects
-         cpObj.rerp_profile = copy(obj.rerp_profile);
-         cpObj.rerp_plot_spec = copy(obj.rerp_plot_spec);
-         cpObj.total_xval_folds = copy(obj.total_xval_folds); 
-         cpObj.event_xval_folds = copy(obj.event_xval_folds); 
+         if isa(obj.rerp_profile,'RerpProfile')
+            cpObj.rerp_profile = copy(obj.rerp_profile);
+         end
+         
+         if isa(obj.rerp_plot_spec,'RerpPlotSpec')
+            cpObj.rerp_plot_spec = copy(obj.rerp_plot_spec);
+         end
+         
+         if isa(obj.total_xval_folds, 'RerpXvalFold')
+            cpObj.total_xval_folds = copy(obj.total_xval_folds); 
+         end
+         
+         if isa(obj.event_xval_folds,'RerpXvalFold')
+            cpObj.event_xval_folds = copy(obj.event_xval_folds); 
+         end
       end
     end
 end

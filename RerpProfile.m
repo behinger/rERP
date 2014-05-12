@@ -528,11 +528,19 @@ classdef RerpProfile < matlab.mixin.Copyable
     methods(Access = protected)
         % Override copyElement method:
         function cpObj = copyElement(obj)
+            import rerp_dependencies.*
+
             % Make a shallow copy of all properties
             cpObj = copyElement@matlab.mixin.Copyable(obj);
+            
             % Make a deep copy of these_events and hed_tree
-            cpObj.these_events = copy(obj.these_events);
-            cpObj.hed_tree = copy(obj.hed_tree);
+            if isa(obj.these_events, 'event')
+                cpObj.these_events = copy(obj.these_events);
+            end
+            
+            if isa(obj.hed_tree, 'hedTree')
+                cpObj.hed_tree = copy(obj.hed_tree);
+            end
         end
     end
 end
