@@ -372,6 +372,7 @@ disp('rerp: done');
             for j=1:s.num_xvalidation_folds
                 rerp_result.total_xval_folds(j).noise_variance(i) = optimal_results{i}.total_xval_folds(j).noise_variance(i);
                 rerp_result.total_xval_folds(j).data_variance(i) = optimal_results{i}.total_xval_folds(j).data_variance(i);
+                rerp_result.total_xval_folds(j).num_samples(i) = optimal_results{i}.total_xval_folds(j).num_samples(i);
             end
             
         end
