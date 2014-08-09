@@ -36,7 +36,6 @@
 %
 %   See also:
 %       rerp_setup_gui, pop_rerp, rerp, RerpProfile, RerpResultStudy
-
 function [ rerp_result_study ] = pop_rerp_study(varargin)
 
 p=inputParser;

@@ -128,7 +128,7 @@ for k = 1:MAX_ITER
     
 end
 
-%Scaling factor required to undo double shrinkage. 
+%Scaling factor required to undo double shrinkage (see elasticnet paper). 
 x = (1 + lambda2)*x;
 end
 
