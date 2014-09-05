@@ -87,6 +87,35 @@ classdef RerpProfile < matlab.mixin.Copyable
                     theseargs=varargin;
                 end
                 
+                parse(p, theseargs{:});
+                params = p.Parameters;
+                
+                if length(theseargs)==1 && isstruct(theseargs{1})
+                    %Passed a structure
+                    missing = setdiff(params, fieldnames(theseargs{1}));
+                else
+                    
+                    if iscell(theseargs)
+                        %Passed name-value pairs as cell array
+                        missing = setdiff(params, theseargs(1:2:end));
+                    end
+                end
+                
+                s=p.Results;
+                
+                msg = 'RerpProfile: profile not completely specified, missing parameters\n';
+                for i=1:length(missing)
+                    msg = [msg '\r\t' missing{i} '\n'];
+                end
+                
+                if ~isempty(missing)
+                    fprintf(msg);
+                    error('RerpProfile: failed to create profile');
+                end
+                
+                fprintf('RerpProfile: creating initial hierarchy\n');
+                obj.hed_tree = hedTree(obj.these_events.hedTag);
+                
                 %Decide whether we include all channels or components based on
                 %passed in profile. If that profile included all channels or comps, we do the same.
                 %Otherwise, we use only the channels or components used in that profile.
@@ -134,41 +163,14 @@ classdef RerpProfile < matlab.mixin.Copyable
                             obj.computed_artifact_indexes_function_name = passed_profile.computed_artifact_indexes_function_name;
                         end
                     end
+                    
                 else
                     %No protptype profile was passed, so we include all chans
                     %and comps
                     obj.include_comps=all_ts_idx;
                     obj.include_chans=all_ts_idx;
                 end
-                
-                fprintf('RerpProfile: creating initial hierarchy\n');
-                obj.hed_tree = hedTree(obj.these_events.hedTag);
-                
-                parse(p, theseargs{:});
-                params = p.Parameters;
-                
-                if length(theseargs)==1 && isstruct(theseargs{1})
-                    %Passed a structure
-                    missing = setdiff(params, fieldnames(theseargs{1}));
-                else
-                    
-                    if iscell(theseargs)
-                        %Passed name-value pairs as cell array
-                        missing = setdiff(params, theseargs(1:2:end));
-                    end
-                end
-                
-                s=p.Results;
-                
-                msg = 'RerpProfile: profile not completely specified, missing parameters\n';
-                for i=1:length(missing)
-                    msg = [msg '\r\t' missing{i} '\n'];
-                end
-                
-                if ~isempty(missing)
-                    fprintf(msg);
-                    error('RerpProfile: failed to create profile');
-                end
+                               
                 
                 obj.eeglab_dataset_name = fullfile(EEG.filepath, EEG.filename);
                 obj.sample_rate = EEG.srate;
@@ -182,7 +184,7 @@ classdef RerpProfile < matlab.mixin.Copyable
                 if ~iscell(s.exclude_tag)
                     s.exclude_tag = obj.hed_tree.uniqueTag;
                 else
-                    s.exclude_tag=intersect(s.exclude_tag, obj.hed_tree.uniqueTag);
+                    this_exclude_tag=intersect(s.exclude_tag, obj.hed_tree.uniqueTag);
                 end
                 
                 fprintf('RerpProfile: parsing hierarchy\n');
