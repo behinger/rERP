@@ -30,7 +30,7 @@ classdef RerpTagList
 
     properties (Constant=true)
         %Regular expression string for all tags with brackets 
-        regexp_str_all = '^\s*[\(\[{]+\s*(.*)\s+[\]}\)]+\s*$';
+        regexp_str_all = '^\s*[\(\[{*]+\s*(.*)\s+[\]}*\)]+\s*$';
         
         %Regular expression string for context affected tags with brackets 
         regexp_str_affected = '^\s*[\[{]+\s+(.*)\s+(?:\(.*\))\s+[\]}]+\s*$';
@@ -112,6 +112,7 @@ classdef RerpTagList
             import rerp_dependencies.*
                         
             segmented = regexp(tag_list, RerpTagList.regexp_str_all, 'tokens');
+            
             idx = [];
             for i=1:length(segmented)
 
