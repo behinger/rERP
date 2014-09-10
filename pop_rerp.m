@@ -122,9 +122,16 @@ if exitcode
     cp.setLastProfile;
 
     EEGOUT.rerp_profile = cp;
-
+    
     % Compute estimates in parallel if we are using regularization
-    if ~isempty(s.penalty_func) && (matlabpool('size') > 0)
+    poolobj = gcp('nocreate'); % If no pool, do not create new one.
+    if isempty(poolobj)
+        poolsize = 0;
+    else
+        poolsize = poolobj.NumWorkers;
+    end
+    
+    if ~isempty(s.penalty_func) && (poolsize > 0)
         rerp_result = rerp_parfor(EEG, cp);
     else
         rerp_result = rerp_parfor(EEG, cp, 'disable_parfor', 1);

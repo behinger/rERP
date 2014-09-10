@@ -89,7 +89,7 @@ classdef RerpResultStudy
                 average_total_rsquare=NaN(1, max_length);
                 average_total_rsquare(1:length(obj.result(i).average_total_rsquare))=obj.result(i).average_total_rsquare;
                 average_event_rsquare=NaN(length(this_master_map), max_length);
-                average_event_rsquare(~nan_idx, 1:size(obj.result(i).admm_residual, 2))=obj.result(i).average_event_rsquare;
+                average_event_rsquare(new_idx, 1:size(obj.result(i).admm_residual, 2))=obj.result(i).average_event_rsquare;
                 
                 %Assign new masterized values back to the result object
                 obj.result(i).rerp_estimate=rerp_estimate;
@@ -120,12 +120,11 @@ classdef RerpResultStudy
                     event_noise_variance = NaN(length(this_master_map), max_length);
                     event_noise_variance(~nan_idx, 1:this_length)= obj.result(i).event_xval_folds(k).noise_variance;
                     event_num_samples = NaN(length(this_master_map), max_length);
-                    event_num_samples(~nan_idx, 1:this_length)= obj.result(i).event_xval_folds(k).num_samples;
+                    event_num_samples(new_idx, 1:this_length)= obj.result(i).event_xval_folds(k).num_samples;
                     obj.result(i).event_xval_folds(k).data_variance=event_data_variance;
                     obj.result(i).event_xval_folds(k).noise_variance=event_noise_variance;
                     obj.result(i).event_xval_folds(k).num_samples=event_num_samples; 
                 end
-
             end
         end
         

@@ -194,7 +194,7 @@ classdef RerpProfile < matlab.mixin.Copyable
                 obj.include_event_types = setdiff(obj.event_types, possible_excluded);
                 
                 rerp_path_components=regexp(strtrim(mfilename('fullpath')),'[\/\\]','split');
-                results_path = [filesep fullfile(rerp_path_components{1:(end-1)}) filesep 'results'];
+                results_path = [fullfile(rerp_path_components{1:(end-1)}) filesep 'results'];
                 s.autosave_results_path=results_path;
                 
                 obj.settings = s;
