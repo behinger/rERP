@@ -216,9 +216,7 @@ classdef hedTree < matlab.mixin.Copyable
             combinedId = zeros(length(allTags) * 5, 1);
             counter = 1;
                    
-            for i = 1:length(allTags)
-                
-                
+            for i = 1:length(allTags)             
                 this_nodeSequence = regexp(allTags{i}, '[/]', 'split');
                 
                 if rc

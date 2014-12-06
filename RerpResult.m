@@ -1071,9 +1071,9 @@ classdef RerpResult < matlab.mixin.Copyable
             if filename
                 try
                     save([path2file '.rerp_result'], 'obj','-mat');
-                    disp(['RerpResult: saved result to disk ' path]);
+                    fprintf('RerpResult: saved result to disk, %s\n', path);
                 catch e
-                    disp(['RerpResult: could not save the specified result to disk ' path]);
+                    fprintf('RerpResult: could not save the specified result to disk %s\n', path);
                     rethrow(e);
                 end
             end
@@ -1175,9 +1175,8 @@ classdef RerpResult < matlab.mixin.Copyable
                             rerp_result{i}.rerp_plot_spec=RerpPlotSpec;
                         end
                         
-                    catch e
-                        disp(['RerpProfile: could not read the specified result from disk ' path]);
-                        rethrow(e);
+                    catch
+                        fprintf('RerpResult: could not read the specified result, %s\n', path{i});
                     end
                 end
             end

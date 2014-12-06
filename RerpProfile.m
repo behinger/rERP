@@ -32,7 +32,8 @@ classdef RerpProfile < matlab.mixin.Copyable
         include_comps=[];        % Component numbers to include in regression
         
         these_events=[];        % Object of class event stores all event information for dataset
-        event_types=[];         % Unique event types in dataset
+        event_types=[];         % Unique event types in dataset 
+        
         num_event_types=[];        % Number of times each event occurs
         event_type_descriptions=[];        % Description of each event type (must enter this manually)
         include_event_types=[];        % Event types to include in regression
@@ -114,7 +115,8 @@ classdef RerpProfile < matlab.mixin.Copyable
                 end
                 
                 fprintf('RerpProfile: creating initial hierarchy\n');
-                obj.hed_tree = hedTree(obj.these_events.hedTag);
+                [obj.continuous_var, new_all_tags, s.continuous_tag] = make_continuous_var(obj.these_events);
+                obj.hed_tree = hedTree(new_all_tags);
                 
                 %Decide whether we include all channels or components based on
                 %passed in profile. If that profile included all channels or comps, we do the same.
@@ -180,15 +182,16 @@ classdef RerpProfile < matlab.mixin.Copyable
                 assert(isempty(setdiff(s.penalty_func, s.penalty_options)), 'RerpProfile: settings.penalty_func must be a subset of settings.penalty_options');
                 
                 % If this is a brand new profile, assign all tags to
-                % exclude_tags.
+                % exclude_tags, all continuous tags to exclude_continuous_tags.
                 if ~iscell(s.exclude_tag)
                     s.exclude_tag = obj.hed_tree.uniqueTag;
+                    s.exclude_continuous_tags = s.continuous_tag;
                 else
-                    this_exclude_tag=intersect(s.exclude_tag, obj.hed_tree.uniqueTag);
+                    s.exclude_tag=intersect(s.exclude_tag, obj.hed_tree.uniqueTag);
                 end
                 
                 fprintf('RerpProfile: parsing hierarchy\n');
-                [obj.include_tag, obj.include_ids, obj.context_group, obj.continuous_var] = parse_hed_tree(obj.hed_tree, s.exclude_tag, s.seperator_tag, s.continuous_tag);
+                [obj.include_tag, obj.include_ids, obj.context_group] = parse_hed_tree(obj.hed_tree, s);
                 
                 possible_excluded = intersect(obj.event_types, s.exclude_event_types);
                 obj.include_event_types = setdiff(obj.event_types, possible_excluded);
@@ -258,7 +261,7 @@ classdef RerpProfile < matlab.mixin.Copyable
                     save([this_path '.rerp_profile'], 'obj','-mat');
                     disp(['RerpProfile: saved profile to disk ' path]);
                 catch e
-                    disp(['RerpProfile: could not save the specified profile to disk ' path]);
+                    fprintf('RerpProfile: could not save the specified profile, %s\n', path);
                     rethrow(e);
                 end
             end
@@ -423,8 +426,8 @@ classdef RerpProfile < matlab.mixin.Copyable
                     'hed_spec_path',fullfile('hed', 'hed_specification_1.3.xml'),...
                     ...
                     'exclude_tag',0,...tags to exclude from regresion
-                    'seperator_tag',{},...tags to generate seperate groups of variables based on which events are hit by the tag's children.
-                    'continuous_tag',{},...tags which have a magnitude associated (e.g. Stimulus/Visual/Luminance/.25)
+                    'separator_tag',{},...tags to generate seperate groups of variables based on which events are hit by the tag's children.
+                    'continuous_tag',{},...tags which have a magnitude associated (e.g. Stimulus/Visual/Luminance/#/.25)
                     ...
                     'regularization_enable', 1,...enable penalized regression
                     'lambda',[1 1],...specify lambda to use if cross validation is disabled
@@ -450,7 +453,7 @@ classdef RerpProfile < matlab.mixin.Copyable
             %   Usage:
             %       path=RerpProfile.rerp_path;
             rerp_path_components=regexp(strtrim(mfilename('fullpath')),'[\/\\]','split');
-            path = [filesep fullfile(rerp_path_components{1:(end-1)})];
+            path = [fullfile(rerp_path_components{1:(end-1)})];
         end
         
         function rerp_profile = loadRerpProfile(varargin)
@@ -516,7 +519,7 @@ classdef RerpProfile < matlab.mixin.Copyable
                         
                         rerp_profile{i}.name = filename{i};
                     catch e
-                        disp(['RerpProfile: could not read the specified profile from disk ' path]);
+                        fprintf('RerpProfile: could not read the specified profile, %s\n', path{i});
                         rethrow(e);
                     end
                 end
@@ -583,7 +586,7 @@ addOptional(p,'enforce_hed_spec',[], validateBinary);
 addOptional(p,'hed_spec_path',[], validateChar);
 
 addOptional(p,'exclude_tag',[]);
-addOptional(p,'seperator_tag',[]);
+addOptional(p,'separator_tag',[]);
 addOptional(p,'continuous_tag',[]);
 
 addOptional(p,'regularization_enable',[], validateBinary);

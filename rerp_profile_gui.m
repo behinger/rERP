@@ -704,7 +704,7 @@ drawnow;
             s.continuous_tag = ls.String;
             
             %Derive variables based on the GUI lists
-            [cp.include_tag, cp.include_ids, cp.context_group, cp.continuous_var] = parse_hed_tree(cp.hed_tree, s.exclude_tag, s.seperator_tag, s.continuous_tag);
+            [cp.include_tag, cp.include_ids, cp.context_group] = parse_hed_tree(cp.hed_tree, s);
             
             set(ui_includeUniqueTagsList, 'String', cp.include_tag, 'Value', []);
             set(ui_excludeUniqueTagsList, 'String', s.exclude_tag, 'Value', []);

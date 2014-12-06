@@ -142,8 +142,10 @@ if ~isempty(itemnum)
     handles = set_options(handles);
 end
 
-setSortIdx(handles.UserData.results(:));
-channelslist_Callback(handles.channelslist, [], handles);
+if ~isempty(handles.UserData.results(:))
+    setSortIdx(handles.UserData.results(:));
+    channelslist_Callback(handles.channelslist, [], handles);
+end
 guidata(handles.output, handles);
 
 % --- Executes during object creation, after setting all properties.

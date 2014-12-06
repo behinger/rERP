@@ -1,52 +1,42 @@
 %Return hed tags and original hed string ids for tree, excluding
 %intermediate nodes which have only one child. Used in
 %heirarchical regression. Excludes "exclude_tags" and
-%"seperator_tags", forming context groups based on seperator_tags.
-function [tags, ids, context_group, continuous_var] = parse_hed_tree(hed_tree, exclude_tags, seperator_tags, continuous_tags)
+%"separator_tags", forming context groups based on separator_tags.
+function [tags, ids, context_group] = parse_hed_tree(hed_tree, s)
 import rerp_dependencies.*
 
 tags = hed_tree.uniqueTag;
 ids = hed_tree.originalHedStringId;
-[continuous_var, tags, ids] = make_continuous_var(tags, ids);
-available_continuous_tags = [continuous_var{:}.name];
-disp('parse_hed_tree: removing exclude/seperator/continuous tags');
 
-%Remove exclude_tags, seperator_tags and continuous_tags
+disp('parse_hed_tree: removing exclude/separator/continuous tags');
+%Remove exclude_tags, separator_tags
 k=1;
 remove=[]; 
 for i = 1:length(tags)
     this_tag = tags{i};  
             
-    for j=1:length(exclude_tags)
-        if strcmpi(this_tag, exclude_tags{j})
+    for j=1:length(s.exclude_tag)
+        if strcmpi(this_tag, s.exclude_tag{j})
             remove(k) = i;
             k=k+1;
         end
     end
     
-    for j=1:length(seperator_tags)
-        if strcmpi(this_tag, seperator_tags{j})
-            remove(k) = i;
-            k=k+1;
-        end
-    end
-    
-    for j=1:length(continuous_tags)
-        if strcmpi(this_tag, continuous_tags{j})
+    for j=1:length(s.separator_tag)
+        if strcmpi(this_tag, s.separator_tag{j})
             remove(k) = i;
             k=k+1;
         end
     end
 end
 
-%Remove excluded, continuous and seperator tags from the list
+%Remove excluded, continuous and separator tags from the list
 idx = setdiff(1:length(ids), unique(remove));
 ids = ids(idx);
 tags = tags(idx);
 
-
 %Form context groups
-[context_group, tags, ids] = makeContextGroup(hed_tree, tags, ids, seperator_tags);
+[context_group, tags, ids] = makeContextGroup(hed_tree, tags, ids, s.separator_tag);
 
 %Remove categorical redundant tags
 disp('parse_hed_tree: removing redundant tags');
@@ -85,7 +75,7 @@ for i=1:len_ids
                 
                 %Don't remove continuous tags with same latencies: magnitude
                 %can be different even if latency is the same
-                if ~any(strcmp(strjoin(node_seq(1:(end-1)),'/'), continuous_tags))
+                if ~any(strcmp(strjoin(node_seq(1:(end-1)),'/'), s.continuous_tag))
                     marked_tags{end+1} = ['*   ' tag_list{i} '   *'];
                     marked_ids(end+1) = id_list(i);
                     
@@ -107,39 +97,39 @@ end
 end
 
 %Create context groups structure: all variables which are concurrently
-%tagged with seperator_tags will be collected into seperate hierarchy
+%tagged with separator_tags will be collected into separate hierarchy
 %and saved as a hedTree in the context_group struct.
-function [context_group, tags, ids, marked_tags, marked_ids] = makeContextGroup(hed_tree, tags, ids, seperator_tag)
+function [context_group, tags, ids] = makeContextGroup(hed_tree, tags, ids, separator_tag)
 import rerp_dependencies.*
 
-context_group=cell(size(seperator_tag));
+context_group=cell(size(separator_tag));
 remove=[];
 k=1;
 rem_tags = {};
-for i=1:length(seperator_tag)
-    fprintf('parse_hed_tree: creating context group %d/%d\n', i,length(seperator_tag));
-    this_seperator_tag = seperator_tag{i};
-    node_seq = regexp(this_seperator_tag, '[/]', 'split');
+for i=1:length(separator_tag)
+    fprintf('parse_hed_tree: creating context group %d/%d\n', i, length(separator_tag));
+    this_separator_tag = separator_tag{i};
+    node_seq = regexp(this_separator_tag, '[/]', 'split');
     
     these_children = [];
     m=1;
-    %Determine which tags are children of seperator_tag and mark them as { }
+    %Determine which tags are children of separator_tag and mark them as { }
     for j=1:length(tags)
-        this_unique_tag = tags{j};
-        this_node_seq = regexp(this_unique_tag, '[/]', 'split');
+        this_tag = tags{j};
+        this_node_seq = regexp(this_tag, '[/]', 'split');
         
-        %Child of the seperator tag will have a longer node sequence
+        %Child of the separator tag will have a longer node sequence
         if length(this_node_seq) > length(node_seq)
             
-            %Check if this tag is a child of the seperator tag, store as context group
+            %Check if this tag is a child of the separator tag, store as context group
             if ~nnz(~strcmpi(this_node_seq(1:length(node_seq)), node_seq))
-                tags{j} = ['{   ' this_unique_tag '   }'];
+                tags{j} = ['{   ' this_tag '   }'];
                 
                 this_original_id = ids{j};
-                these_children(m).tag = this_unique_tag;
+                these_children(m).tag = this_tag;
                 these_children(m).ids = this_original_id;
                 these_children(m).hed_tree = hedTree(hed_tree.originalHedStrings(these_children(m).ids));
-                
+
                 remove(k) = j;
                 k=k+1;
                 m=m+1;
@@ -147,33 +137,27 @@ for i=1:length(seperator_tag)
         end
     end
     
-    %We don't want the context groups to affect each other's children,
-    %keep them seperated.
-    rem_tags = {rem_tags{:} tags{remove}};
-    
     % Determine which tags to replicate in the context groups (co-occurring
     % tags) and mark them as {{ }}
     if ~isempty(these_children)
         hedtag_set={};
         
         for n = 1:length(these_children)
-            hedtag_set = {hedtag_set{:} these_children(n).hed_tree.uniqueTag{:}};
+            hedtag_set = union(hedtag_set, these_children(n).hed_tree.uniqueTag);
         end
         
-        sub_hed_tree = hedTree(hedtag_set);
-        context_group{i}.affected_tags=sub_hed_tree.uniqueTag;
+        context_group{i}.affected_tags=sort(hedtag_set);
         context_group{i}.children=these_children;
-        context_group{i}.name=this_seperator_tag;
+        context_group{i}.name=this_separator_tag;
     end
 end
 
 % Mark the tags which are affected by context groups. This will show any
 % intersections of context groups by marking along with the
-% seperator tags.
+% separator tags.
 [~, rem_idx,~] = intersect(tags, rem_tags);
 sub_tags_idx = setdiff(1:length(tags), rem_idx);
 sub_tags = tags(sub_tags_idx);
-
 
 for i=1:length(context_group)
     this_group = context_group{i};
@@ -188,7 +172,7 @@ for i=1:length(context_group)
             [context_group{i}.children(j).included_tag, incld_idx] = intersect(this_child.hed_tree.uniqueTag, stripped_hit_tags);
             
             % Find the original hed string ids associated with the tags which
-            % fall under this child (seperated according to tag)
+            % fall under this child (separated according to tag)
             for k=1:length(context_group{i}.children(j).included_tag)
                 included_tag_id = this_child.hed_tree.originalHedStringId{incld_idx(k)};
                 context_group{i}.children(j).included_ids{k} = sort(this_child.ids(included_tag_id));
