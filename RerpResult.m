@@ -1156,7 +1156,7 @@ classdef RerpResult < matlab.mixin.Copyable
                     filename={profdir(:).name};
                     path=cellfun(@(x) fullfile(pathname, x), filename, 'uniformoutput', false);
                 else
-                    filename={regexp(pathname, '.*[\\\/](.*\.rerp_result)','match')};
+                    filename=regexp(pathname, '.*[\\\/](.*\.rerp_result)','match');
                     path={pathname};
                 end
             end
@@ -1169,11 +1169,6 @@ classdef RerpResult < matlab.mixin.Copyable
                         res = load(path{i}, '-mat');
                         rerp_result{i} = res.obj;
                         rerp_result{i}.name = filename{i};
-                        
-                        %Make sure old version results have an RerpResultSpec
-                        if isempty(rerp_result{i}.rerp_plot_spec)
-                            rerp_result{i}.rerp_plot_spec=RerpPlotSpec;
-                        end
                         
                     catch
                         fprintf('RerpResult: could not read the specified result, %s\n', path{i});

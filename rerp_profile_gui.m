@@ -433,75 +433,75 @@ drawnow;
     end
 
 %DESIGNATE selected tags as seperator tags
-    function cllbk_tag_seperator(src, eventdata)
-        import rerp_dependencies.*
-        if hed_list_selected == ui_seperatorTagsList
-            return;
-            
-        else
-            this_selected_list = get(hed_list_selected);
-            this_selected_value = this_selected_list.Value;
-            this_selected_str = this_selected_list.String;
-            these_tags = RerpTagList.strip_brackets(this_selected_str(this_selected_value));
-            
-            sep_props = get(ui_seperatorTagsList);
-            sep_string = sep_props.String;
-            
-            if isempty(sep_string)
-                sep_string={};
-            end
-            
-            sep_tag = sort({these_tags{:} sep_string{:}});
-            
-            set(hed_list_selected, 'string',this_selected_str(setdiff(1:length(this_selected_str),this_selected_value)),'value', []);
-            set(ui_seperatorTagsList, 'string', sep_tag,'value', []);
-            
-            try
-                reload_hed;
-                
-            catch e
-                %Didn't work, reset GUI to previous state
-                set(hed_list_selected, 'string',this_selected_str, 'value', []);
-                set(ui_seperatorTagsList, 'string', sep_string,'value', []);
-                rethrow(e);
-            end
-        end
-    end
+%     function cllbk_tag_seperator(src, eventdata)
+%         import rerp_dependencies.*
+%         if hed_list_selected == ui_seperatorTagsList
+%             return;
+%             
+%         else
+%             this_selected_list = get(hed_list_selected);
+%             this_selected_value = this_selected_list.Value;
+%             this_selected_str = this_selected_list.String;
+%             these_tags = RerpTagList.strip_brackets(this_selected_str(this_selected_value));
+%             
+%             sep_props = get(ui_seperatorTagsList);
+%             sep_string = sep_props.String;
+%             
+%             if isempty(sep_string)
+%                 sep_string={};
+%             end
+%             
+%             sep_tag = sort({these_tags{:} sep_string{:}});
+%             
+%             set(hed_list_selected, 'string',this_selected_str(setdiff(1:length(this_selected_str),this_selected_value)),'value', []);
+%             set(ui_seperatorTagsList, 'string', sep_tag,'value', []);
+%             
+%             try
+%                 reload_hed;
+%                 
+%             catch e
+%                 %Didn't work, reset GUI to previous state
+%                 set(hed_list_selected, 'string',this_selected_str, 'value', []);
+%                 set(ui_seperatorTagsList, 'string', sep_string,'value', []);
+%                 rethrow(e);
+%             end
+%         end
+%     end
 
-%DESIGNATE selected tags as continuous tags
-    function cllbk_tag_continuous(src, eventdata)
-        import rerp_dependencies.*
-        if hed_list_selected == ui_continuousTagsList
-            return;
-            
-        else
-            this_selected_list = get(hed_list_selected);
-            this_selected_value = this_selected_list.Value;
-            this_selected_str = this_selected_list.String;
-            these_tags = RerpTagList.strip_brackets(this_selected_str(this_selected_value));
-            
-            cont_props = get(ui_continuousTagsList);
-            cont_string = cont_props.String;
-            
-            if isempty(cont_string)
-                cont_string={};
-            end
-            
-            cont_tag = sort({these_tags{:} cont_string{:}});
-            
-            set(hed_list_selected, 'string',this_selected_str(setdiff(1:length(this_selected_str),this_selected_value)),'value', []);
-            set(ui_continuousTagsList, 'string', cont_tag,'value', []);
-            
-            try
-                reload_hed;
-            catch e
-                %Didn't work, reset GUI to previous state
-                set(hed_list_selected, 'string',this_selected_str, 'value', []);
-                set(ui_continuousTagsList, 'string', cont_string,'value', []);
-                rethrow(e);
-            end
-        end
-    end
+% %DESIGNATE selected tags as continuous tags
+%     function cllbk_tag_continuous(src, eventdata)
+%         import rerp_dependencies.*
+%         if hed_list_selected == ui_continuousTagsList
+%             return;
+%             
+%         else
+%             this_selected_list = get(hed_list_selected);
+%             this_selected_value = this_selected_list.Value;
+%             this_selected_str = this_selected_list.String;
+%             these_tags = RerpTagList.strip_brackets(this_selected_str(this_selected_value));
+%             
+%             cont_props = get(ui_continuousTagsList);
+%             cont_string = cont_props.String;
+%             
+%             if isempty(cont_string)
+%                 cont_string={};
+%             end
+%             
+%             cont_tag = sort({these_tags{:} cont_string{:}});
+%             
+%             set(hed_list_selected, 'string',this_selected_str(setdiff(1:length(this_selected_str),this_selected_value)),'value', []);
+%             set(ui_continuousTagsList, 'string', cont_tag,'value', []);
+%             
+%             try
+%                 reload_hed;
+%             catch e
+%                 %Didn't work, reset GUI to previous state
+%                 set(hed_list_selected, 'string',this_selected_str, 'value', []);
+%                 set(ui_continuousTagsList, 'string', cont_string,'value', []);
+%                 rethrow(e);
+%             end
+%         end
+%     end
 
 %DESIGNATE selected tags as included tags
     function cllbk_tag_include(src, eventdata)
@@ -698,16 +698,25 @@ drawnow;
             
             ls = get(ui_excludeUniqueTagsList);
             s.exclude_tag = ls.String;
-            ls = get(ui_seperatorTagsList);
-            s.seperator_tag = ls.String;
-            ls = get(ui_continuousTagsList);
-            s.continuous_tag = ls.String;
+            
+%             ls = get(ui_seperatorTagsList);
+%             s.seperator_tag = ls.String;
+%             ls = get(ui_continuousTagsList);
+%             s.continuous_tag = ls.String;
             
             %Derive variables based on the GUI lists
             [cp.include_tag, cp.include_ids, cp.context_group] = parse_hed_tree(cp.hed_tree, s);
             
-            set(ui_includeUniqueTagsList, 'String', cp.include_tag, 'Value', []);
-            set(ui_excludeUniqueTagsList, 'String', s.exclude_tag, 'Value', []);
+         
+            set(ui_includeUniqueTagsList, 'String', cp.include_tag, 'Value', []); 
+            if ~isempty(cp.context_group);
+                excluded=setdiff(s.exclude_tag, cp.context_group(:).children.tag);  
+            else
+                excluded=s.exclude_tag;
+            end
+                
+            set(ui_excludeUniqueTagsList, 'String', excluded, 'Value', []);
+            
             
             %Load the HED specification if desired
             if s.enforce_hed_spec
@@ -909,6 +918,9 @@ drawnow;
             [cp.include_event_types, include_event_types_idx, exclude_event_types_idx, include_descriptions_event_types, exclude_descriptions_event_types ] = get_event_type_split(cp.event_types, s.exclude_event_types, cp.event_type_descriptions);
             [type_of_processing, other_type, time_series, message] = get_proc_types;
             
+            exclude = setdiff(s.exclude_tag, s.separator_tag_children);
+            exclude = sort([exclude; s.exclude_separator_tag; s.exclude_continuous_tag]);
+            
             uilist = { ...
                 { 'Style', 'checkbox', 'string', 'Auto-save results','tag', 'autoSaveResultsEnable', 'value', s.rerp_result_autosave,'callback', @cllbk_result_autosave_enable,'tooltipstring','Automatically save results in directory to the right'},...
                 { 'Style', 'edit', 'string', s.autosave_results_path, 'horizontalalignment', 'left', 'fontsize', 8, 'tag','autosavePathLabel','enable', enableAutosaveStatus},...
@@ -950,12 +962,12 @@ drawnow;
                 { 'Style', 'text', 'string', 'Include tags', 'horizontalalignment', 'left','fontweight', 'bold','enable',enableHedStatus, 'tag','includeTagsLabel','tooltipstring','tags which are included in regression'},...
                 { 'Style', 'text', 'string', '*   Exclude tags   *', 'horizontalalignment', 'left','fontweight', 'bold','enable',enableHedStatus, 'tag','excludeTagsLabel','tooltipstring','tags which are excluded from regression'},...
                 { 'Style', 'listbox', 'string', cp.include_tag,'Max',1e7,'tag', 'includeUniqueTagsList','enable',enableHedStatus,'callback',@cllbk_list_select},...
-                { 'Style', 'listbox', 'string', s.exclude_tag,'Max',1e7,'tag', 'excludeUniqueTagsList','enable',enableHedStatus,'callback',@cllbk_list_select},...
+                { 'Style', 'listbox', 'string', exclude,'Max',1e7,'tag', 'excludeUniqueTagsList','enable',enableHedStatus,'callback',@cllbk_list_select},...
                 ...
                 { 'Style', 'text', 'string', '{   Separator tags   }', 'horizontalalignment', 'left','fontweight', 'bold','enable', enableHedStatus, 'tag','seperatorTagsLabel','tooltipstring','tags which separate children into seperate variable groups'},...
                 { 'Style', 'text', 'string', '[   Continuous tags   ]', 'horizontalalignment', 'left','fontweight', 'bold','enable', enableHedStatus, 'tag','continuousTagsLabel','tooltipstring','tags which have an associated magnitude (e.g. Stimulus/Visual/Luminance/0.25)'},...
-                { 'Style', 'listbox', 'Max',1e7, 'string', s.seperator_tag,'tag', 'seperatorTagsList','enable',enableHedStatus,'callback',@cllbk_list_select},...
-                { 'Style', 'listbox', 'Max',1e7, 'string', s.continuous_tag,'tag', 'continuousTagsList','enable',enableHedStatus,'callback',@cllbk_list_select},...
+                { 'Style', 'listbox', 'Max',1e7, 'string', setdiff(s.separator_tag, s.exclude_separator_tag),'tag', 'seperatorTagsList','enable',enableHedStatus,'callback',@cllbk_list_select},...
+                { 'Style', 'listbox', 'Max',1e7, 'string', setdiff(s.continuous_tag, s.exclude_continuous_tag),'tag', 'continuousTagsList','enable',enableHedStatus,'callback',@cllbk_list_select},...
                 ...
                 { 'Style', 'pushbutton', 'string', 'Include', 'horizontalalignment', 'left','tag', 'tagIncludeButton','enable',enableHedStatus, 'callback', @cllbk_tag_include},...
                 { 'Style', 'pushbutton', 'string', 'Exclude', 'horizontalalignment', 'left','tag', 'tagExcludeButton','enable',enableHedStatus,'callback',@cllbk_tag_exclude},...
@@ -987,8 +999,6 @@ drawnow;
                 'title', title);
             
             gui_handle = gcf;
-            
-            
             
             %Bring relevent ui handles into scope.
             ui_enterExcludeChans = findobj([all_handlers{:}],'flat', 'tag','enterExcludeChans');

@@ -8,8 +8,8 @@ import rerp_dependencies.*
 tags = hed_tree.uniqueTag;
 ids = hed_tree.originalHedStringId;
 
-disp('parse_hed_tree: removing exclude/separator/continuous tags');
-%Remove exclude_tags, separator_tags
+disp('parse_hed_tree: removing exclude/separator tags');
+%Remove exclude_tags
 k=1;
 remove=[]; 
 for i = 1:length(tags)
@@ -17,6 +17,13 @@ for i = 1:length(tags)
             
     for j=1:length(s.exclude_tag)
         if strcmpi(this_tag, s.exclude_tag{j})
+            remove(k) = i;
+            k=k+1;
+        end
+    end
+    
+    for j=1:length(s.exclude_continuous_tag)
+        if strcmpi(this_tag, s.exclude_continuous_tag{j})
             remove(k) = i;
             k=k+1;
         end
@@ -36,12 +43,12 @@ ids = ids(idx);
 tags = tags(idx);
 
 %Form context groups
-[context_group, tags, ids] = makeContextGroup(hed_tree, tags, ids, s.separator_tag);
+[context_group, tags, ids] = makeContextGroup(hed_tree, tags, ids, s);
 
 %Remove categorical redundant tags
 disp('parse_hed_tree: removing redundant tags');
 [tags, ids, marked_tags, marked_ids] = remove_redundant_tags(tags, ids, {}, {});
-
+ 
 tags = {tags{:} marked_tags{:}};
 ids = {ids{:} marked_ids{:}};
 disp('parse_hed_tree: done');
@@ -97,12 +104,14 @@ end
 end
 
 %Create context groups structure: all variables which are concurrently
-%tagged with separator_tags will be collected into separate hierarchy
+%tagged with separator tags will be collected into separate hierarchy
 %and saved as a hedTree in the context_group struct.
-function [context_group, tags, ids] = makeContextGroup(hed_tree, tags, ids, separator_tag)
+function [context_group, tags, ids] = makeContextGroup(hed_tree, tags, ids, s)
 import rerp_dependencies.*
 
-context_group=cell(size(separator_tag));
+separator_tag=setdiff(s.separator_tag, s.exclude_separator_tag);
+context_group=struct([]) ;
+
 remove=[];
 k=1;
 rem_tags = {};
@@ -146,9 +155,9 @@ for i=1:length(separator_tag)
             hedtag_set = union(hedtag_set, these_children(n).hed_tree.uniqueTag);
         end
         
-        context_group{i}.affected_tags=sort(hedtag_set);
-        context_group{i}.children=these_children;
-        context_group{i}.name=this_separator_tag;
+        context_group(i).affected_tags=sort(hedtag_set);
+        context_group(i).children=these_children;
+        context_group(i).name=this_separator_tag;
     end
 end
 
@@ -160,7 +169,7 @@ sub_tags_idx = setdiff(1:length(tags), rem_idx);
 sub_tags = tags(sub_tags_idx);
 
 for i=1:length(context_group)
-    this_group = context_group{i};
+    this_group = context_group(i);
     
     if ~isempty(this_group)
         [stripped_hit_tags, this_idx, ~] = intersect(RerpTagList.strip_affected_brackets(sub_tags), this_group.affected_tags);
@@ -169,13 +178,13 @@ for i=1:length(context_group)
         %Find the affected ids which are included for each child
         for j=1:length(this_group.children)
             this_child = this_group.children(j);
-            [context_group{i}.children(j).included_tag, incld_idx] = intersect(this_child.hed_tree.uniqueTag, stripped_hit_tags);
+            [context_group(i).children(j).included_tag, incld_idx] = intersect(this_child.hed_tree.uniqueTag, stripped_hit_tags);
             
             % Find the original hed string ids associated with the tags which
             % fall under this child (separated according to tag)
-            for k=1:length(context_group{i}.children(j).included_tag)
+            for k=1:length(context_group(i).children(j).included_tag)
                 included_tag_id = this_child.hed_tree.originalHedStringId{incld_idx(k)};
-                context_group{i}.children(j).included_ids{k} = sort(this_child.ids(included_tag_id));
+                context_group(i).children(j).included_ids{k} = sort(this_child.ids(included_tag_id));
             end
         end
         
