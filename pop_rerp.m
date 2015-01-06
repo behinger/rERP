@@ -27,6 +27,7 @@
 %           
 function [rerp_result, EEGOUT, com] = pop_rerp(EEG, rerp_profile, varargin)
 import rerp_dependencies.*
+rerp_result=[]; 
 
 % display help if not enough arguments
 % ------------------------------------

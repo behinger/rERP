@@ -522,10 +522,12 @@ drawnow;
                 include_string={};
             end
             
-            include_tag = sort({these_tags{:} include_string{:}});
+            include_tag = sort([these_tags; include_string]);
+            s.exclude_separator_tag=intersect(include_tag, s.separator_tag);
+            s.exclude_continuous_tag=intersect(include_tag, s.continuous_tag); 
             
             set(hed_list_selected, 'string',this_selected_str(setdiff(1:length(this_selected_str),this_selected_value)),'value', []);
-            set(ui_includeUniqueTagsList, 'string', include_tag,'value', []);
+            set(ui_includeUniqueTagsList, 'string', include_tag, 'value', []);
             try
                 reload_hed;
                 
@@ -698,16 +700,10 @@ drawnow;
             
             ls = get(ui_excludeUniqueTagsList);
             s.exclude_tag = ls.String;
-            
-%             ls = get(ui_seperatorTagsList);
-%             s.seperator_tag = ls.String;
-%             ls = get(ui_continuousTagsList);
-%             s.continuous_tag = ls.String;
-            
+                  
             %Derive variables based on the GUI lists
-            [cp.include_tag, cp.include_ids, cp.context_group] = parse_hed_tree(cp.hed_tree, s);
+            [cp.include_tag, cp.include_ids, cp.context_group] = parse_hed_tree(cp, s);
             
-         
             set(ui_includeUniqueTagsList, 'String', cp.include_tag, 'Value', []); 
             if ~isempty(cp.context_group);
                 excluded=setdiff(s.exclude_tag, cp.context_group(:).children.tag);  
@@ -716,7 +712,6 @@ drawnow;
             end
                 
             set(ui_excludeUniqueTagsList, 'String', excluded, 'Value', []);
-            
             
             %Load the HED specification if desired
             if s.enforce_hed_spec
@@ -742,7 +737,7 @@ drawnow;
         end
     end
 
-%RETRUN hed version from hedManager class
+%RETURN hed version from hedManager class
     function hed_version = get_hed_version
         hed_version = '< not found >';
         if ~isempty(current_included_hed_tree)
@@ -919,6 +914,8 @@ drawnow;
             [type_of_processing, other_type, time_series, message] = get_proc_types;
             
             exclude = setdiff(s.exclude_tag, s.separator_tag_children);
+            separator_intermediate_tag=cellfun(@(x) [x '/|'], s.separator_tag, 'uniformoutput', false);  
+            exclude = setdiff(exclude, [s.separator_tag; separator_intermediate_tag; s.continuous_tag]);
             exclude = sort([exclude; s.exclude_separator_tag; s.exclude_continuous_tag]);
             
             uilist = { ...
@@ -966,8 +963,8 @@ drawnow;
                 ...
                 { 'Style', 'text', 'string', '{   Separator tags   }', 'horizontalalignment', 'left','fontweight', 'bold','enable', enableHedStatus, 'tag','seperatorTagsLabel','tooltipstring','tags which separate children into seperate variable groups'},...
                 { 'Style', 'text', 'string', '[   Continuous tags   ]', 'horizontalalignment', 'left','fontweight', 'bold','enable', enableHedStatus, 'tag','continuousTagsLabel','tooltipstring','tags which have an associated magnitude (e.g. Stimulus/Visual/Luminance/0.25)'},...
-                { 'Style', 'listbox', 'Max',1e7, 'string', setdiff(s.separator_tag, s.exclude_separator_tag),'tag', 'seperatorTagsList','enable',enableHedStatus,'callback',@cllbk_list_select},...
-                { 'Style', 'listbox', 'Max',1e7, 'string', setdiff(s.continuous_tag, s.exclude_continuous_tag),'tag', 'continuousTagsList','enable',enableHedStatus,'callback',@cllbk_list_select},...
+                { 'Style', 'listbox', 'Max',1e7, 'string', cp.include_separator_tag, 'tag', 'seperatorTagsList','enable',enableHedStatus,'callback',@cllbk_list_select},...
+                { 'Style', 'listbox', 'Max',1e7, 'string', cp.include_continuous_tag, 'tag', 'continuousTagsList','enable',enableHedStatus,'callback',@cllbk_list_select},...
                 ...
                 { 'Style', 'pushbutton', 'string', 'Include', 'horizontalalignment', 'left','tag', 'tagIncludeButton','enable',enableHedStatus, 'callback', @cllbk_tag_include},...
                 { 'Style', 'pushbutton', 'string', 'Exclude', 'horizontalalignment', 'left','tag', 'tagExcludeButton','enable',enableHedStatus,'callback',@cllbk_tag_exclude},...

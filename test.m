@@ -17,6 +17,8 @@ cp=RerpProfile(EEG);
 s=cp.settings; 
 cp.saveRerpProfile('path', '/Users/MattB/Documents/Code/eeglab/plugins/rERP/profiles/test.rerp_profile');
 %%
+clear cp;
+clear RerpProfile;
 cp = RerpProfile.loadRerpProfile('path', '/Users/MattB/Documents/Code/eeglab/plugins/rERP/profiles/test.rerp_profile');
 s=cp.settings;
 rerp_result = pop_rerp(EEG, cp, 'force_gui', 1);

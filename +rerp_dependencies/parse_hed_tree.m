@@ -2,8 +2,10 @@
 %intermediate nodes which have only one child. Used in
 %heirarchical regression. Excludes "exclude_tags" and
 %"separator_tags", forming context groups based on separator_tags.
-function [tags, ids, context_group] = parse_hed_tree(hed_tree, s)
+function [tags, ids, context_group] = parse_hed_tree(cp, s)
 import rerp_dependencies.*
+
+hed_tree=cp.hed_tree; 
 
 tags = hed_tree.uniqueTag;
 ids = hed_tree.originalHedStringId;
@@ -12,35 +14,12 @@ disp('parse_hed_tree: removing exclude/separator tags');
 %Remove exclude_tags
 k=1;
 remove=[]; 
-for i = 1:length(tags)
-    this_tag = tags{i};  
-            
-    for j=1:length(s.exclude_tag)
-        if strcmpi(this_tag, s.exclude_tag{j})
-            remove(k) = i;
-            k=k+1;
-        end
-    end
-    
-    for j=1:length(s.exclude_continuous_tag)
-        if strcmpi(this_tag, s.exclude_continuous_tag{j})
-            remove(k) = i;
-            k=k+1;
-        end
-    end
-    
-    for j=1:length(s.separator_tag)
-        if strcmpi(this_tag, s.separator_tag{j})
-            remove(k) = i;
-            k=k+1;
-        end
-    end
-end
+extended_sep_tags=[s.separator_tag; cellfun(@(x) [x '/|'], s.separator_tag, 'uniformoutput', false); s.separator_tag_children];
+rem_tags=[s.exclude_tag; s.exclude_continuous_tag; extended_sep_tags]; 
 
-%Remove excluded, continuous and separator tags from the list
-idx = setdiff(1:length(ids), unique(remove));
+[tags, idx]=setdiff(tags, rem_tags); 
 ids = ids(idx);
-tags = tags(idx);
+
 
 %Form context groups
 [context_group, tags, ids] = makeContextGroup(hed_tree, tags, ids, s);

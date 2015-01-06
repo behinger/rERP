@@ -68,5 +68,5 @@ for i=1:length(continuous_tags)
 end
 
 %get the seperator tags
-separator_tags = unique(all_separator_tags);
-separator_tag_children=sort(unique(all_separator_tag_children)); 
+separator_tags = sort(unique(all_separator_tags))';
+separator_tag_children=sort(unique(all_separator_tag_children))'; 
