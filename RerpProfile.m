@@ -32,11 +32,13 @@ classdef RerpProfile < matlab.mixin.Copyable
         include_comps=[];        % Component numbers to include in regression
         
         these_events=[];        % Object of class event stores all event information for dataset
-        event_types=[];         % Unique event types in dataset 
+        event_types={};         % Unique event types in dataset 
         
         num_event_types=[];        % Number of times each event occurs
-        event_type_descriptions=[];        % Description of each event type (must enter this manually)
-        include_event_types=[];        % Event types to include in regression
+        event_type_descriptions={};        % Description of each event type (must enter this manually)
+        include_event_types={};        % Event types to include in regression
+        include_separator_tag={};
+        include_continuous_tag={};
         
         variable_artifact_indexes=[];        % Artifact indexes to use when settings.artifact_variable_enable==1
         artifact_variable_name='';        % Name of the variable used as source for variable_artifact_indexes
@@ -192,7 +194,7 @@ classdef RerpProfile < matlab.mixin.Copyable
                 end
                 
                 fprintf('RerpProfile: parsing hierarchy\n');
-                [obj.include_tag, obj.include_ids, obj.context_group] = parse_hed_tree(obj, obj.settings);
+                parse_hed_tree(obj, s);
                 
                 possible_excluded = intersect(obj.event_types, s.exclude_event_types);
                 obj.include_event_types = setdiff(obj.event_types, possible_excluded);
@@ -456,8 +458,9 @@ classdef RerpProfile < matlab.mixin.Copyable
             %Get path to rERP toolbox
             %   Usage:
             %       path=RerpProfile.rerp_path;
-            rerp_path_components=regexp(strtrim(mfilename('fullpath')),'[\/\\]','split');
-            path = [fullfile(rerp_path_components{1:(end-1)})];
+            rerp_path=mfilename('fullpath');
+            rerp_path=regexp(rerp_path, ['^(.*)' filesep '.*$'], 'tokens');
+            path=rerp_path{:}{:};
         end
         
         function rerp_profile = loadRerpProfile(varargin)

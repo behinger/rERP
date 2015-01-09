@@ -510,21 +510,29 @@ drawnow;
             return;
             
         else
+            %Get the selected tags
             this_selected_list = get(hed_list_selected);
             this_selected_value = this_selected_list.Value;
             this_selected_str = this_selected_list.String;
             these_tags = RerpTagList.strip_brackets(this_selected_str(this_selected_value));
             
+            %Get continous and sep tags
+            these_sep_tags = intersect(these_tags, s.separator_tag);
+            these_con_tags = intersect(these_tags, s.continuous_tag);
+            cp.include_separator_tag=[cp.include_separator_tag; these_sep_tags];
+            cp.include_continuous_tag=[cp.include_continuous_tag; these_con_tags];
+            s.exclude_separator_tag=setdiff(cp.include_separator_tag, s.separator_tag);
+            s.exclude_continuous_tag=setdiff(cp.include_continuous_tag, s.continuous_tag);
+            
+            %Get already included tags
             include_props = get(ui_includeUniqueTagsList);
             include_string = RerpTagList.strip_brackets(include_props.String);
-            
+
             if isempty(include_string)
                 include_string={};
             end
             
             include_tag = sort([these_tags; include_string]);
-            s.exclude_separator_tag=intersect(include_tag, s.separator_tag);
-            s.exclude_continuous_tag=intersect(include_tag, s.continuous_tag); 
             
             set(hed_list_selected, 'string',this_selected_str(setdiff(1:length(this_selected_str),this_selected_value)),'value', []);
             set(ui_includeUniqueTagsList, 'string', include_tag, 'value', []);
@@ -702,11 +710,15 @@ drawnow;
             s.exclude_tag = ls.String;
                   
             %Derive variables based on the GUI lists
-            [cp.include_tag, cp.include_ids, cp.context_group] = parse_hed_tree(cp, s);
+            parse_hed_tree(cp, s);
             
+            marked_sep_tags = cellfun(@(x) ['{ ' x ' }'], cp.include_separator_tag,'uniformoutput',false); 
+            cp.include_tag=[cp.include_tag; marked_sep_tags];
+            cp.include_ids=[cp.include_ids; repmat({'s'}, [length(cp.include_separator_tag) 1])];
+                
             set(ui_includeUniqueTagsList, 'String', cp.include_tag, 'Value', []); 
             if ~isempty(cp.context_group);
-                excluded=setdiff(s.exclude_tag, cp.context_group(:).children.tag);  
+                excluded=setdiff(s.exclude_tag, {cp.context_group(:).children.tag});  
             else
                 excluded=s.exclude_tag;
             end

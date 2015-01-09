@@ -1,4 +1,7 @@
 function [ continuous_var, new_all_tags, continuous_tags, separator_tags, separator_tag_children ] = make_continuous_var( events )
+all_separator_tags={};
+all_separator_tag_children={};
+
 separated =  strtrim(regexp(events.hedTag, '[;,]', 'split'));
 
 %Identify continuous tags by the # tag

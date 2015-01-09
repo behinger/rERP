@@ -159,10 +159,10 @@ classdef RerpTagList
             context_affected_tags = RerpTagList.strip_label(RerpTagList.strip_brackets(RerpTagList.get_affected(tags)));
             context_group = rerp_profile.context_group;
             for i=1:length(context_group)
-                this_group = context_group{i};
+                this_group = context_group(i);
                 if ~isempty(this_group)
                     included_affected = intersect(this_group.affected_tags, context_affected_tags(:));
-                    rerp_profile.context_group{i}.included_affected = included_affected;
+                    rerp_profile.context_group(i).included_affected = included_affected;
 
                     nchld = length(this_group.children);
                     ncontextchldrn = ncontextchldrn + nchld;
