@@ -17,12 +17,15 @@ clear cp;
 clear RerpProfile;
 cp=RerpProfile(EEG);
 s=cp.settings; 
-cp.saveRerpProfile('path', fullfile(rerp_path,'profiles','test.rerp_profile'));
+cp.saveRerpProfile('path', fullfile(RerpProfile.rerp_path,'profiles','test.rerp_profile'));
 
 %%
 clear cp;
 clear RerpProfile;
-cp = RerpProfile.loadRerpProfile('path', fullfile(rerp_path, 'profiles','test.rerp_profile'));
+cp = RerpProfile.loadRerpProfile('path', fullfile(RerpProfile.rerp_path, 'profiles','test.rerp_profile'));
 s=cp.settings;
-rerp_result = pop_rerp(EEG, cp, 'force_gui', 1);
+%rerp_result = pop_rerp(EEG, cp, 'force_gui', 1);
+rerp_result = pop_rerp(EEG, cp);
+%%
+
 %EEG=pop_loadset(fullfile(dropbox_path,'SCCN','RSVP', 'Gaby Data', 'GabyData2', 'S02_contData_cudaica.set'));

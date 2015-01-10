@@ -35,8 +35,8 @@ g3 = [16.67 16.66 16.67];
 g4 = [12.5 12.5 12.5 12.5];
 g5 = [10 10 10 10 10];
 
-geomhoriz    = { [17 22 11]  [17 11 11 11]     [17 11 11 11]  [17 8 17 8]    [17 16 17] 1      g2 g2 g2   g2 g2   g2 g2 g2 g2 g4 1 1     [15 10 12.5 12.5] [15 10 12.5 12.5] [15 10 12.5 12.5] };
-geomvert = [1 1      1 1       1 1        1 5 1    1 1 1 5 1 5 1 1 1       1 1 2 ];
+geomhoriz    = { [17 22 11]  [17 11 11 11]     [17 11 11 11]  [17 8 17 8]    [17 16 17] 1      g2 g2 g2   g2 g2   g2 g2 g2 1 1     [15 10 12.5 12.5] [15 10 12.5 12.5] [15 10 12.5 12.5] };
+geomvert = [1 1      1 1       1 1        1 5 1    1 1   1 8 1 1 1       1 1 2 ];
 
 title = ['RerpProfile: ' cp.name];
 
@@ -54,6 +54,7 @@ title = ['RerpProfile: ' cp.name];
     enableErspStatus] = deal([]);
 
 make_gui;
+reload_hed; 
 uiwait(gui_handle);
 cp.settings=s;
 drawnow;
@@ -519,10 +520,10 @@ drawnow;
             %Get continous and sep tags
             these_sep_tags = intersect(these_tags, s.separator_tag);
             these_con_tags = intersect(these_tags, s.continuous_tag);
-            cp.include_separator_tag=[cp.include_separator_tag; these_sep_tags];
-            cp.include_continuous_tag=[cp.include_continuous_tag; these_con_tags];
-            s.exclude_separator_tag=setdiff(cp.include_separator_tag, s.separator_tag);
-            s.exclude_continuous_tag=setdiff(cp.include_continuous_tag, s.continuous_tag);
+            cp.include_separator_tag=sort([cp.include_separator_tag; these_sep_tags]);
+            cp.include_continuous_tag=sort([cp.include_continuous_tag; these_con_tags]);
+            s.exclude_separator_tag=sort(setdiff(cp.include_separator_tag, s.separator_tag));
+            s.exclude_continuous_tag=sort(setdiff(cp.include_continuous_tag, s.continuous_tag));
             
             %Get already included tags
             include_props = get(ui_includeUniqueTagsList);
@@ -560,6 +561,15 @@ drawnow;
             this_selected_str = this_selected_list.String;
             these_tags = RerpTagList.strip_brackets(this_selected_str(this_selected_value));
             
+            these_sep_tags = intersect(these_tags, s.separator_tag);
+            these_con_tags = intersect(these_tags, s.continuous_tag);
+            
+            s.exclude_separator_tag=sort([these_sep_tags; s.exclude_separator_tag]);
+            s.exclude_continuous_tag=sort([these_con_tags; s.exclude_continuous_tag]);
+            
+            cp.include_separator_tag=sort(setdiff(s.separator_tag, s.exclude_separator_tag));
+            cp.include_continuous_tag=sort(setdiff(s.continuous_tag, s.exclude_continuous_tag));
+   
             exclude_props = get(ui_excludeUniqueTagsList);
             exclude_string = exclude_props.String;
             
@@ -713,8 +723,8 @@ drawnow;
             parse_hed_tree(cp, s);
             
             marked_sep_tags = cellfun(@(x) ['{ ' x ' }'], cp.include_separator_tag,'uniformoutput',false); 
-            cp.include_tag=[cp.include_tag; marked_sep_tags];
-            cp.include_ids=[cp.include_ids; repmat({'s'}, [length(cp.include_separator_tag) 1])];
+            cp.include_tag=[cp.include_tag(:); marked_sep_tags(:)];
+            cp.include_ids=[cp.include_ids(:); repmat({'s'}, [length(cp.include_separator_tag) 1])];
                 
             set(ui_includeUniqueTagsList, 'String', cp.include_tag, 'Value', []); 
             if ~isempty(cp.context_group);
@@ -823,18 +833,18 @@ drawnow;
         category_ns = ceil(continuous_epoch_length*cp.sample_rate);
         continuous_ns = ceil(category_epoch_length*cp.sample_rate);
         
+        cp.settings=s; 
         if s.hed_enable
             [ncontinvars, ncatvars, ncontextvars, ncontextchldrn] = RerpTagList.cntVarsParams(cp);
-            parameter_cnt = ncontinvars*continuous_ns + (ncatvars + ncontextvars)*category_ns;
+            parameter_cnt = (ncatvars + ncontextvars(1))*category_ns + (ncontinvars +ncontextvars(2))*continuous_ns; 
         else
-            
             parameter_cnt = length(cp.included_event_types)*category_ns;
         end
         
         mess = [mess num2str(parameter_cnt) ' / ' num2str(cp.pnts) ')'];
         
         if s.hed_enable
-            mess = [mess ' - (# seperator tag children / # tags spawned by children) : (' num2str(ncontextchldrn) ' / ' num2str(ncontextvars) ')'];
+            mess = [mess ' - (# seperator tag children / # normal and continuous tags created) : (' num2str(ncontextchldrn) ' / ' num2str(ncontextvars) ')'];
         end
         
         set(ui_parameterCountLabel, 'string', mess);
@@ -973,15 +983,8 @@ drawnow;
                 { 'Style', 'listbox', 'string', cp.include_tag,'Max',1e7,'tag', 'includeUniqueTagsList','enable',enableHedStatus,'callback',@cllbk_list_select},...
                 { 'Style', 'listbox', 'string', exclude,'Max',1e7,'tag', 'excludeUniqueTagsList','enable',enableHedStatus,'callback',@cllbk_list_select},...
                 ...
-                { 'Style', 'text', 'string', '{   Separator tags   }', 'horizontalalignment', 'left','fontweight', 'bold','enable', enableHedStatus, 'tag','seperatorTagsLabel','tooltipstring','tags which separate children into seperate variable groups'},...
-                { 'Style', 'text', 'string', '[   Continuous tags   ]', 'horizontalalignment', 'left','fontweight', 'bold','enable', enableHedStatus, 'tag','continuousTagsLabel','tooltipstring','tags which have an associated magnitude (e.g. Stimulus/Visual/Luminance/0.25)'},...
-                { 'Style', 'listbox', 'Max',1e7, 'string', cp.include_separator_tag, 'tag', 'seperatorTagsList','enable',enableHedStatus,'callback',@cllbk_list_select},...
-                { 'Style', 'listbox', 'Max',1e7, 'string', cp.include_continuous_tag, 'tag', 'continuousTagsList','enable',enableHedStatus,'callback',@cllbk_list_select},...
-                ...
                 { 'Style', 'pushbutton', 'string', 'Include', 'horizontalalignment', 'left','tag', 'tagIncludeButton','enable',enableHedStatus, 'callback', @cllbk_tag_include},...
                 { 'Style', 'pushbutton', 'string', 'Exclude', 'horizontalalignment', 'left','tag', 'tagExcludeButton','enable',enableHedStatus,'callback',@cllbk_tag_exclude},...
-                { 'Style', 'pushbutton', 'string', 'Seperator', 'horizontalalignment', 'left','tag', 'tagSeperatorButton','enable',enableHedStatus,'callback',@cllbk_tag_seperator},...
-                { 'Style', 'pushbutton', 'string', 'Continuous', 'horizontalalignment', 'left','tag', 'tagContinuousButton','enable',enableHedStatus,'callback', @cllbk_tag_continuous},...
                 { 'Style', 'text','string','parameter count: <unknown>', 'tag','parameterCountLabel'},...
                 {},...
                 ...%Regularization options

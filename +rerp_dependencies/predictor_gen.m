@@ -43,33 +43,33 @@ continuous_epoch_length = s.continuous_epoch_boundaries(2) - s.continuous_epoch_
 %Number of samples per epoch
 category_ns = ceil(category_epoch_length*p.sample_rate);
 continuous_ns = ceil(continuous_epoch_length*p.sample_rate);
-            
+
 indexes = cell(0,0);
 
 if s.hed_enable
     [ncontinvars, ncatvars, ncontextvars] = RerpTagList.cntVarsParams(p);
-    parameter_cnt = ncontinvars*continuous_ns + (ncatvars + ncontextvars)*category_ns;
+    parameter_cnt = (ncontinvars + ncontextvars(2))*continuous_ns + (ncatvars + ncontextvars(1))*category_ns;
     predictor_pad = max(continuous_ns, category_ns);
     predictor_shift = min(min(cat_t0, con_t0),0);
     
-    [ii, jj, value] = deal(cell(1, ncontinvars + ncatvars + ncontextvars));
+    [ii, jj, value] = deal(cell(1, ncontinvars + ncatvars + sum(ncontextvars)));
     cell_idx = 1;
     
-    cat_tags = RerpTagList.strip_subtags(p.include_tag);
-    [~, idx] = intersect(p.hed_tree.uniqueTag, cat_tags);
-    cat_ids = p.hed_tree.originalHedStringId(idx);
+    not_affected_tags = RerpTagList.strip_subtags(p.include_tag);
+    continuous_tag=intersect(not_affected_tags, rerp_profile.include_continuous_tag);
+    cat_tag=setdiff(not_affected_tags, continuous_tag);
     
-    contin_var = p.continuous_var;
-    context_grp = p.context_group;
-     
+    [~, cat_idx] = intersect(p.hed_tree.uniqueTag, cat_tag);
+    cat_ids = p.hed_tree.originalHedStringId(cat_idx);
     
+    j_end_idx=0; 
     %Enter categorical variables
     for j=1:length(cat_ids)
         this_cat_id =  cat_ids{j};
-        j_start_idx = (cell_idx-1)*category_ns + 1;
+        j_start_idx = j_end_idx + 1;
         j_end_idx = j_start_idx + category_ns - 1;
-        m=0;
         
+        m=0;
         j_vec=repmat(j_start_idx:j_end_idx,1,length(this_cat_id));
         i_vec=zeros(1,length(this_cat_id)*category_ns);
         indexes{end+1}=j_start_idx:j_end_idx;
@@ -82,7 +82,7 @@ if s.hed_enable
             i_start_idx = m*category_ns+1;
             i_end_idx = i_start_idx + category_ns -1;
             
-            i_vec(i_start_idx:i_end_idx) = (this_latency):(this_latency+category_ns-1);   
+            i_vec(i_start_idx:i_end_idx) = (this_latency):(this_latency+category_ns-1);
             m=m+1;
         end
         
@@ -93,83 +93,106 @@ if s.hed_enable
     end
     
     %Enter continuous variables
-    for j=1:length(contin_var)
-        this_contin_id =  contin_var{j}.ids;
-        this_contin_val = contin_var{j}.val;
-        
-        j_start_idx = (cell_idx-1)*continuous_ns + 1;
-        j_end_idx = j_start_idx + continuous_ns - 1;
-        m=0;
-        
-        j_vec=repmat(j_start_idx:j_end_idx,1,length(this_contin_id));
-        i_vec=zeros(1,length(this_contin_id)*continuous_ns);
-        indexes{end+1}=j_start_idx:j_end_idx;
-        value_vec = zeros(1, length(i_vec));
-        
-        for i=1:length(this_contin_id)
-            %The id represents the latency of the event that generated the
-            %tag
-            this_latency = p.these_events.latencyInFrame(this_contin_id(i));
-            i_start_idx = m*continuous_ns+1;
-            i_end_idx = i_start_idx + continuous_ns -1;
+    for j=1:length(p.continuous_var)
+        if ~isempty(intersect(p.continuous_var(j).name, continuous_tag));          
+            this_contin_val = p.continuous_var(j).val;
+            this_contin_id =  p.continuous_var(j).ids;
+            j_start_idx = j_end_idx + 1;
+            j_end_idx = j_start_idx + continuous_ns - 1;
             
-            i_vec(i_start_idx:i_end_idx) = (this_latency):(this_latency+continuous_ns-1);
-            value_vec(i_start_idx:i_end_idx) = ones(1, continuous_ns)*this_contin_val(i);
-            m=m+1;
+            m=0;
+            j_vec=repmat(j_start_idx:j_end_idx,1,length(this_contin_id));
+            i_vec=zeros(1,length(this_contin_id)*continuous_ns);
+            indexes{end+1}=j_start_idx:j_end_idx;
+            value_vec = zeros(1, length(i_vec));
+            
+            for i=1:length(this_contin_id)
+                %The id represents the latency of the event that generated the
+                %tag
+                this_latency = p.these_events.latencyInFrame(this_contin_id(i));
+                i_start_idx = m*continuous_ns+1;
+                i_end_idx = i_start_idx + continuous_ns -1;
+                
+                i_vec(i_start_idx:i_end_idx) = (this_latency):(this_latency+continuous_ns-1);
+                value_vec(i_start_idx:i_end_idx) = ones(1, continuous_ns)*this_contin_val(i);
+                m=m+1;
+            end
+            
+            ii{cell_idx} = i_vec+con_t0;
+            jj{cell_idx} = j_vec;
+            value{cell_idx} = value_vec;
+            cell_idx = cell_idx +1;
         end
-        
-        ii{cell_idx} = i_vec+con_t0;
-        jj{cell_idx} = j_vec;
-        value{cell_idx} = value_vec;
-        cell_idx = cell_idx +1;
     end
     
     %Enter context group variables
-    for j=1:length(context_grp)
-        this_group =  context_grp{j};
-        for k=1:length(this_group.children)
-            this_child = this_group.children(k);
-            for x=1:length(this_child.included_ids)
-                this_included_id = this_child.included_ids{x};
-                
-                j_start_idx = (cell_idx-1)*category_ns + 1;
-                j_end_idx = j_start_idx + category_ns - 1;
-
-                j_vec=repmat(j_start_idx:j_end_idx,1,length(this_included_id));
-                i_vec=zeros(1,length(this_included_id)*category_ns);
-                indexes{end+1}=j_start_idx:j_end_idx;
-                value_vec = ones(1, length(i_vec));
-                m=0;
-                
-                for i=1:length(this_included_id)
-                    %The id represents the latency of the event that generated the
-                    %tag
-                    this_latency = p.these_events.latencyInFrame(this_included_id(i));
-                    i_start_idx = m*category_ns+1;
-                    i_end_idx = i_start_idx + category_ns -1;
-
-                    i_vec(i_start_idx:i_end_idx) = (this_latency):(this_latency+category_ns-1);
-                    m=m+1;
+    for j=1:length(p.context_group)
+        this_group=p.context_group(j);
+        if ~isempty(intersect(this_group.name, p.include_separator_tag));
+            for k=1:length(this_group.children)
+                this_child = this_group.children(k);
+                for x=1:length(this_child.included_ids)
+                    this_included_id = this_child.included_ids{x};
+                    this_included_tag = this_child.included_tag{x};
+                    is_continuous_tag=~isempty(intersect(this_included_tag, p.settings.continuous_tag));
+                    
+                    %Check if this tag is a continuous or categorical
+                    if is_continuous_tag
+                        ns=continuous_ns;
+                        [~, this_continuous_idx] = intersect(this_included_tag, {p.continuous_var(:).name});
+                        this_contin_val = p.continuous_var(this_continuous_idx).val;
+                        this_contin_id =  p.continuous_var(this_continuous_idx).ids;
+                        [~, incl_val_idx] = intersect(this_contin_id, this_included_id);
+                        t0=con_t0; 
+                        assert(length(incl_val_idx)==length(this_included_id),...
+                            'predictor_gen: problem matching up continuous ids for context group'); 
+                    else
+                        ns=category_ns;
+                        t0=cat_t0;
+                    end
+                    
+                    j_start_idx = j_end_idx + 1;
+                    j_end_idx = j_start_idx + ns - 1;
+                    
+                    j_vec=repmat(j_start_idx:j_end_idx,1,length(this_included_id));
+                    i_vec=zeros(1,length(this_included_id)*ns);
+                    indexes{end+1}=j_start_idx:j_end_idx;
+                    value_vec = ones(1, length(i_vec));
+                           
+                    m=0;
+                    for i=1:length(this_included_id)
+                        %The id represents the latency of the event that generated the
+                        %tag
+                        this_latency = p.these_events.latencyInFrame(this_included_id(i));
+                        i_start_idx = m*ns+1;
+                        i_end_idx = i_start_idx + ns -1;
+                        i_vec(i_start_idx:i_end_idx) = ((this_latency):(this_latency+ns-1)) + t0;
+                        
+                        if is_continuous_tag
+                            value_vec(i_start_idx:i_end_idx) = repmat(this_contin_val(incl_val_idx(i)), 1, ns); 
+                        end
+                        
+                        m=m+1;
+                    end
+                    
+                    ii{cell_idx} = i_vec;
+                    jj{cell_idx} = j_vec;
+                    value{cell_idx} = value_vec;
+                    cell_idx = cell_idx +1;
                 end
-            
-                ii{cell_idx} = i_vec+cat_t0;
-                jj{cell_idx} = j_vec;
-                value{cell_idx} = value_vec;
-                cell_idx = cell_idx +1;
             end
         end
     end
-    
 else
     
     % Predictor formed on event types
     ns = category_ns;
     numvars = length(p.include_event_types);
     [~, include_idx] = intersect(p.event_types, p.include_event_types);
-    num_event_types = p.num_event_types(sort(include_idx)); 
+    num_event_types = p.num_event_types(sort(include_idx));
     parameter_cnt = ns*numvars;
     
-    predictor_shift = min(cat_t0,0); 
+    predictor_shift = min(cat_t0,0);
     predictor_pad = ns;
     
     [ii, jj, value] = deal(cell(1,numvars));
@@ -211,17 +234,17 @@ n=cell2mat(jj);
 v=cell2mat(value);
 
 %Shift the matrix
-m = m-predictor_shift; 
+m = m-predictor_shift;
 
 %Return the bounds of the data
 data_pad(1) = -predictor_shift;
-data_pad(2) = predictor_pad  + max(max(cat_t0,con_t0),0);
+data_pad(2) = predictor_pad + max(max(cat_t0, con_t0),0);
 
 try
     predictor=sparse(m, n, v, p.pnts + sum(data_pad), parameter_cnt);
     
 catch  e
-    fprintf('Max m index = %d, max n index = %d\n',max(m), max(n));
+    fprintf('Max m index = %d, max n index = %d\n', max(m), max(n));
     fprintf('Dimension = %d x %d\n', p.pnts + sum(data_pad), parameter_cnt);
     rethrow(e)
 end

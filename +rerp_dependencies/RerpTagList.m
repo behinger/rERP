@@ -148,30 +148,39 @@ classdef RerpTagList
         %pop_rerp GUI (with brackets and labelling. 
         function [ncontinvars, ncatvars, ncontextvars, ncontextchldrn] = cntVarsParams(rerp_profile)
             import rerp_dependencies.*
-            
             tags = rerp_profile.include_tag;
-            ncontinvars =length(rerp_profile.continuous_var);
-            ncatvars = length(RerpTagList.strip_subtags(tags));
+            not_affected_tags = RerpTagList.strip_subtags(tags);
+            
+            %Number of non-context continuous tags
+            continuous_tag=intersect(not_affected_tags, rerp_profile.include_continuous_tag); 
+            ncontinvars=length(continuous_tag);
+            
+            %Number of non-context regular tags
+            cat_tag=setdiff(not_affected_tags,continuous_tag); 
+            ncatvars = length(cat_tag);
             
             % Compute number of variables and number of children introduced by context groups
-            ncontextvars = 0; 
+            ncontextvars = [0 0]; 
             ncontextchldrn = 0; 
             context_affected_tags = RerpTagList.strip_label(RerpTagList.strip_brackets(RerpTagList.get_affected(tags)));
-            context_group = rerp_profile.context_group;
-            for i=1:length(context_group)
-                this_group = context_group(i);
-                if ~isempty(this_group)
-                    included_affected = intersect(this_group.affected_tags, context_affected_tags(:));
-                    rerp_profile.context_group(i).included_affected = included_affected;
-
-                    nchld = length(this_group.children);
-                    ncontextchldrn = ncontextchldrn + nchld;
-                    thisnum = length(included_affected)*nchld;
-                    ncontextvars = ncontextvars + thisnum;
+            affected_cat_tag = setdiff(context_affected_tags, rerp_profile.include_continuous_tag);
+            affected_con_tag = intersect(context_affected_tags, rerp_profile.include_continuous_tag); 
+            for i=1:length(rerp_profile.context_group)
+                this_group = rerp_profile.context_group(i);
+                if ~isempty(intersect(this_group.name, rerp_profile.include_separator_tag))
+                    if ~isempty(this_group)
+                        nchld = length(this_group.children);
+                        ncontextchldrn = ncontextchldrn + nchld;
+                        
+                        regular_children=intersect(this_group.included_affected, affected_cat_tag);
+                        continuous_children=intersect(this_group.included_affected, affected_con_tag);
+                        
+                        ncontextvars(1) = (ncontextvars(1) + length(regular_children))*nchld;
+                        ncontextvars(2) = (ncontextvars(2) + length(continuous_children))*nchld;
+                    end
                 end
             end
         end
-        
     end
 end
 

@@ -923,13 +923,13 @@ classdef RerpResult < matlab.mixin.Copyable
                 
                 continuous_tags=cell(1,length(p.continuous_var));
                 for i=1:length(p.continuous_var)
-                    continuous_tags{i} = p.continuous_var{i}.name;
+                    continuous_tags{i} = p.continuous_var(i).name;
                 end
                 
                 context_tags=cell(0,0);
                 m=1;
                 for i=1:length(p.context_group)
-                    this_group = p.context_group{i};
+                    this_group = p.context_group(i);
                     for j=1:length(this_group.children)
                         this_child = this_group.children(j);
                         for k=1:length(this_child.included_tag)

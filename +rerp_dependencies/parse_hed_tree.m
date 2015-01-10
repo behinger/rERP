@@ -19,7 +19,6 @@ rem_tags=[s.exclude_tag; s.exclude_continuous_tag; extended_sep_tags];
 [tags, idx]=setdiff(tags, rem_tags);
 ids = ids(idx);
 
-
 %Form context groups
 if isempty(cp.context_group) && ~isempty(s.separator_tag)
     [cp.context_group, tags, ids] = makeContextGroup(cp, tags, ids, s);
@@ -28,6 +27,13 @@ end
 if ~isempty(s.separator_tag)
     disp('parse_hed_tree: refreshing context groups');
     [tags, ids] = refreshContextGroup(cp, tags, ids);
+end
+
+%Figure out which included tags were affected by each context group
+context_affected_tags = RerpTagList.strip_label(RerpTagList.strip_brackets(RerpTagList.get_affected(tags)));
+for i=1:length(cp.context_group) 
+    included_affected = intersect(cp.context_group(i).affected_tags, context_affected_tags(:));
+    cp.context_group(i).included_affected = included_affected;
 end
 
 %Remove categorical redundant tags
@@ -164,7 +170,7 @@ if ~isempty(tags)
     for i=1:length(cp.context_group)
         this_group = cp.context_group(i);
         
-        if ~isempty(this_group)
+        if ~isempty(this_group) && ~isempty(intersect(this_group.name, cp.include_separator_tag))
             [stripped_hit_tags, this_idx, ~] = intersect(RerpTagList.strip_affected_brackets(sub_tags), this_group.affected_tags);
             hit_tags = sub_tags(this_idx);
             
