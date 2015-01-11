@@ -26,6 +26,6 @@ cp = RerpProfile.loadRerpProfile('path', fullfile(RerpProfile.rerp_path, 'profil
 s=cp.settings;
 rerp_result = pop_rerp(EEG, cp, 'force_gui', 1);
 %rerp_result = pop_rerp(EEG, cp);
+
 %%
-rerp_result_gui;
-%EEG=pop_loadset(fullfile(dropbox_path,'SCCN','RSVP', 'Gaby Data', 'GabyData2', 'S02_contData_cudaica.set'));
+EEG=pop_loadset(fullfile(dropbox_path,'SCCN', 'Gaby Data', 'GabyData2', 'S02_contData_cudaica.set'));
