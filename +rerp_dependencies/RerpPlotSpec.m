@@ -22,7 +22,8 @@ classdef RerpPlotSpec < matlab.mixin.Copyable
         significance_level=.05 %p-value threshold for determining significance
         locking_idx=1 %For plotRerpImage, specifies the locking variable for epochs
         delay_idx=1 %For plotRerpImage, sorts based on delay from locking variable to delay variable
-        window_size_ms=3000 %For plotRerpImage, length of plotting window (epoch length)
+        rerp_image_boundary=[-1 2]; %For plotRerpImage, length of plotting window (epoch length)
+        
         constant_scale=0; %Force the y-axis to be the same across all plots
         sort_by_r2=1; %Plot in order of decreasing R2
         over_plot=0; %Plot multiple times on the same axes

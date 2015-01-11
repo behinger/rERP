@@ -103,7 +103,7 @@ end
 
 %We don't add a row of ones to predictor: assumes no dc bias in data.
 fprintf('rerp: generating predictor, time=%f\n', toc);
-[predictor, data_pad, parameter_idx_layout] = p.predictor;
+[predictor, data_pad, parameter_idx_layout, tags] = p.predictor;
 
 %Extend data with zeros to match predictor size/alignment
 data = [zeros(data_pad(1), size(data,2)); data; zeros(data_pad(2), size(data,2))];
@@ -246,7 +246,8 @@ rerp_result.ersp_flag=ersp_flag;
 
 dsname = regexp(rerp_result.rerp_profile.eeglab_dataset_name,'.*[\\\/](.*)\.set', 'tokens');
 rerp_result.name=[dsname{1}{1} ' ' rerp_result.analysis_name ' ' rerp_result.date_completed];
-
+rerp_result.parameter_idx_layout=parameter_idx_layout; 
+rerp_result.tags=tags; 
 disp('rerp: done');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

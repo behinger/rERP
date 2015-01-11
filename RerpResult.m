@@ -25,6 +25,9 @@ classdef RerpResult < matlab.mixin.Copyable
         rerp_estimate % The rerp or rersp esitmates for each channel and frequency. must be reshaped for ersp.
         admm_residual % If regularization required alternating direction method of multipliers
         
+        tags={};
+        parameter_idx_layout={};  %Gives the index into the parameter vector for each variable
+        
         average_total_rsquare % Rsquare as computed on the entire data with full signal estimate
         average_event_rsquare % Rsquare as computed only on the part of the data affected by the variable, with it's part of the signal estimate
         
@@ -47,8 +50,8 @@ classdef RerpResult < matlab.mixin.Copyable
                 return;
             end
             
-            obj.total_xval_folds=RerpXvalFold; 
-            obj.event_xval_folds=RerpXvalFold; 
+            obj.total_xval_folds=RerpXvalFold;
+            obj.event_xval_folds=RerpXvalFold;
             
             obj.rerp_profile = rerp_profile;
             if nargin > 1
@@ -107,8 +110,8 @@ classdef RerpResult < matlab.mixin.Copyable
             datasetname = regexp(obj.rerp_profile.eeglab_dataset_name,'.*[\\\/](.*).set','tokens');
             if ~isempty(datasetname)
                 datasetname = {{regexprep(datasetname{1}{1},'[\_]','\\\_')}};
-            else 
-                datasetname = {{''}}; 
+            else
+                datasetname = {{''}};
             end
             
             if obj.rerp_plot_spec.constant_scale
@@ -123,13 +126,13 @@ classdef RerpResult < matlab.mixin.Copyable
                 if obj.rerp_plot_spec.exclude_insignificant
                     this_ts_idx = obj.rerp_plot_spec.ts_idx(rsquare_significance(i, obj.rerp_plot_spec.ts_idx)==1);
                 else
-                    this_ts_idx = obj.rerp_plot_spec.ts_idx; 
+                    this_ts_idx = obj.rerp_plot_spec.ts_idx;
                 end
                 
                 if ~isempty(obj.rerp_plot_spec.ts_idx)
                     scrollsubplot(4,1,m,h);
                     hold all;
-                    this_estimate = [estimates{i, this_ts_idx}]; 
+                    this_estimate = [estimates{i, this_ts_idx}];
                     if ~isempty(this_estimate)
                         plot(xaxis_ms{i}', this_estimate);
                     end
@@ -384,7 +387,7 @@ classdef RerpResult < matlab.mixin.Copyable
             
             axis([-1 length(obj.rerp_plot_spec.ts_idx) tmin tmax]);
             line([-1 length(obj.rerp_plot_spec.ts_idx)],[0 0],'linewidth',1,'color',[0 0 0]);
-
+            
         end
         
         function plotRerpEventRsquared(obj, h)
@@ -414,7 +417,7 @@ classdef RerpResult < matlab.mixin.Copyable
             datasetname = {{regexprep(datasetname{1}{1},'[\_]','\\\_')}};
             
             vals=obj.average_event_rsquare(obj.rerp_plot_spec.event_idx, obj.rerp_plot_spec.ts_idx_event_types(:));
-            overall_max = max(max(vals)); 
+            overall_max = max(max(vals));
             overall_min = min(min(min(vals), 0));
             
             m=1;
@@ -484,7 +487,7 @@ classdef RerpResult < matlab.mixin.Copyable
                 else
                     type= 'Component';
                 end
-
+                
                 xlabel([type ' - decreasing R ^2 order']);
                 ylabel('R ^2');
                 title(['Rsquare performance by time series: ' tags{obj.rerp_plot_spec.event_idx(i)}]);
@@ -521,20 +524,16 @@ classdef RerpResult < matlab.mixin.Copyable
             %Plot raw epochs, modeled epochs and difference (noise) epochs
             %Sorts epochs based on the time delay to another event type
             %   Usage:
-            %       rerp_result.plotRerpImage(EEG, rerp_plot_spec.locking_idx, rerp_plot_spec.delay_idx, rerp_plot_spec.ts_idx, rerp_plot_spec.window_size_ms);
-            %       rerp_result.plotRerpImage(EEG, rerp_plot_spec.locking_idx, rerp_plot_spec.delay_idx, rerp_plot_spec.ts_idx, rerp_plot_spec.window_size_ms, h);
+            %     rerp_result.plotRerpImage;
             %
             %   Parameters:
-            %       EEG - the EEG struct for this RerpResult, with data populated
-            %       rerp_plot_spec.locking_idx - index of event type or hed tag to extract
-            %           epochs
-            %       rerp_plot_spec.delay_idx - index of event type or hed tag to measure delay from locking variable
-            %       rerp_plot_spec.window_size_ms - length of epoch window
             import rerp_dependencies.*
             
             if ~exist('h','var')
                 h=figure;
             end
+            
+            boundary = obj.rerp_plot_spec.rerp_image_boundary;
             
             eeg_parts=regexp(obj.rerp_profile.eeglab_dataset_name, '(.*[\\\/])(.*.set)', 'tokens');
             
@@ -572,10 +571,9 @@ classdef RerpResult < matlab.mixin.Copyable
                 end
             end
             
-            num_samples = ceil(obj.rerp_profile.sample_rate*(obj.rerp_plot_spec.window_size_ms/1000));
-            
             [tags, estimates, xaxis_ms, epoch_boundaries] = obj.get_plotting_params;
             locking_tag = tags{obj.rerp_plot_spec.locking_idx};
+            this_epoch_boundaries=epoch_boundaries{obj.rerp_plot_spec.locking_idx};
             locking_estimate = estimates(obj.rerp_plot_spec.locking_idx, obj.rerp_plot_spec.ts_idx);
             
             if ~isempty(obj.rerp_plot_spec.delay_idx)
@@ -584,20 +582,24 @@ classdef RerpResult < matlab.mixin.Copyable
                 delay_tag=[];
             end
             
-            this_epoch_boundaries = epoch_boundaries{obj.rerp_plot_spec.locking_idx};
-            this_xaxis_ms = ((0:(num_samples-1))'/obj.rerp_profile.sample_rate + this_epoch_boundaries(1))*1000;
+            num_samples = ceil((boundary(2)-boundary(1))*obj.rerp_profile.sample_rate);
+            %this_epoch_boundaries = epoch_boundaries{obj.rerp_plot_spec.locking_idx};
+            this_xaxis_ms = ((0:(num_samples-1))'/obj.rerp_profile.sample_rate + boundary(1))*1000;
             
             disp('RerpResult: generating modeled data');
             [predictor, data_pad] = obj.rerp_profile.predictor;
-            data = [zeros(data_pad(1), size(data,2)); data; zeros(data_pad(2), size(data,2)); zeros(num_samples,size(data,2))];
-            modeled_data = [predictor*obj.rerp_estimate(:,obj.rerp_plot_spec.ts_idx); zeros(num_samples,size(data,2))];
+            extra_pad = ceil(max(0, this_epoch_boundaries(1)-boundary(1))*obj.rerp_profile.sample_rate);
+            front_pad = data_pad(1)+extra_pad;
+            %data = [zeros(data_pad(1), size(data,2)); data; zeros(data_pad(2), size(data,2)); zeros(num_samples,size(data,2))];
+            data = [zeros(front_pad, size(data,2)); data; zeros(data_pad(2) + num_samples, size(data,2))];
+            modeled_data = [zeros(extra_pad, size(data,2)); predictor*obj.rerp_estimate(:,obj.rerp_plot_spec.ts_idx); zeros(num_samples,size(data,2))];
             noise = data-modeled_data;
-            
-            idx_start = max(max(ceil(this_epoch_boundaries(1)*obj.rerp_profile.sample_rate)+data_pad(1)), 1);
+
             disp('RerpResult: getting epochs');
-            [data_epochs, event_nums] = obj.get_rerp_epochs(data(idx_start:end), locking_tag, num_samples);
-            [modeled_epochs] = obj.get_rerp_epochs(modeled_data(idx_start:end), locking_tag, num_samples);
-            [noise_epochs] = obj.get_rerp_epochs(noise(idx_start:end), locking_tag, num_samples);
+            %idx_start = max(max(ceil(this_epoch_boundaries(1)*obj.rerp_profile.sample_rate)+data_pad(1)), 1);
+            [data_epochs, event_nums] = obj.get_rerp_epochs(data, locking_tag, front_pad, boundary);
+            [modeled_epochs] = obj.get_rerp_epochs(modeled_data, locking_tag,  front_pad, boundary);
+            [noise_epochs] = obj.get_rerp_epochs(noise, locking_tag, front_pad, boundary);
             
             %Threshold epochs to modeled data to get good color
             %range.
@@ -904,13 +906,6 @@ classdef RerpResult < matlab.mixin.Copyable
             
             p=obj.rerp_profile;
             
-            category_epoch_length = p.settings.category_epoch_boundaries(2) - p.settings.category_epoch_boundaries(1);
-            continuous_epoch_length = p.settings.continuous_epoch_boundaries(2) - p.settings.continuous_epoch_boundaries(1);
-            
-            %Number of samples per epoch
-            category_ns = ceil(category_epoch_length*p.sample_rate);
-            continuous_ns = ceil(continuous_epoch_length*p.sample_rate);
-            
             if obj.ersp_flag
                 nbins = obj.rerp_profile.settings.nbins;
                 raw_estimate = reshape(obj.rerp_estimate, [size(obj.rerp_estimate,1), size(obj.rerp_estimate,2)/nbins, nbins]);
@@ -918,97 +913,24 @@ classdef RerpResult < matlab.mixin.Copyable
                 raw_estimate = obj.rerp_estimate;
             end
             
-            if p.settings.hed_enable
-                cat_tags = RerpTagList.strip_subtags(p.include_tag);
-                
-                continuous_tags=cell(1,length(p.continuous_var));
-                for i=1:length(p.continuous_var)
-                    continuous_tags{i} = p.continuous_var(i).name;
+            tags = obj.tags;
+            idx = obj.parameter_idx_layout;
+            stripped_tags=RerpTagList.strip_brackets(tags);
+            estimates=cell(length(tags), size(raw_estimate, 2));
+            xaxis_ms=cell(size(tags));
+            epoch_boundaries=cell(size(tags));
+            
+            for i=1:length(stripped_tags)
+                this_tag=stripped_tags{i};
+                if ~isempty(intersect(this_tag, p.settings.continuous_tag))
+                    epoch_boundaries{i}=p.settings.continuous_epoch_boundaries;
+                else
+                    epoch_boundaries{i}=p.settings.category_epoch_boundaries;
                 end
                 
-                context_tags=cell(0,0);
-                m=1;
-                for i=1:length(p.context_group)
-                    this_group = p.context_group(i);
-                    for j=1:length(this_group.children)
-                        this_child = this_group.children(j);
-                        for k=1:length(this_child.included_tag)
-                            this_included_tag = this_child.included_tag{k};
-                            context_tags{m} = [this_included_tag '    (' this_child.tag ')'];
-                            m=m+1;
-                        end
-                    end
-                    
-                end
-                
-                tags = {cat_tags{:} continuous_tags{:} context_tags{:}};
-                estimates=cell(length(tags), size(raw_estimate,2));
-                xaxis_ms=cell(size(tags));
-                epoch_boundaries=cell(size(tags));
-                
-                m=1;
-                for i=1:length(cat_tags)
-                    
-                    start_idx=category_ns*(m-1)+1;
-                    end_idx = start_idx+category_ns-1;
-                    for j=1:size(raw_estimate,2)
-                        estimates{m,j} = squeeze(raw_estimate(start_idx:end_idx, j,:));
-                        xaxis_ms{m} = RerpResult.get_xaxis_ms(p.settings.category_epoch_boundaries, p.sample_rate);
-                        epoch_boundaries{m}=p.settings.category_epoch_boundaries;
-                    end
-                    
-                    m=m+1;
-                end
-                
-                for i=1:length(continuous_tags)
-                    
-                    start_idx=continuous_ns*(m-1)+1;
-                    end_idx = start_idx+continuous_ns-1;
-                    for j=1:size(raw_estimate,2)
-                        estimates{m,j} = squeeze(raw_estimate(start_idx:end_idx, j,:));
-                        xaxis_ms{m} = RerpResult.get_xaxis_ms(p.settings.continuous_epoch_boundaries, p.sample_rate);
-                        epoch_boundaries{m}=p.settings.continuous_epoch_boundaries;
-                    end
-                    
-                    m=m+1;
-                end
-                
-                for i=1:length(context_tags)
-                    
-                    start_idx=category_ns*(m-1)+1;
-                    end_idx = start_idx+category_ns-1;
-                    for j=1:size(raw_estimate,2)
-                        estimates{m,j} = squeeze(raw_estimate(start_idx:end_idx, j,:));
-                        xaxis_ms{m} = RerpResult.get_xaxis_ms(p.settings.category_epoch_boundaries, p.sample_rate);
-                        epoch_boundaries{m}=p.settings.category_epoch_boundaries;
-                    end
-                    
-                    m=m+1;
-                end
-                
-            else
-                tags=cell(size(p.include_event_types));
-                [~, descridx] = intersect(p.event_types, p.include_event_types);
-                for i=1:length(p.include_event_types)
-                    if strcmp(p.event_type_descriptions{descridx(i)},'')||isempty(p.event_type_descriptions{descridx(i)})
-                        tags{i} = p.include_event_types{i};
-                    else
-                        tags{i} = [p.include_event_types{i} '  (' p.event_type_descriptions{descridx(i)} ')'];
-                    end
-                end
-                
-                estimates=cell(length(tags), size(raw_estimate,2));
-                xaxis_ms=cell(size(tags));
-                epoch_boundaries=cell(size(tags));
-                
-                for i=1:length(tags)
-                    start_idx=category_ns*(i-1)+1;
-                    end_idx = start_idx+category_ns-1;
-                    for j=1:size(raw_estimate,2)
-                        estimates{i,j} = squeeze(raw_estimate(start_idx:end_idx, j, :));
-                        xaxis_ms{i} = RerpResult.get_xaxis_ms(p.settings.category_epoch_boundaries, p.sample_rate);
-                        epoch_boundaries{i}=p.settings.category_epoch_boundaries;
-                    end
+                xaxis_ms{i} = RerpResult.get_xaxis_ms(epoch_boundaries{i}, p.sample_rate);
+                for j=1:size(raw_estimate, 2)
+                    estimates{i,j} = squeeze(raw_estimate(idx{i}, j, :));
                 end
             end
         end
@@ -1109,7 +1031,7 @@ classdef RerpResult < matlab.mixin.Copyable
                 else
                     obj(i).rerp_plot_spec.sort_idx = 1:length(rsq);
                 end
-                    
+                
             end
         end
     end
@@ -1261,7 +1183,7 @@ classdef RerpResult < matlab.mixin.Copyable
             % Returns time series numbers where rsquare was statistically
             % different from zero mean at p<rerp_plot_spec.significance_level
             import rerp_dependencies.ttestw
-
+            
             data_variance=zeros(length(obj.total_xval_folds), length(obj.total_xval_folds(1).data_variance));
             noise_variance=zeros(length(obj.total_xval_folds), length(obj.total_xval_folds(1).noise_variance));
             weight=zeros(length(obj.total_xval_folds), length(obj.total_xval_folds(1).num_samples));
@@ -1273,7 +1195,7 @@ classdef RerpResult < matlab.mixin.Copyable
             end
             
             rsquare = 1 - noise_variance./data_variance;
-            rsquare_significance=zeros([1,size(rsquare,2)]); 
+            rsquare_significance=zeros([1,size(rsquare,2)]);
             for i=1:size(rsquare,2)
                 rsquare_significance(i) = squeeze(ttestw(rsquare(:,i), 0, weight(:,i), 'Alpha', obj.rerp_plot_spec.significance_level));
             end
@@ -1294,7 +1216,7 @@ classdef RerpResult < matlab.mixin.Copyable
             end
             
             rsquare = 1 - noise_variance./data_variance;
-            rsquare_significance=zeros([size(rsquare,2), size(rsquare,3)]); 
+            rsquare_significance=zeros([size(rsquare,2), size(rsquare,3)]);
             for i=1:size(rsquare,2)
                 for j=1:size(rsquare,3)
                     rsquare_significance(i, j) = squeeze(ttestw(rsquare(:,i, j), 0, weight(:,i, j), 'Alpha', obj.rerp_plot_spec.significance_level));
@@ -1302,7 +1224,7 @@ classdef RerpResult < matlab.mixin.Copyable
             end
             
             rsquare_significance = reshape(rsquare_significance, size(obj.event_xval_folds(1).data_variance));
-            rsquare_significance(isnan(rsquare_significance))=0; 
+            rsquare_significance(isnan(rsquare_significance))=0;
         end
         
         function delay = get_delay_times(obj, event_nums, delay_var, num_samples)
@@ -1371,9 +1293,10 @@ classdef RerpResult < matlab.mixin.Copyable
             end
         end
         
-        function [rerp_epochs, event_nums] = get_rerp_epochs(obj, data, locking_var,  num_samples)
+        function [rerp_epochs, event_nums] = get_rerp_epochs(obj, data, locking_var, front_pad, boundaries)
             import rerp_dependencies.RerpTagList;
-            
+            num_samples = ceil((boundaries(2)-boundaries(1))*obj.rerp_profile.sample_rate); 
+
             % Extract epochs corresponding to tags or event codes
             events = obj.rerp_profile.these_events;
             rerp_epochs = zeros([num_samples, length(events.label), size(data,2)]);
@@ -1383,16 +1306,15 @@ classdef RerpResult < matlab.mixin.Copyable
             context_tag = regexp(locking_var, regexp_str_in_parentheses, 'tokens');
             locking_tag = RerpTagList.strip_label({locking_var});
             locking_tag=locking_tag{1};
-            
             if obj.rerp_profile.settings.hed_enable
                 % Get event numbers for locking_var (possibly in a context
                 % group).
                 if ~isempty(context_tag)
                     for i=1:length(obj.rerp_profile.context_group)
-                        this_group = obj.rerp_profile.context_group{i};
+                        this_group = obj.rerp_profile.context_group(i);
                         for j=1:length(this_group.children)
                             this_child = this_group.children(i);
-                            if strcmp(context_tag{1}{1}, this_child.tag)
+                            if strcmp(strtrim(context_tag{1}{1}), this_child.tag)
                                 idx = find(strcmp(locking_tag, this_child.included_tag), 1);
                                 event_nums = this_child.included_ids{idx};
                             end
@@ -1401,12 +1323,6 @@ classdef RerpResult < matlab.mixin.Copyable
                 else
                     tag_idx = strcmp(locking_tag, obj.rerp_profile.hed_tree.uniqueTag);
                     event_nums = obj.rerp_profile.hed_tree.originalHedStringId{tag_idx};
-                end
-                
-                for i=event_nums(:)'
-                    this_latency = round(events.latencyInFrame(i));
-                    rerp_epochs(:,m,:) = data(this_latency:(this_latency+num_samples-1),:);
-                    m=m+1;
                 end
                 
             else
@@ -1423,6 +1339,13 @@ classdef RerpResult < matlab.mixin.Copyable
                 end
             end
             
+            %Extract the epochs for the event numbers selected
+            for i=event_nums(:)'
+                this_latency = round(events.latencyInFrame(i));
+                this_latency = this_latency + front_pad + ceil(boundaries(1)*obj.rerp_profile.sample_rate);
+                rerp_epochs(:,m,:) = data(this_latency:(this_latency+num_samples-1),:);
+                m=m+1;
+            end
             rerp_epochs=rerp_epochs(:,1:(m-1),:);
         end
     end
@@ -1478,30 +1401,30 @@ classdef RerpResult < matlab.mixin.Copyable
     end
     
     methods (Access = protected)
-       % Override copyElement method:
-      function cpObj = copyElement(obj)
-         import rerp_dependencies.*
-         
-         % Make a shallow copy of all properties
-         cpObj = copyElement@matlab.mixin.Copyable(obj);
-         
-         % Make a deep copy of these objects
-         if isa(obj.rerp_profile,'RerpProfile')
-            cpObj.rerp_profile = copy(obj.rerp_profile);
-         end
-         
-         if isa(obj.rerp_plot_spec,'RerpPlotSpec')
-            cpObj.rerp_plot_spec = copy(obj.rerp_plot_spec);
-         end
-         
-         if isa(obj.total_xval_folds, 'RerpXvalFold')
-            cpObj.total_xval_folds = copy(obj.total_xval_folds); 
-         end
-         
-         if isa(obj.event_xval_folds,'RerpXvalFold')
-            cpObj.event_xval_folds = copy(obj.event_xval_folds); 
-         end
-      end
+        % Override copyElement method:
+        function cpObj = copyElement(obj)
+            import rerp_dependencies.*
+            
+            % Make a shallow copy of all properties
+            cpObj = copyElement@matlab.mixin.Copyable(obj);
+            
+            % Make a deep copy of these objects
+            if isa(obj.rerp_profile,'RerpProfile')
+                cpObj.rerp_profile = copy(obj.rerp_profile);
+            end
+            
+            if isa(obj.rerp_plot_spec,'RerpPlotSpec')
+                cpObj.rerp_plot_spec = copy(obj.rerp_plot_spec);
+            end
+            
+            if isa(obj.total_xval_folds, 'RerpXvalFold')
+                cpObj.total_xval_folds = copy(obj.total_xval_folds);
+            end
+            
+            if isa(obj.event_xval_folds,'RerpXvalFold')
+                cpObj.event_xval_folds = copy(obj.event_xval_folds);
+            end
+        end
     end
 end
 

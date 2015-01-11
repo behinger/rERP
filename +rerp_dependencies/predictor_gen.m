@@ -25,7 +25,7 @@
 % of the authors and should not be interpreted as representing official policies,
 % either expressed or implied, of the FreeBSD Project.
 
-function [predictor, data_pad, indexes] = predictor_gen( rerp_profile )
+function [predictor, data_pad,  indexes, tags] = predictor_gen( rerp_profile )
 %PREDICTOR_GEN generate a sparse matrix predictor for ERP regression
 
 import rerp_dependencies.*
@@ -45,7 +45,7 @@ category_ns = ceil(category_epoch_length*p.sample_rate);
 continuous_ns = ceil(continuous_epoch_length*p.sample_rate);
 
 indexes = cell(0,0);
-
+tags = cell(0,0);
 if s.hed_enable
     [ncontinvars, ncatvars, ncontextvars] = RerpTagList.cntVarsParams(p);
     parameter_cnt = (ncontinvars + ncontextvars(2))*continuous_ns + (ncatvars + ncontextvars(1))*category_ns;
@@ -56,12 +56,12 @@ if s.hed_enable
     cell_idx = 1;
     
     not_affected_tags = RerpTagList.strip_subtags(p.include_tag);
-    continuous_tag=intersect(not_affected_tags, rerp_profile.include_continuous_tag);
+    continuous_tag=intersect(not_affected_tags, p.include_continuous_tag);
     cat_tag=setdiff(not_affected_tags, continuous_tag);
     
     [~, cat_idx] = intersect(p.hed_tree.uniqueTag, cat_tag);
     cat_ids = p.hed_tree.originalHedStringId(cat_idx);
-    
+    cat_tags = p.hed_tree.uniqueTag(cat_idx);
     j_end_idx=0; 
     %Enter categorical variables
     for j=1:length(cat_ids)
@@ -73,6 +73,7 @@ if s.hed_enable
         j_vec=repmat(j_start_idx:j_end_idx,1,length(this_cat_id));
         i_vec=zeros(1,length(this_cat_id)*category_ns);
         indexes{end+1}=j_start_idx:j_end_idx;
+        tags{end+1}=cat_tags{j};
         value_vec = ones(1, length(i_vec));
         
         for i=1:length(this_cat_id)
@@ -104,6 +105,7 @@ if s.hed_enable
             j_vec=repmat(j_start_idx:j_end_idx,1,length(this_contin_id));
             i_vec=zeros(1,length(this_contin_id)*continuous_ns);
             indexes{end+1}=j_start_idx:j_end_idx;
+            tags{end+1}=p.continuous_var(j).name;
             value_vec = zeros(1, length(i_vec));
             
             for i=1:length(this_contin_id)
@@ -157,6 +159,7 @@ if s.hed_enable
                     j_vec=repmat(j_start_idx:j_end_idx,1,length(this_included_id));
                     i_vec=zeros(1,length(this_included_id)*ns);
                     indexes{end+1}=j_start_idx:j_end_idx;
+                    tags{end+1}= [this_included_tag ' ( ' this_child.tag ' )'];
                     value_vec = ones(1, length(i_vec));
                            
                     m=0;
@@ -206,6 +209,7 @@ else
         j_vec=repmat(j_start_idx:j_end_idx, 1, num_event_types(j));
         i_vec=zeros(1,num_event_types(j)*ns);
         indexes{end+1}=j_start_idx:j_end_idx;
+        tags{end+1}=this_type;
         value_vec = ones(1, num_event_types(j)*ns);
         
         for i=1:length(p.these_events.label)
