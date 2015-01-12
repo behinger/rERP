@@ -245,7 +245,13 @@ rerp_result.date_completed=datestr(now,'yyyy-mm-dd-HH:MM:SS');
 rerp_result.ersp_flag=ersp_flag;
 
 dsname = regexp(rerp_result.rerp_profile.eeglab_dataset_name,'.*[\\\/](.*)\.set', 'tokens');
-rerp_result.name=[dsname{1}{1} ' ' rerp_result.analysis_name ' ' rerp_result.date_completed];
+if p.ersp_flag
+    type=' rERSP';
+else
+    type='';
+end
+
+rerp_result.name=[dsname{1}{1} ' ' rerp_result.analysis_name type ' ' rerp_result.date_completed];
 rerp_result.parameter_idx_layout=parameter_idx_layout; 
 rerp_result.tags=tags; 
 disp('rerp: done');

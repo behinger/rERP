@@ -120,7 +120,7 @@ classdef RerpResultStudy
                     event_noise_variance = NaN(length(this_master_map), max_length);
                     event_noise_variance(~nan_idx, 1:this_length)= obj.result(i).event_xval_folds(k).noise_variance;
                     event_num_samples = NaN(length(this_master_map), max_length);
-                    event_num_samples(new_idx, 1:this_length)= obj.result(i).event_xval_folds(k).num_samples;
+                    event_num_samples(new_idx, 1:this_length)= repmat(obj.result(i).event_xval_folds(k).num_samples,1,this_length);
                     obj.result(i).event_xval_folds(k).data_variance=event_data_variance;
                     obj.result(i).event_xval_folds(k).noise_variance=event_noise_variance;
                     obj.result(i).event_xval_folds(k).num_samples=event_num_samples; 
