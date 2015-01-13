@@ -146,6 +146,8 @@ if ~isempty(handles.UserData.results(:))
     setSortIdx(handles.UserData.results(:));
     channelslist_Callback(handles.channelslist, [], handles);
 end
+
+%trigger_all_callbacks(eventdata, handles); 
 guidata(handles.output, handles);
 
 % --- Executes during object creation, after setting all properties.
@@ -497,7 +499,12 @@ end
 
 % Setup result options for plotting. Populate channels/components. Populate event types/tags
 opts=get_all_plotting_opts(handles);
-set(handles.typeplotlist, 'string', opts, 'value', min(length(opts), get(handles.typeplotlist,'Value')));
+if ~isempty(opts) && nnz(get(handles.typeplotlist,'Value'))==0
+    val=1;
+else
+    val=min(length(opts), get(handles.typeplotlist,'Value'));
+end
+set(handles.typeplotlist, 'string', opts, 'value',val);
 
 if first_result.rerp_profile.settings.type_proc
     set(handles.typeproclabel, 'string', 'Channels (R2)');
@@ -721,3 +728,14 @@ if ~isempty(handles.UserData.current.result)
         handles.UserData.current.result(i).rerp_plot_spec.over_plot=get(hObject,'Value');
     end
 end
+
+function trigger_all_callbacks(eventdata, handles)
+    typeplotlist_Callback(handles.typeplotlist, eventdata, handles)
+    channelslist_Callback(handles.channelslist, eventdata, handles)
+    tagslist_Callback(handles.tagslist, eventdata, handles)
+    sortbyrsqaurebox_Callback(handles.sortbyrsqaurebox, eventdata, handles)
+    significancelevel_Callback(handles.significancelevel, eventdata, handles)
+    enterwindow_Callback(handles.enterwindow_Callback, eventdata, handles)
+    exclude_insignif_Callback(handles.exclude_insignif, eventdata, handles)
+    constant_scale_Callback(handles.constant_scale, eventdata, handles)
+    overplot_Callback(handles.overplot, eventdata, handles)
