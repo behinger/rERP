@@ -61,7 +61,7 @@ else
     fmin = 1;
     fmax = rerp_profile.sample_rate/2;
     plotFlag = false;
-    [coefficients, data, angle, frequency, time] = ts.waveletTimeFrequencyAnalysis(wname,fmin,fmax, nbins, plotFlag);
+    [coefficients, data, angle, frequency, time] = ts.waveletTimeFrequencyAnalysis(wname, fmin, fmax, nbins, plotFlag);
     
     td = find(t==time(1))-1;
     to = length(t) - find(t==time(end));

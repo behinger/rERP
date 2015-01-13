@@ -679,8 +679,8 @@ classdef RerpResult < matlab.mixin.Copyable
             
             nbins = obj.rerp_profile.settings.nbins;
             sr = obj.rerp_profile.sample_rate;
-            y_axis_hz = ((1:floor(nbins/2)))*sr/nbins;
-            
+            y_axis_hz = logspace(0,log10(floor((sr/2))), nbins);
+            y_axis_hz = num2cell(num2str(y_axis_hz(:)), 2);
             [tags, estimates, xaxis_ms] = obj.get_plotting_params;
             
             m=1;
@@ -701,14 +701,16 @@ classdef RerpResult < matlab.mixin.Copyable
                 
                 for j=obj.rerp_plot_spec.event_idx
                     % Plot the rERSP estimates
-                    this_xaxis_ms = xaxis_ms{i,j};
+                    this_xaxis_ms = xaxis_ms{j};
                     this_estimate = estimates{j,i};
-                    this_tag = tags{i,j};
+                    this_tag = tags{j};
                     
                     scrollsubplot(1,1,m,h);
-                    a=imagesc(this_xaxis_ms, y_axis_hz, this_estimate');
+                    a=imagesc(this_xaxis_ms, 1:nbins, this_estimate');
                     colormap('jet');
-                    title(['rERSP, ' ts ': ' tsn ', ' v ': ' this_tag]);
+                    title(['rERSP (db Power), ' ts ': ' tsn ', ' v ': ' this_tag]);
+                    set(gca, 'YTick', linspace(1,nbins,10));
+                    set(gca, 'YTickLabel', y_axis_hz(linspace(1,nbins,10)));  
                     xlabel('time ( ms )');
                     ylabel('frequency ( Hz ) ');
                     axis xy;
@@ -1019,7 +1021,7 @@ classdef RerpResult < matlab.mixin.Copyable
             for i=1:length(obj)
                 if obj(i).ersp_flag
                     nbins=obj(i).rerp_profile.settings.nbins;
-                    rsq = max(reshape(first_result.average_total_rsquare, [nbins, length(first_result.average_total_rsquare)/nbins]));
+                    rsq = max(reshape(obj(i).average_total_rsquare, [nbins, length(obj(i).average_total_rsquare)/nbins]));
                 else
                     rsq = obj(i).average_total_rsquare;
                 end
@@ -1155,11 +1157,13 @@ classdef RerpResult < matlab.mixin.Copyable
                     for j=1:length(result.total_xval_folds)
                         result.total_xval_folds(j).noise_variance(idx)=this_result.total_xval_folds(j).noise_variance;
                         result.total_xval_folds(j).data_variance(idx)=this_result.total_xval_folds(j).data_variance;
+                        result.total_xval_folds(j).num_samples(idx)=this_result.total_xval_folds(j).num_samples;
                     end
                     
                     for j=1:length(result.event_xval_folds)
                         result.event_xval_folds(j).noise_variance(:,idx)=this_result.event_xval_folds(j).noise_variance;
                         result.event_xval_folds(j).data_variance(:,idx)=this_result.event_xval_folds(j).data_variance;
+                        result.event_xval_folds(j).num_samples(:,idx)=this_result.event_xval_folds(j).num_samples;
                     end
                     
                     result.gridsearch = RerpResult.mergeGridSearch(result, this_result, idx);
