@@ -147,6 +147,14 @@ if ~isempty(handles.UserData.results(:))
     channelslist_Callback(handles.channelslist, [], handles);
 end
 
+%Load current dataset bounds for rERP image plot
+if ~isempty(handles.UserData.current.result)
+    cat_bound = handles.UserData.current.result(1).rerp_profile.settings.category_epoch_boundaries;
+    con_bound = handles.UserData.current.result(1).rerp_profile.settings.continuous_epoch_boundaries;
+    minwin=min([cat_bound con_bound]);
+    maxwin=max([cat_bound con_bound]);
+    set(handles.enterwindow,'string', num2str([minwin maxwin]));
+end
 %trigger_all_callbacks(eventdata, handles); 
 guidata(handles.output, handles);
 
@@ -210,9 +218,9 @@ function channelslist_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 % Hints: contents = cellstr(get(hObject,'String')) returns channelslist contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from channelslist
-for i=1:length(handles.UserData.current.result)
+for i=1:length(handles.UserData.results)
     this_ts_list_idx=get(handles.channelslist,'Value');
-    this_result=handles.UserData.current.result(i);
+    this_result=handles.UserData.results(i);
     
     %Only plot number of time series that is available for all currently selected results
     extend_length = max(this_ts_list_idx)-length(this_result.rerp_plot_spec.sort_idx);
@@ -259,14 +267,14 @@ function tagslist_Callback(hObject, eventdata, handles)
 
 % Hints: contents = cellstr(get(hObject,'String')) returns tagslist contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from tagslist
-for i=1:length(handles.UserData.current.result)
-    handles.UserData.current.result(i).rerp_plot_spec.event_idx = get(hObject, 'Value');
+for i=1:length(handles.UserData.results)
+    handles.UserData.results(i).rerp_plot_spec.event_idx = get(hObject, 'Value');
     
     if handles.UserData.rerpimage
         if handles.UserData.locksort
-            handles.UserData.current.result(i).rerp_plot_spec.delay_idx=get(hObject,'Value');
+            handles.UserData.results(i).rerp_plot_spec.delay_idx=get(hObject,'Value');
         else
-            handles.UserData.current.result(i).rerp_plot_spec.locking_idx=get(hObject,'Value');
+            handles.UserData.results(i).rerp_plot_spec.locking_idx=get(hObject,'Value');
         end
     end
 end
@@ -573,7 +581,7 @@ function sortbyrsqaurebox_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-handles.UserData.current.result(:).rerp_plot_spec.sort_by_r2=get(hObject,'Value');
+handles.UserData.results(:).rerp_plot_spec.sort_by_r2=get(hObject,'Value');
 
 % Hint: get(hObject,'Value') returns toggle state of sortbyrsqaurebox
 resultslist_Callback(handles.resultslist, [], handles)
@@ -597,8 +605,8 @@ function significancelevel_Callback(hObject, eventdata, handles)
 try
     newlevel = str2double(get(handles.significancelevel,'String'));
     if isnumeric(newlevel)&&length(newlevel)==1&&newlevel>=0&&newlevel<=1
-        for i=1:length(handles.UserData.current.result)
-            handles.UserData.current.result(i).rerp_plot_spec.significance_level=newlevel;
+        for i=1:length(handles.UserData.results)
+            handles.UserData.results(i).rerp_plot_spec.significance_level=newlevel;
         end
     else
         error('rerp_result_gui');
@@ -630,12 +638,16 @@ function lockingindexbutton_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 if  handles.UserData.locksort==0
     set(hObject,'String', 'Sorting variable');
-    set(handles.tagslist,'Value', handles.UserData.current.result(1).rerp_plot_spec.delay_idx);
+    if ~isempty(handles.UserData.current.result)
+           set(handles.tagslist,'Value', handles.UserData.current.result(1).rerp_plot_spec.delay_idx);
+    end
     handles.UserData.locksort=1;
 else
     set(hObject,'String', 'Locking variable');
+    if ~isempty(handles.UserData.current.result) 
+        set(handles.tagslist,'Value',handles.UserData.current.result(1).rerp_plot_spec.locking_idx);
+    end
     handles.UserData.locksort=0;
-    set(handles.tagslist,'Value',handles.UserData.current.result(1).rerp_plot_spec.locking_idx);
 end
 
 % Update handles structure
@@ -649,11 +661,11 @@ function enterwindow_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of enterwindow as text
 %        str2double(get(hObject,'String')) returns contents of enterwindow as a double
-if ~isempty(handles.UserData.current.result)
-    for i=1:length(handles.UserData.current.result)
+if ~isempty(handles.UserData.results)
+    for i=1:length(handles.UserData.results)
         bound = str2num(get(handles.enterwindow,'String'));
         assert(length(bound)==2,'rerp_result_gui: rerp image boundary must have two numeric entries'); 
-        handles.UserData.current.result(i).rerp_plot_spec.rerp_image_boundary = bound;
+        handles.UserData.results(i).rerp_plot_spec.rerp_image_boundary = bound;
     end
 end
 
@@ -697,9 +709,9 @@ function exclude_insignif_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of exclude_insignif
-if ~isempty(handles.UserData.current.result)
-    for i=1:length(handles.UserData.current.result)
-        handles.UserData.current.result(i).rerp_plot_spec.exclude_insignificant=get(hObject,'Value');
+if ~isempty(handles.UserData.results)
+    for i=1:length(handles.UserData.results)
+        handles.UserData.results(i).rerp_plot_spec.exclude_insignificant=get(hObject,'Value');
     end
 end
 
@@ -710,9 +722,9 @@ function constant_scale_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of constant_scale
-if ~isempty(handles.UserData.current.result)
-    for i=1:length(handles.UserData.current.result)
-        handles.UserData.current.result(i).rerp_plot_spec.constant_scale=get(hObject,'Value');
+if ~isempty(handles.UserData.results)
+    for i=1:length(handles.UserData.results)
+        handles.UserData.results(i).rerp_plot_spec.constant_scale=get(hObject,'Value');
     end
 end
 
@@ -723,9 +735,9 @@ function overplot_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of overplot
-if ~isempty(handles.UserData.current.result)
-    for i=1:length(handles.UserData.current.result)
-        handles.UserData.current.result(i).rerp_plot_spec.over_plot=get(hObject,'Value');
+if ~isempty(handles.UserData.results)
+    for i=1:length(handles.UserData.results)
+        handles.UserData.results(i).rerp_plot_spec.over_plot=get(hObject,'Value');
     end
 end
 

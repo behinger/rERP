@@ -146,7 +146,6 @@ if exitcode
     rerp_result.setLastResult;
     if cp.settings.rerp_result_autosave
         resultfilename=[rerp_result.name '.rerp_result'];
-        
         try
             rerp_result.saveRerpResult('path', fullfile(s.autosave_results_path, resultfilename));
         catch

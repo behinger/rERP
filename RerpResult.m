@@ -1157,11 +1157,13 @@ classdef RerpResult < matlab.mixin.Copyable
                     for j=1:length(result.total_xval_folds)
                         result.total_xval_folds(j).noise_variance(idx)=this_result.total_xval_folds(j).noise_variance;
                         result.total_xval_folds(j).data_variance(idx)=this_result.total_xval_folds(j).data_variance;
+                        result.total_xval_folds(j).num_samples(idx)=this_result.total_xval_folds(j).num_samples;
                     end
                     
                     for j=1:length(result.event_xval_folds)
                         result.event_xval_folds(j).noise_variance(:,idx)=this_result.event_xval_folds(j).noise_variance;
                         result.event_xval_folds(j).data_variance(:,idx)=this_result.event_xval_folds(j).data_variance;
+                        result.event_xval_folds(j).num_samples(:,idx)=this_result.event_xval_folds(j).num_samples;
                     end
                     
                     result.gridsearch = RerpResult.mergeGridSearch(result, this_result, idx);
