@@ -13,19 +13,24 @@ EEG=pop_loadset(fullfile(dropbox_path,'SCCN','RSVP','exp53_continuous_with_ica.s
 % end
 
 %%
-clear cp;
-clear RerpProfile;
-cp=RerpProfile(EEG);
-s=cp.settings; 
-cp.saveRerpProfile('path', fullfile(RerpProfile.rerp_path,'profiles','test.rerp_profile'));
+% clear cp;
+% clear RerpProfile;
+% cp=RerpProfile(EEG);
+% s=cp.settings; 
+% cp.saveRerpProfile('path', fullfile(RerpProfile.rerp_path,'profiles','test.rerp_profile'));
 
 %%
 clear cp;
 clear RerpProfile;
 cp = RerpProfile.loadRerpProfile('path', fullfile(RerpProfile.rerp_path, 'profiles','test.rerp_profile'));
-s=cp.settings;
-rerp_result = pop_rerp(EEG, cp, 'force_gui', 1);
+
+rerp_result = pop_rerp(EEG, cp);
+
+cp=rerp_result.rerp_profile; 
+cp.settings.regularization_enable=0;
+rerp_result(2)=pop_rerp(EEG, cp);
+
 %rerp_result = pop_rerp(EEG, cp);
 %%
-rerp_result_gui;
+rerp_result_gui('results', rerp_result);
 %EEG=pop_loadset(fullfile(dropbox_path,'SCCN','RSVP', 'Gaby Data', 'GabyData2', 'S02_contData_cudaica.set'));

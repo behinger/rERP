@@ -6,6 +6,7 @@ function [ max_sv1, max_sv2] = get_largest_sv(B, Uc, Sc)
 W=diag(diag(1./diag(Sb))*Ub'*Uc*Sc);
 gz = W > 0; 
 max_sv1=min(W(gz)); 
+
 W=diag(diag(1./diag(Sb))*Sc);
 gz = W > 0;
 max_sv2=min(W(gz)); 
