@@ -1359,6 +1359,7 @@ classdef RerpResult < matlab.mixin.Copyable
                 end
             end
             
+            m=1;
             %Extract the epochs for the event numbers selected
             for i=event_nums(:)'
                 this_latency = round(events.latencyInFrame(i));
