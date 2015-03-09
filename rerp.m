@@ -241,7 +241,7 @@ end
 cross_validate_event_types(rerp_result);
 
 rerp_result.compute_time_seconds=toc;
-rerp_result.date_completed=datestr(now,'yyyy-mm-dd-HH:MM:SS');
+rerp_result.date_completed=datestr(now,'yyyy-mm-dd-HHMMSS');
 rerp_result.ersp_flag=ersp_flag;
 
 dsname = regexp(rerp_result.rerp_profile.eeglab_dataset_name,'.*[\\\/](.*)\.set', 'tokens');
