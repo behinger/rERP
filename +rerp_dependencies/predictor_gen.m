@@ -205,7 +205,7 @@ else
         j_end_idx = j_start_idx + ns - 1;
         m=0;
         
-        this_type = p.include_event_types(j);
+        this_type = p.include_event_types{j};
         j_vec=repmat(j_start_idx:j_end_idx, 1, num_event_types(j));
         i_vec=zeros(1,num_event_types(j)*ns);
         indexes{end+1}=j_start_idx:j_end_idx;

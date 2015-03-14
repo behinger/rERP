@@ -166,8 +166,15 @@ classdef RerpResult < matlab.mixin.Copyable
                     
                     if isempty(props)
                         a=legend(legend_idx);
+                        leg_prop = get(a);
+                        leg_prop.UserData.lstrings=legend_idx;
+                        set(a,'UserData', leg_prop.UserData);
                     else
-                        a=legend({props(m).UserData.lstrings{:} legend_idx{:}});
+                        new_ls = [props(m).UserData.lstrings legend_idx];
+                        a=legend(new_ls);
+                        leg_prop = get(a);
+                        leg_prop.UserData.lstrings={new_ls};
+                        set(a,'UserData', leg_prop.UserData);
                     end
                     
                     pr= get(gca,'UserData');
@@ -269,11 +276,20 @@ classdef RerpResult < matlab.mixin.Copyable
                     title([titl significance_label]);
                     xlim([min(cell2mat(xaxis_ms(new_idx))) max(cell2mat(xaxis_ms(new_idx)))]);
                     legend_idx = cellfun(@(x) [leg x], tags(new_idx) , 'UniformOutput' ,false);
+                    
                     if isempty(props)
                         a=legend(strtrim(legend_idx));
+                        leg_prop = get(a);
+                        leg_prop.UserData.lstrings=legend_idx;
+                        set(a,'UserData', leg_prop.UserData);
                     else
-                        a=legend({props(m).UserData.lstrings{:} strtrim(legend_idx{:})});
+                        new_ls = [props(m).UserData.lstrings legend_idx];
+                        a=legend(new_ls);
+                        leg_prop = get(a);
+                        leg_prop.UserData.lstrings={new_ls};
+                        set(a,'UserData', leg_prop.UserData);
                     end
+                    
                     pr= get(gca,'UserData');
                     pr.legend=a;
                     set(gca, 'UserData',pr);
@@ -1343,6 +1359,7 @@ classdef RerpResult < matlab.mixin.Copyable
                 end
             end
             
+            m=1;
             %Extract the epochs for the event numbers selected
             for i=event_nums(:)'
                 this_latency = round(events.latencyInFrame(i));
@@ -1378,7 +1395,6 @@ classdef RerpResult < matlab.mixin.Copyable
             % Callback for axes context menu: publishes the figure
             ax=gca;
             h=figure;
-            set(h,'color',[1 1 1]);
             
             newax=copyobj(ax, h);
             pr=get(ax,'UserData');
