@@ -20,6 +20,9 @@ else
     data=EEG.icaact(time_series, :)';
 end
 
+assert(~isempty(time_series),'rerp_parfor: no time-series were included in profile');
+assert(~isempty(data),'rerp_parfor: no data found in EEG struct');
+
 pnts=size(data,1);
 nbchan=size(data,2);
 nbins=rerp_profile.settings.nbins;

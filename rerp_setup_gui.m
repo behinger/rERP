@@ -200,6 +200,7 @@ function edit_profile_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 val = get(handles.profiles_list,'Value');
+exitcode=0; 
 if ~isempty(val)
     if length(val) > 1
         warning('rerp_setup_gui: can only edit one profile at a time');
@@ -209,6 +210,7 @@ if ~isempty(val)
     old_prof = copy(this_profile);
     exitcode = rerp_profile_gui(this_profile);
 end
+
 %Cancelled operation, restore old profile
 if ~exitcode
     handles.UserData.profiles(val(1))=old_prof;

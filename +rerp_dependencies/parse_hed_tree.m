@@ -14,7 +14,7 @@ ids = hed_tree.originalHedStringId;
 k=1;
 remove=[];
 extended_sep_tags=[s.separator_tag; cellfun(@(x) [x '/|'], s.separator_tag, 'uniformoutput', false); s.separator_tag_children];
-rem_tags=[s.exclude_tag; s.exclude_continuous_tag; extended_sep_tags];
+rem_tags=[s.exclude_tag(:); s.exclude_continuous_tag(:); extended_sep_tags(:)];
 
 [tags, idx]=setdiff(tags, rem_tags);
 ids = ids(idx);

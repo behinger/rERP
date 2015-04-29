@@ -218,9 +218,9 @@ function channelslist_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 % Hints: contents = cellstr(get(hObject,'String')) returns channelslist contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from channelslist
-for i=1:length(handles.UserData.results)
+for i=1:length(handles.UserData.current.result)
     this_ts_list_idx=get(handles.channelslist,'Value');
-    this_result=handles.UserData.results(i);
+    this_result=handles.UserData.current.result(i);
     
     %Only plot number of time series that is available for all currently selected results
     extend_length = max(this_ts_list_idx)-length(this_result.rerp_plot_spec.sort_idx);

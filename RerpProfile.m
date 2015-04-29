@@ -124,9 +124,10 @@ classdef RerpProfile < matlab.mixin.Copyable
                 %passed in profile. If that profile included all channels or comps, we do the same.
                 %Otherwise, we use only the channels or components used in that profile.
                 all_ts_idx=1:EEG.nbchan;
+                all_comp_idx=1:length(EEG.icaweights);
                 if ~isempty(passed_profile)
                     %Did we include all components in prototype profile?
-                    if length(passed_profile.include_comps)==passed_profile.nbchan
+                    if length(passed_profile.include_comps)==length(EEG.icaweights);
                         include_all_comps=1;
                     else
                         include_all_comps=0;
@@ -140,9 +141,9 @@ classdef RerpProfile < matlab.mixin.Copyable
                     %Decide whether to include all or subset of components in
                     %this new profile
                     if ~include_all_comps
-                        obj.include_comps=intersect(passed_profile.include_comps, all_ts_idx);
+                        obj.include_comps=intersect(passed_profile.include_comps, all_comp_idx);
                     else
-                        obj.include_comps=all_ts_idx;
+                        obj.include_comps=all_comp_idx;
                     end
                     
                     %Decide whether to include all or subset of channels in
@@ -171,7 +172,7 @@ classdef RerpProfile < matlab.mixin.Copyable
                 else
                     %No protptype profile was passed, so we include all chans
                     %and comps
-                    obj.include_comps=all_ts_idx;
+                    obj.include_comps=all_comp_idx;
                     obj.include_chans=all_ts_idx;
                 end
                                
