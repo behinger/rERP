@@ -14,7 +14,7 @@ ids = hed_tree.originalHedStringId;
 k=1;
 remove=[];
 extended_sep_tags=[s.separator_tag; cellfun(@(x) [x '/|'], s.separator_tag, 'uniformoutput', false); s.separator_tag_children];
-rem_tags=[s.exclude_tag; s.exclude_continuous_tag; extended_sep_tags];
+rem_tags=[s.exclude_tag(:); s.exclude_continuous_tag(:); extended_sep_tags(:)];
 
 [tags, idx]=setdiff(tags, rem_tags);
 ids = ids(idx);
@@ -37,7 +37,7 @@ for i=1:length(cp.context_group)
 end
 
 %Remove categorical redundant tags
-[tags, ids, marked_tags, marked_ids] = remove_redundant_tags(tags, ids, {}, {});
+[tags, ids, marked_tags, marked_ids] = remove_redundant_tags(tags, ids, {}, {},s);
 
 cp.include_tag = {tags{:} marked_tags{:}};
 cp.include_ids = {ids{:} marked_ids{:}};
@@ -51,7 +51,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Recursively remove any redundant tags in hierarchy
-function [short_tags, short_ids, marked_tags, marked_ids] = remove_redundant_tags(tag_list, id_list, marked_tags, marked_ids)
+function [short_tags, short_ids, marked_tags, marked_ids] = remove_redundant_tags(tag_list, id_list, marked_tags, marked_ids,s) % XXX BEHINGER added 's' because apparently it is needed in line 77
 import rerp_dependencies.*
 
 len_ids=length(id_list);
@@ -73,7 +73,7 @@ for i=1:len_ids
                 
                 %Don't remove continuous tags with same latencies: magnitude
                 %can be different even if latency is the same
-                if ~any(strcmp(strjoin(node_seq(1:(end-1)),'/'), s.continuous_tag))
+                if ~any(strcmp(strjoin(node_seq(1:(end)),'/'), s.continuous_tag)) % BEHINGER XXX I had to remove the end-1 when i only had continuous regressors
                     marked_tags{end+1} = ['*   ' tag_list{i} '   *'];
                     marked_ids(end+1) = id_list(i);
                     
@@ -85,7 +85,7 @@ for i=1:len_ids
                     tag_list = tag_list(~ridx);
                     
                     %Go one level deeper in recursion
-                    [short_tags, short_ids, marked_tags, marked_ids] = remove_redundant_tags(tag_list, id_list, marked_tags, marked_ids);
+                    [short_tags, short_ids, marked_tags, marked_ids] = remove_redundant_tags(tag_list, id_list, marked_tags, marked_ids,s); 
                     return;
                 end
             end

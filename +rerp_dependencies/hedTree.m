@@ -139,9 +139,9 @@ classdef hedTree < matlab.mixin.Copyable
             %its child. If the name of the child tag is # (to designate a number), it will be
             %lumped with its value, the next proceeding tag.
             if ~iscell(requireChild)
-                rc = boolean(0);
+                rc = 0;
             else
-                rc = boolean(1);
+                rc = 1;
             end
             
             trimmed = strtrim(hedStringArray);
